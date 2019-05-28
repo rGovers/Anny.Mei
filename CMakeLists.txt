@@ -10,7 +10,7 @@ configure_file (
 )
 
 include_directories("${PROJECT_SOURCE_DIR}/include")
-file(GLOB SOURCES "src/*.cpp")
+file(GLOB SOURCES "src/*.cpp" "src/*.c")
 
 add_subdirectory("glfw-3.3")
 include_directories("glfw-3.3/include")
