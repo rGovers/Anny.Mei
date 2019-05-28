@@ -37,10 +37,12 @@
 #CMake
 CMakeFiles
 ApplicationConfig.h
-*.cmake
 CMakeCache.txt
 
 #Project Files
 Makefile
 
+#Folders
 build
+glfw-3.3/docs
+glfw-3.3/examples

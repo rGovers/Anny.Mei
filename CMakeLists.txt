@@ -12,4 +12,8 @@ configure_file (
 include_directories("${PROJECT_SOURCE_DIR}/include")
 file(GLOB SOURCES "src/*.cpp")
 
+add_subdirectory("glfw-3.3")
+include_directories("glfw-3.3/include")
+
 add_executable (Application ${SOURCES})
+target_link_libraries(Application glfw ${GLFW_LIBRARIES})
