@@ -44,5 +44,3 @@ Makefile
 
 #Folders
 build
-glfw-3.3/docs
-glfw-3.3/examples
