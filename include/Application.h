@@ -8,6 +8,9 @@ class Application
 private:
     GLFWwindow* m_window;
 
+    int         m_width;
+    int         m_height;
+
 protected:
     virtual void Update(double a_delta) = 0;
 
@@ -17,6 +20,9 @@ public:
     virtual ~Application();
 
     GLFWwindow* GetWindow() const;
+
+    int GetWidth() const;
+    int GetHeight() const;
 
     void Run();
 };
