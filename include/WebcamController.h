@@ -2,6 +2,7 @@
 
 class PBOTexture;
 class RenderTexture;
+class Texture;
 class VirtualCamera;
 
 class WebcamController
@@ -18,6 +19,8 @@ public:
     WebcamController();
     WebcamController(int a_width, int a_height);
     ~WebcamController();
+
+    Texture* GetTexture() const;
 
     void Bind();
 

@@ -9,6 +9,7 @@
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
+#include "Texture.h"
 #include "WebcamController.h"
 
 void GLAPIENTRY
@@ -75,6 +76,8 @@ void AppMain::Update(double a_delta)
     ImGui::NewFrame();
 
     ImGui::Begin("Main");
+
+    ImGui::Image((ImTextureID)m_webcamController->GetTexture()->GetHandle(), { 640, 480 });
 
     ImGui::End();
 

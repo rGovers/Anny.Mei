@@ -11,8 +11,7 @@ configure_file (
 
 include_directories("${PROJECT_SOURCE_DIR}/include")
 include_directories("${PROJECT_SOURCE_DIR}/imgui")
-include_directories("${PROJECT_SOURCE_DIR}/imgui/examples")
-file(GLOB SOURCES "src/*.cpp" "src/*.c" "imgui/*.cpp" "imgui/examples/*.cpp")
+file(GLOB SOURCES "src/*.cpp" "src/*.c" "imgui/*.cpp")
 
 add_subdirectory("glfw-3.3")
 include_directories("glfw-3.3/include")

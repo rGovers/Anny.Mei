@@ -35,6 +35,11 @@ WebcamController::~WebcamController()
     delete m_renderTexture;
 }
 
+Texture* WebcamController::GetTexture() const
+{
+    return m_pboTexture;
+}
+
 void WebcamController::Bind()
 {
     m_renderTexture->Bind();
