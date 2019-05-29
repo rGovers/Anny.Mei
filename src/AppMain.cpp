@@ -2,6 +2,13 @@
 
 #include <stdio.h>
 
+#undef IMGUI_IMPL_OPENGL_LOADER_GL3W
+#undef IMGUI_IMPL_OPENGL_LOADER_GLEW
+#define IMGUI_IMPL_OPENGL_LOADER_GLAD
+
+#include "imgui.h"
+#include "imgui_impl_glfw.h"
+#include "imgui_impl_opengl3.h"
 #include "WebcamController.h"
 
 void GLAPIENTRY
@@ -24,9 +31,23 @@ AppMain::AppMain(int a_width, int a_height) : Application(a_width, a_height, "An
 
     glEnable(GL_DEBUG_OUTPUT);
     glDebugMessageCallback(MessageCallback, 0);
+
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO();
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+
+    ImGui::StyleColorsDark();
+
+    ImGui_ImplGlfw_InitForOpenGL(GetWindow(), true);
+    ImGui_ImplOpenGL3_Init("#version 130");
 }
 AppMain::~AppMain()
 {
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+    ImGui::DestroyContext();
+
     delete m_webcamController;
 }
 
@@ -41,11 +62,23 @@ void AppMain::Update(double a_delta)
 
     m_webcamController->Update();
 
-    glClearColor(1, 0, 0, 1);
+    glClearColor(0.3, 0.3, 0.3, 1);
 
     // It would seem I have to clear it every frame even if I made no change
     // If I where to guess by the image being populated images from other applications
     // the memory is shared and switching between multiple applications
     // Does not happen as often when I am the only app running
-    glClear(GL_COLOR_BUFFER_BIT);    
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);    
+
+    ImGui_ImplOpenGL3_NewFrame();
+    ImGui_ImplGlfw_NewFrame();
+    ImGui::NewFrame();
+
+    ImGui::Begin("Main");
+
+    ImGui::End();
+
+    ImGui::Render();
+
+    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
