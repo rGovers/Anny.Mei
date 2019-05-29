@@ -8,6 +8,8 @@ private:
     unsigned int* m_pbo;
 
     unsigned int  m_readIndex;
+
+    int           m_pixelFormat;
 protected:
 
 public:
@@ -19,5 +21,8 @@ public:
     unsigned int GetCurrentPBO() const;
     unsigned int GetCurrentPBOIndex() const;
 
-    void SwitchPBO();
+    void Unbind();
+
+    void* MapPixels();
+    void UnmapPixels();
 };
