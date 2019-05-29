@@ -48,16 +48,12 @@ void Application::Run()
 
     glViewport(0, 0, 640, 480);
 
-    glClearColor(1.0f, 0.0f, 0.0f, 1.0f);
-
     while (!glfwWindowShouldClose(m_window))
     {
         double time = glfwGetTime();
 
         glfwPollEvents();
 
-        glClear(GL_COLOR_BUFFER_BIT);
-        
         Update(time - prevTime);
 
         glfwSwapBuffers(m_window);

@@ -1,6 +1,7 @@
+#include "ApplicationConfig.h"
+
 #include <stdio.h>
 
-#include "ApplicationConfig.h"
 #include "AppMain.h"
 
 int main (int argc, char *argv[])

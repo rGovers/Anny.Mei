@@ -2,12 +2,12 @@
 
 #include "Application.h"
 
-class VirtualCamera;
+class WebcamController;
 
 class AppMain : public Application
 {
 private:
-    VirtualCamera* m_virtualCamera;
+    WebcamController* m_webcamController;
     
 protected:
     virtual void Update(double a_delta);
