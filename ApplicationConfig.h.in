@@ -1,2 +1,2 @@
-#define Application_VERSION_MAJOR @Application_VERSION_MAJOR@
-#define Application_VERSION_MINOR @Application_VERSION_MINOR@
+#define APPLICATION_VERSION_MAJOR @Application_VERSION_MAJOR@
+#define APPLICATION_VERSION_MINOR @Application_VERSION_MINOR@

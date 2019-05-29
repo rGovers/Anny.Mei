@@ -44,3 +44,6 @@ Makefile
 
 #Folders
 build
+
+#ImGui
+imgui.ini

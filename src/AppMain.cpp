@@ -9,6 +9,7 @@
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
+#include "ModelEditor.h"
 #include "Texture.h"
 #include "WebcamController.h"
 
@@ -29,6 +30,7 @@ MessageCallback( GLenum a_source,
 AppMain::AppMain(int a_width, int a_height) : Application(a_width, a_height, "Anny.Mei")
 {
     m_webcamController = new WebcamController();
+    m_modelEditor = new ModelEditor("Test.kra");
 
     glEnable(GL_DEBUG_OUTPUT);
     glDebugMessageCallback(MessageCallback, 0);
@@ -50,6 +52,7 @@ AppMain::~AppMain()
     ImGui::DestroyContext();
 
     delete m_webcamController;
+    delete m_modelEditor;
 }
 
 void AppMain::Update(double a_delta)
@@ -58,7 +61,7 @@ void AppMain::Update(double a_delta)
 
     m_webcamController->Bind();
 
-    glClearColor(0, 1, 0, 1);
+    glClearColor(m_backgroundColor[0], m_backgroundColor[1], m_backgroundColor[2], 1);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     m_webcamController->Update();
@@ -75,9 +78,18 @@ void AppMain::Update(double a_delta)
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
 
-    ImGui::Begin("Main");
+    ImGui::SetNextWindowPos({ 10, 10 }, ImGuiCond_Appearing);
+    ImGui::SetNextWindowSize({ 660, 520 }, ImGuiCond_Appearing);
+    ImGui::Begin("Preview");
 
     ImGui::Image((ImTextureID)m_webcamController->GetTexture()->GetHandle(), { 640, 480 });
+
+    ImGui::End();
+
+    ImGui::SetNextWindowPos({ 670, 10 }, ImGuiCond_Appearing);
+    ImGui::Begin("Options");
+
+    ImGui::ColorPicker3("Background Color", m_backgroundColor);
 
     ImGui::End();
 

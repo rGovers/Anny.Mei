@@ -6,7 +6,7 @@
 
 int main (int argc, char *argv[])
 {
-    printf("Anny.Mei: %d.%d \n", Application_VERSION_MAJOR, Application_VERSION_MINOR);
+    printf("Anny.Mei: %d.%d \n", APPLICATION_VERSION_MAJOR, APPLICATION_VERSION_MINOR);
 
     Application* app = new AppMain(640, 480);
 

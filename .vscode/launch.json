@@ -11,7 +11,7 @@
             "program": "${workspaceFolder}/build/Application",
             "args": [],
             "stopAtEntry": false,
-            "cwd": "${workspaceFolder}",
+            "cwd": "${workspaceFolder}/build/",
             "externalConsole": false,
             "preLaunchTask": "build",
             "linux": {
