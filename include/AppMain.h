@@ -14,6 +14,8 @@ private:
 
     float             m_backgroundColor[3] = { 0, 1, 0 };
 
+    bool*             m_menuState;
+
 protected:
     virtual void Update(double a_delta);
 

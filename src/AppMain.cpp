@@ -6,6 +6,7 @@
 #undef IMGUI_IMPL_OPENGL_LOADER_GLEW
 #define IMGUI_IMPL_OPENGL_LOADER_GLAD
 
+#include "FileDialog.h"
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
@@ -27,10 +28,12 @@ MessageCallback( GLenum a_source,
             a_type, a_severity, a_message );
 }
 
-AppMain::AppMain(int a_width, int a_height) : Application(a_width, a_height, "Anny.Mei")
+AppMain::AppMain(int a_width, int a_height) : 
+    Application(a_width, a_height, "Anny.Mei"),
+    m_modelEditor(nullptr),
+    m_menuState(new bool(true))
 {
     m_webcamController = new WebcamController();
-    m_modelEditor = new ModelEditor("Test.kra");
 
     glEnable(GL_DEBUG_OUTPUT);
     glDebugMessageCallback(MessageCallback, 0);
@@ -44,15 +47,24 @@ AppMain::AppMain(int a_width, int a_height) : Application(a_width, a_height, "An
 
     ImGui_ImplGlfw_InitForOpenGL(GetWindow(), true);
     ImGui_ImplOpenGL3_Init("#version 130");
+
+    FileDialog::Create();
 }
 AppMain::~AppMain()
 {
+    FileDialog::Destroy();
+
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
 
     delete m_webcamController;
-    delete m_modelEditor;
+
+    if (m_modelEditor != nullptr)
+    {
+        delete m_modelEditor;
+        m_modelEditor = nullptr;
+    }
 }
 
 void AppMain::Update(double a_delta)
@@ -78,19 +90,55 @@ void AppMain::Update(double a_delta)
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
 
+    if (ImGui::BeginMainMenuBar())
+    {
+        if (ImGui::BeginMenu("File"))
+        {
+            if (ImGui::MenuItem("Open Image File"))
+            {
+                char* const* const filters = new char*[1] { "*.kra" };
+
+                const char* filePath = FileDialog::OpenFile("Open Image File", filters, 1);
+                delete[] filters;
+
+                if (filePath != nullptr && filePath[0] != 0)
+                {
+                    if (m_modelEditor != nullptr)
+                    {
+                        delete m_modelEditor;
+                        m_modelEditor = nullptr;
+                    }
+
+                    m_modelEditor = new ModelEditor(filePath);
+                }
+            }
+
+            ImGui::Separator();
+
+            if (ImGui::MenuItem("Exit", "Alt+F4"))
+            {
+                glfwSetWindowShouldClose(GetWindow(), true);
+            }
+
+            ImGui::EndMenu();
+        }
+
+        ImGui::EndMainMenuBar();
+    }
+
     ImGui::SetNextWindowPos({ 10, 10 }, ImGuiCond_Appearing);
     ImGui::SetNextWindowSize({ 660, 520 }, ImGuiCond_Appearing);
-    ImGui::Begin("Preview");
-
-    ImGui::Image((ImTextureID)m_webcamController->GetTexture()->GetHandle(), { 640, 480 });
-
+    if (ImGui::Begin("Preview"))
+    {
+        ImGui::Image((ImTextureID)m_webcamController->GetTexture()->GetHandle(), { 640, 480 });
+    }
     ImGui::End();
 
     ImGui::SetNextWindowPos({ 670, 10 }, ImGuiCond_Appearing);
-    ImGui::Begin("Options");
-
-    ImGui::ColorPicker3("Background Color", m_backgroundColor);
-
+    if (ImGui::Begin("Options"))
+    {
+        ImGui::ColorPicker3("Background Color", m_backgroundColor);
+    }
     ImGui::End();
 
     ImGui::Render();
