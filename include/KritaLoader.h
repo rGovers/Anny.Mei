@@ -12,6 +12,8 @@ struct KritaLayer
 {
     std::string Name;
     std::string FileName;
+    int PixelSize;
+    int DefaultPixel;
 };
 struct KritaImage
 {
@@ -46,6 +48,7 @@ private:
     void GetMainFileNodeData(const rapidxml::xml_node<>* a_node);
 
     void LoadMainFile();
+    void LoadLayerMetaFiles();
 protected:
 
 public:

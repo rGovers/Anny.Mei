@@ -33,6 +33,7 @@
 
 # vscode 
 .vscode/ipch
+.vscode/settings.json
 
 #CMake
 CMakeFiles
