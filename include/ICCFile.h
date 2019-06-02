@@ -91,6 +91,57 @@ private:
         Saturation = 2,
         ICCAbsoluteColorimetric = 3
     };
+    enum class e_TagSignature : unsigned int
+    {
+        AToB0               = 0x30423241,
+        AToB1               = 0x31423241,
+        AToB2               = 0x32423241,
+        BlueColorant        = 0x5A595862,
+        BlueTRC             = 0x43525462,
+        BToA0               = 0x30413242,
+        BToA1               = 0x31413242,
+        BToA2               = 0x32413242,
+        CalibrationDataTime = 0x746C6163,
+        CharTarget          = 0x67726174,
+        ChromaticAdaptation = 0x64616863,
+        Chromaticity        = 0x6D726863,
+        Copyright           = 0x74727063,
+        CrdInfo             = 0x69647263,
+        DeviceMfgDesc       = 0x646E6D64,
+        DeviceModelDesc     = 0x64646D64,
+        DeviceSettings      = 0x73766564,
+        Gamut               = 0x746D6167,
+        GreyTRC             = 0x4352546B,
+        GreenColorant       = 0x5A595867,
+        GreenTRC            = 0x43525467,
+        Luminance           = 0x696D756C,
+        Measurement         = 0x7361656D,
+        MediaBlackPoint     = 0x74706B62,
+        MediaWhitePoint     = 0x74707477,
+        NamedColor          = 0x6C6F636E,
+        NamedColor2         = 0x326C636E,
+        // Covered by patent apparently...
+        OutputResponse      = 0x70736572,
+        Preview0            = 0x30657270,
+        Preview1            = 0x31657270,
+        Preview2            = 0x32657270,
+        ProfileDescription  = 0x63736564,
+        ProfileSequenceDesc = 0x71657370,
+        Ps2CRD0             = 0x30647370,
+        Ps2CRD1             = 0x31647370,
+        Ps2CRD2             = 0x32647370,
+        Ps2CRD3             = 0x33647370,
+        Ps2CSA              = 0x73327370,
+        Ps2RenderingIntent  = 0x69327370,
+        RedColorantTag      = 0x5A595872,
+        RedTRC              = 0x43525472,
+        ScreeningDesc       = 0x64726373,
+        Screening           = 0x6E726373,
+        Technology          = 0x68636574,
+        Ucrbg               = 0x20646662,
+        ViewingCondDesc     = 0x64657576,
+        ViewingConditions   = 0x77656976
+    };
 
     struct Header
     {
@@ -113,7 +164,7 @@ private:
     };
     struct TagDefinition
     {
-        unsigned int TagSignature;
+        e_TagSignature TagSignature;
         unsigned int DataOffset;
         unsigned int ElementSize;
     };

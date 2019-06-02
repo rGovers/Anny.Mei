@@ -86,7 +86,7 @@ void ICCFile::LoadTagDefinition(const char* a_data)
     {
         const int index = i * 12;
 
-        tagDef.TagSignature = *(unsigned int*)(dataPtr + index + 0);
+        tagDef.TagSignature = *(e_TagSignature*)(dataPtr + index + 0);
         tagDef.DataOffset = GetReversedUInt(dataPtr + index + 4);
         tagDef.ElementSize = GetReversedUInt(dataPtr + index + 8);
 
