@@ -11,6 +11,15 @@ unsigned int GetReversedUInt(const char* a_data)
     char4[1] = a_data[0];
     return *(unsigned int*)char4;
 }
+float GetReversedFloat(const char* a_data)
+{
+    char char4[4];
+    char4[0] = a_data[3];
+    char4[1] = a_data[2];
+    char4[2] = a_data[1];
+    char4[1] = a_data[0];
+    return *(float*)char4;
+}
 int GetReversedInt(const char* a_data)
 {
     char char4[4];
@@ -39,7 +48,7 @@ ICCFileDateTime GetReversedDateTime(const char* a_data)
     return *(ICCFileDateTime*)char12;
 }
 
-ICCFile::ICCFile(const char* a_data)
+void ICCFile::LoadHeader(const char* a_data)
 {
     m_header = ICCFile::Header();
 
@@ -57,12 +66,29 @@ ICCFile::ICCFile(const char* a_data)
     m_header.DeviceModel = GetReversedUInt(a_data + 52);
     m_header.DeviceAttributes = *(e_Attributes*)(a_data + 56);
     m_header.RenderingIntent = *(e_RenderingIntent*)(a_data + 64);
-    m_header.XYZValue[0] = *(float*)(a_data + 68);
-    m_header.XYZValue[1] = *(float*)(a_data + 72);
-    m_header.XYZValue[2] = *(float*)(a_data + 76);
+    m_header.XYZValue[0] = GetReversedFloat(a_data + 68);
+    m_header.XYZValue[1] = GetReversedFloat(a_data + 72);
+    m_header.XYZValue[2] = GetReversedFloat(a_data + 76);
     m_header.ProfileSignature = GetReversedUInt(a_data + 80);
+}
+void ICCFile::LoadTagDefinition(const char* a_data)
+{
+    m_tagDefinition = ICCFile::TagDefinition();
+
+    const char* dataPtr = a_data + m_header.Size;
+
+    m_tagDefinition.TagSignature = *(unsigned int*)(dataPtr + 0);
+    m_tagDefinition.DataOffset = GetReversedUInt(dataPtr + 4);
+    m_tagDefinition.ElementSize = GetReversedUInt(dataPtr + 8);
+}
+
+ICCFile::ICCFile(const char* a_data)
+{
+    LoadHeader(a_data);
 
     assert(m_header.ACSP == 0x70736361);
+
+    LoadTagDefinition(a_data);
 }
 ICCFile::~ICCFile()
 {

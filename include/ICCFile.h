@@ -8,9 +8,9 @@ struct ICCFileDateTime
     unsigned short Year;
     unsigned short Month;
     unsigned short Day;
-    unsigned short Hours;
-    unsigned short Minutes;
-    unsigned short Seconds;
+    unsigned short Hour;
+    unsigned short Minute;
+    unsigned short Second;
 };
 struct ICCFileVersion 
 {
@@ -70,17 +70,19 @@ private:
         SunMicro    = 0x574E5553,
         Taligent    = 0x544E4754
     };
-    enum class e_Flags : unsigned int
+    enum e_Flags : unsigned int
     {
-        Embedded    = 1,
-        Independent = 2,
+        Flags_None        = 0,
+        Flags_Embedded    = 1,
+        Flags_Independent = 2,
     };
-    enum class e_Attributes : unsigned long
+    enum e_Attributes : unsigned long
     {
-        Reflective  = 1,
-        Glossy      = 2,
-        Positive    = 4,
-        Color       = 8
+        Attributes_None        = 0,
+        Attributes_Reflective  = 1,
+        Attributes_Glossy      = 2,
+        Attributes_Positive    = 4,
+        Attributes_Color       = 8
     };
     enum class e_RenderingIntent : unsigned int
     {
@@ -111,11 +113,16 @@ private:
     };
     struct TagDefinition
     {
-
+        unsigned int TagSignature;
+        unsigned int DataOffset;
+        unsigned int ElementSize;
     };
 
-    Header m_header;
+    Header        m_header;
+    TagDefinition m_tagDefinition;
 
+    void LoadHeader(const char* a_data);
+    void LoadTagDefinition(const char* a_data);
 protected:
 
 public:
