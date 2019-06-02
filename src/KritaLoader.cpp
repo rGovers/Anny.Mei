@@ -2,6 +2,8 @@
 
 #include <assert.h>
 
+#include "ICCFile.h"
+
 // File IO helper defines
 // I dont normally use defines but IO can be a pain sometimes
 #define IFSETTOATTVAL(aCmp, bCmp, val, attVal) if (strcmp(aCmp, bCmp) == 0) { val = attVal; }
@@ -34,6 +36,11 @@ std::string ToLower(const std::string& a_string)
     }
 
     return cache;
+}
+
+std::string GetFilePathNoExtension(const KritaLayer& a_layer)
+{
+    return (a_layer.Image->Directory + "/layers/" + a_layer.FileName).c_str();
 }
 
 KritaImage* KritaLoader::GetImageMetaData(const rapidxml::xml_node<>* a_node) const
@@ -105,7 +112,10 @@ void KritaLoader::GetMainFileNodeData(const rapidxml::xml_node<>* a_node)
             // Should being the keyword
             assert(m_currentImage != nullptr);
 
+            layer->Image = m_currentImage;
+
             m_currentImage->Layers.push_back(layer);
+            m_layers.push_back(layer);
         }
 
         delete[] nameCache;
@@ -139,7 +149,7 @@ void KritaLoader::LoadLayerMetaFiles()
         {
             KritaLayer* layer = *layerIter;
 
-            std::string filePath = image->Directory +  "/layers/" + layer->FileName;
+            std::string filePath = GetFilePathNoExtension(*layer);
 
             std::shared_ptr<ZipArchiveEntry> file = m_file->GetEntry(filePath.c_str());
             
@@ -196,4 +206,41 @@ KritaLoader::~KritaLoader()
     {
         delete *iter;
     }
+
+    for (auto iter = m_layers.begin(); iter != m_layers.end(); ++iter)
+    {
+        delete *iter;
+    }
+}
+
+int KritaLoader::GetLayerCount() const
+{
+    return m_layers.size();
+}
+LayerMeta* KritaLoader::GetLayerMeta(int a_index) const
+{
+    KritaLayer* layer = m_layers[a_index];
+
+    LayerMeta* layerMeta = new LayerMeta();
+    layerMeta->Name = layer->Name.c_str();
+    layerMeta->Width = layer->Image->Width;
+    layerMeta->Height = layer->Image->Height;
+
+    return layerMeta;
+}
+Layer* KritaLoader::GetLayer(int a_index) const
+{
+    KritaLayer* layer = m_layers[a_index];
+
+    std::string filePath = GetFilePathNoExtension(*layer) + ".icc";
+
+    char* data;
+    std::shared_ptr<ZipArchiveEntry> file = m_file->GetEntry(filePath);
+    GETFILEDATA(data, file);
+
+    ICCFile* iccFile = new ICCFile(data);
+
+    delete data;
+
+    delete iccFile;
 }

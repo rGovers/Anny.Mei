@@ -126,6 +126,11 @@ void AppMain::Update(double a_delta)
         ImGui::EndMainMenuBar();
     }
 
+    if (m_modelEditor != nullptr)
+    {
+        m_modelEditor->Update(a_delta);
+    }
+
     ImGui::SetNextWindowPos({ 10, 10 }, ImGuiCond_Appearing);
     ImGui::SetNextWindowSize({ 660, 520 }, ImGuiCond_Appearing);
     if (ImGui::Begin("Preview"))
