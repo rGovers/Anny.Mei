@@ -73,13 +73,25 @@ void ICCFile::LoadHeader(const char* a_data)
 }
 void ICCFile::LoadTagDefinition(const char* a_data)
 {
-    m_tagDefinition = ICCFile::TagDefinition();
+    const char* dataPtr = a_data + 128;
 
-    const char* dataPtr = a_data + m_header.Size;
+    m_tags = GetReversedUInt(dataPtr + 0);
 
-    m_tagDefinition.TagSignature = *(unsigned int*)(dataPtr + 0);
-    m_tagDefinition.DataOffset = GetReversedUInt(dataPtr + 4);
-    m_tagDefinition.ElementSize = GetReversedUInt(dataPtr + 8);
+    dataPtr += 4;
+
+    m_tagDefinition = new TagDefinition[m_tags];
+
+    TagDefinition tagDef;
+    for (int i = 0; i < m_tags; ++i)
+    {
+        const int index = i * 12;
+
+        tagDef.TagSignature = *(unsigned int*)(dataPtr + index + 0);
+        tagDef.DataOffset = GetReversedUInt(dataPtr + index + 4);
+        tagDef.ElementSize = GetReversedUInt(dataPtr + index + 8);
+
+        m_tagDefinition[i] = tagDef;
+    }
 }
 
 ICCFile::ICCFile(const char* a_data)
@@ -92,5 +104,5 @@ ICCFile::ICCFile(const char* a_data)
 }
 ICCFile::~ICCFile()
 {
-
+    delete[] m_tagDefinition;
 }

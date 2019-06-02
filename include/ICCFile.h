@@ -118,8 +118,9 @@ private:
         unsigned int ElementSize;
     };
 
-    Header        m_header;
-    TagDefinition m_tagDefinition;
+    Header         m_header;
+    unsigned int   m_tags;
+    TagDefinition* m_tagDefinition;
 
     void LoadHeader(const char* a_data);
     void LoadTagDefinition(const char* a_data);
