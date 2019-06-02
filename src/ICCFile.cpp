@@ -48,7 +48,7 @@ ICCFile::ICCFile(const char* a_data)
     m_header.ProfileVersion = *(ICCFileVersion*)(a_data + 8);
     m_header.DeviceClass = *(e_DeviceClass*)(a_data + 12);
     m_header.ColorSpace = *(e_ColorSpace*)(a_data + 16);
-    m_header.PCS = *(e_ProfileConnectionSpace*)(a_data + 20);
+    m_header.PCS = *(e_ColorSpace*)(a_data + 20);
     m_header.DateTime = GetReversedDateTime(a_data + 24);
     m_header.ACSP = *(unsigned int*)(a_data + 36);
     m_header.PrimaryPlatform = *(e_PrimaryPlatform*)(a_data + 40);
