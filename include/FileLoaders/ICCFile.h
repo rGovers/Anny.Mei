@@ -16,7 +16,6 @@ struct ICCFileVersion
 {
     char Major;
     char Minor;
-    short Reserved;
 };
 
 // No image libraries that I know of support it but Krita uses it
@@ -26,16 +25,21 @@ class ICCFile
 private:
     enum class e_DeviceClass : unsigned int
     {
-        InputDevice          = 0x726E6373,
-        DisplayDevice        = 0x72746E6D,
-        OutputDevice         = 0x72747270,
-        DeviceLink           = 0x6B6E696C,
-        ColorSpaceConversion = 0x63617073,
-        Abstract             = 0x74736261,
-        NamedColor           = 0x6C636D6E
+        InputDevice             = 0x726E6373,
+        DisplayDevice           = 0x72746E6D,
+        OutputDevice            = 0x72747270,
+        DeviceLink              = 0x6B6E696C,
+        ColorSpaceConversion    = 0x63617073,
+        Abstract                = 0x74736261,
+        NamedColor              = 0x6C636D6E,
+        ColorEncodingSpace      = 0x636E6563,
+        MultiplexIdentification = 0x2064696D,
+        MultiplexLink           = 0x6B7E6C6D,
+        MultiplexVisualization  = 0x7369766D
     };
     enum class e_ColorSpace : unsigned int
     {
+        None    = 0x00000000,
         XYZ     = 0x205A5958,
         LAB     = 0x2062614C,
         LUV     = 0x2076754C,
@@ -82,7 +86,11 @@ private:
         Attributes_Reflective  = 1,
         Attributes_Glossy      = 2,
         Attributes_Positive    = 4,
-        Attributes_Color       = 8
+        Attributes_Color       = 8,
+        Attributes_Paper       = 16,
+        Attributes_NonTex      = 32,
+        Attributes_Isotopic    = 64,
+        Attributes_NonLuminous = 128,
     };
     enum class e_RenderingIntent : unsigned int
     {
@@ -133,7 +141,7 @@ private:
         Ps2CRD3             = 0x33647370,
         Ps2CSA              = 0x73327370,
         Ps2RenderingIntent  = 0x69327370,
-        RedColorantTag      = 0x5A595872,
+        RedColorant         = 0x5A595872,
         RedTRC              = 0x43525472,
         ScreeningDesc       = 0x64726373,
         Screening           = 0x6E726373,
@@ -141,6 +149,16 @@ private:
         Ucrbg               = 0x20646662,
         ViewingCondDesc     = 0x64657576,
         ViewingConditions   = 0x77656976
+    };
+
+    enum class e_SpectralColorSpace : unsigned int
+    {
+        None                    = 0,
+        Relective               = 0x00007372,
+        Transmission            = 0x00007374,
+        Radient                 = 0x00007365,
+        BiSpectralReflectance   = 0x00007362,
+        BiSpectralReflectanceS  = 0x00003607
     };
 
     struct Header
@@ -160,7 +178,13 @@ private:
         e_Attributes DeviceAttributes;
         e_RenderingIntent RenderingIntent;
         float XYZValue[3];
-        int ProfileSignature;
+        unsigned int ProfileCreator;
+        unsigned long ProfileSignature[2];
+        unsigned int SpectralPCS;
+        unsigned int SpectralWave;
+        unsigned int BISpectralWave;
+        unsigned int MCSSignature;
+        e_DeviceClass DeviceSubClass;        
     };
     struct TagDefinition
     {
@@ -169,9 +193,20 @@ private:
         unsigned int ElementSize;
     };
 
-    Header         m_header;
-    unsigned int   m_tags;
-    TagDefinition* m_tagDefinition;
+    struct CurveType
+    {
+        unsigned int Curv;
+        unsigned int Count;
+        unsigned short* Data;
+    };
+    
+    Header           m_header;
+    unsigned int     m_tags;
+    TagDefinition*   m_tagDefinition;
+
+    int              m_endIndex;
+
+    char*            m_dataBlob;
 
     void LoadHeader(const char* a_data);
     void LoadTagDefinition(const char* a_data);
@@ -179,6 +214,8 @@ protected:
 
 public:
     ICCFile() = delete;
-    ICCFile(const char* a_data);
+    ICCFile(const char* a_data, int a_size);
     ~ICCFile();
+
+    char* GetColorData();
 };

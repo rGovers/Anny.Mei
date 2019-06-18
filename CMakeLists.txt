@@ -15,7 +15,7 @@ include_directories("${PROJECT_SOURCE_DIR}/glad")
 include_directories("${PROJECT_SOURCE_DIR}/imgui")
 include_directories("${PROJECT_SOURCE_DIR}/rapidxml-1.13")
 include_directories("${PROJECT_SOURCE_DIR}/tinyfiledialogs")
-file(GLOB SOURCES "src/*.cpp"  "imgui/*.cpp" "glad/*.c" "tinyfiledialogs/*.c")
+file(GLOB SOURCES "src/*.cpp" "imgui/*.cpp" "glad/*.c" "tinyfiledialogs/*.c")
 
 add_subdirectory("glfw-3.3")
 include_directories("glfw-3.3/include")

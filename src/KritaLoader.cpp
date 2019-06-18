@@ -1,8 +1,8 @@
-#include "KritaLoader.h"
+#include "FileLoaders/KritaLoader.h"
 
 #include <assert.h>
 
-#include "ICCFile.h"
+#include "FileLoaders/ICCFile.h"
 
 // File IO helper defines
 // I dont normally use defines but IO can be a pain sometimes
@@ -178,7 +178,7 @@ void KritaLoader::LoadLayerMetaFiles()
                 index = str.find('\n', index + 1);
             }
             
-            delete data;
+            delete[] data;
             data = nullptr;
 
             std::shared_ptr<ZipArchiveEntry> defaultPixelFile = m_file->GetEntry((filePath + ".defaultpixel").c_str());
@@ -238,9 +238,11 @@ Layer* KritaLoader::GetLayer(int a_index) const
     std::shared_ptr<ZipArchiveEntry> file = m_file->GetEntry(filePath);
     GETFILEDATA(data, file);
 
-    ICCFile* iccFile = new ICCFile(data);
+    ICCFile* iccFile = new ICCFile(data, file->GetSize());
 
-    delete data;
+    char* color = iccFile->GetColorData();
 
+    delete[] color;
+    delete[] data;
     delete iccFile;
 }

@@ -96,9 +96,9 @@ void AppMain::Update(double a_delta)
         {
             if (ImGui::MenuItem("Open Image File"))
             {
-                char* const* const filters = new char*[1] { "*.kra" };
+                char* const* const filters = new char*[2] { "*.kra", "*.psd" };
 
-                const char* filePath = FileDialog::OpenFile("Open Image File", filters, 1);
+                const char* filePath = FileDialog::OpenFile("Open Image File", filters, 2);
                 delete[] filters;
 
                 if (filePath != nullptr && filePath[0] != 0)

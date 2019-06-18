@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ImageLoader.h"
+#include "FileLoaders/ImageLoader.h"
 
 // I have some weird stuff going on that I need to do some digging
 // Standard library is doing some weird things I need to work out the cause

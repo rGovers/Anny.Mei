@@ -1,12 +1,15 @@
 #include "ModelEditor.h"
 
 #include "imgui.h"
-#include "KritaLoader.h"
+#include "FileLoaders/KritaLoader.h"
+#include "FileLoaders/PSDLoader.h"
 
 ModelEditor::ModelEditor(const char* a_path) :
     m_selectedIndex(-1)
 {
-    m_imageLoader = new KritaLoader(a_path);
+    // m_imageLoader = new KritaLoader(a_path);
+
+    m_imageLoader = new PSDLoader(a_path);
 
     const int layerCount = m_imageLoader->GetLayerCount();
 

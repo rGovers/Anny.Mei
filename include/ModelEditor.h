@@ -3,7 +3,7 @@
 #include <list>
 #include <vector>
 
-#include "ImageLoader.h"
+#include "FileLoaders/ImageLoader.h"
 
 struct LayerTexture
 {
