@@ -2,6 +2,7 @@
 
 #include "Application.h"
 
+class ModelController;
 class ModelEditor;
 class WebcamController;
 
@@ -10,9 +11,9 @@ class AppMain : public Application
 private:
     WebcamController* m_webcamController;
     
+    ModelController*  m_modelController;
     ModelEditor*      m_modelEditor;
 
-    float             m_backgroundColor[3] = { 0, 1, 0 };
 
     bool*             m_menuState;
 

@@ -3,13 +3,13 @@
 #include <assert.h>
 
 #include "FileLoaders/ICCFile.h"
+#include "FileUtils.h"
 
 // File IO helper defines
 // I dont normally use defines but IO can be a pain sometimes
 #define IFSETTOATTVAL(aCmp, bCmp, val, attVal) if (strcmp(aCmp, bCmp) == 0) { val = attVal; }
 #define IFSETTOATTVALI(aCmp, bCmp, val, attVal) if (strcmp(aCmp, bCmp) == 0) { val = std::stoi(attVal); }
-#define GETNAME(val, node) char* name = node->name(); int len = strlen(name); val = new char[len]; strcpy(val, name)
-#define GETFILEDATA(dataBuffer, file) { std::istream* stream = file->GetDecompressionStream(); std::size_t len = file->GetSize(); dataBuffer = new char[len]; stream->read(data, len); file->CloseDecompressionStream(); }
+#define GETNAME(val, node) char* name = node->name(); int len = strlen(name); val = new char[len]; strcpy(val, name);
 
 void ToLower(char* a_string)
 {
@@ -40,7 +40,7 @@ std::string ToLower(const std::string& a_string)
 
 std::string GetFilePathNoExtension(const KritaLayer& a_layer)
 {
-    return (a_layer.Image->Directory + "/layers/" + a_layer.FileName).c_str();
+    return (a_layer.Image->Directory + "/layers/" + a_layer.FileName);
 }
 
 KritaImage* KritaLoader::GetImageMetaData(const rapidxml::xml_node<>* a_node) const
@@ -232,7 +232,7 @@ Layer* KritaLoader::GetLayer(int a_index) const
 {
     KritaLayer* layer = m_layers[a_index];
 
-    std::string filePath = GetFilePathNoExtension(*layer) + ".icc";
+    std::string filePath = GetFilePathNoExtension(*layer) + std::string(".icc");
 
     char* data;
     std::shared_ptr<ZipArchiveEntry> file = m_file->GetEntry(filePath);

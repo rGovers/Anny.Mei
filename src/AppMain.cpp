@@ -11,6 +11,7 @@
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
+#include "ModelController.h"
 #include "ModelEditor.h"
 #include "Texture.h"
 #include "WebcamController.h"
@@ -32,6 +33,7 @@ MessageCallback( GLenum a_source,
 
 AppMain::AppMain(int a_width, int a_height) : 
     Application(a_width, a_height, "Anny.Mei"),
+    m_modelController(nullptr),
     m_modelEditor(nullptr),
     m_menuState(new bool(true)),
     m_filePath(nullptr)
@@ -72,11 +74,16 @@ AppMain::~AppMain()
 
 void AppMain::New()
 {
+    if (m_modelController != nullptr)
+    {
+        delete m_modelController;
+    }
     if (m_modelEditor != nullptr)
     {
         delete m_modelEditor;
     }    
 
+    m_modelController = new ModelController();
     m_modelEditor = new ModelEditor();
     m_filePath = nullptr;
 }
@@ -84,6 +91,29 @@ void AppMain::Open()
 {
     char* const* const filters = new char*[1] { "*.aMei" };
     m_filePath = FileDialog::OpenFile("Open Project File", filters, 1);
+
+    if (m_filePath != nullptr)
+    {
+        if (m_filePath[0] != 0)
+        {
+            ZipArchive::Ptr zip = ZipFile::Open(m_filePath);
+
+            if (m_modelController != nullptr)
+            {
+                delete m_modelController;
+            }
+            if (m_modelEditor != nullptr)
+            {
+                delete m_modelEditor;
+            }
+
+            m_modelController = ModelController::Load(zip);
+        }
+        else
+        {
+            m_filePath = nullptr;
+        }
+    }
 
     delete[] filters;
 }
@@ -95,14 +125,28 @@ void AppMain::Save() const
     {
         ZipArchive::Ptr zipArchive = ZipArchive::Create();
 
+        std::istream* mControllerStream = nullptr;
+
         if (m_modelEditor != nullptr)
         {
+            m_modelEditor->SaveToArchive(zipArchive);
+        }
+        if (m_modelController != nullptr)
+        {
+            std::shared_ptr<ZipArchiveEntry> entryptr = zipArchive->CreateEntry("properties.conf");
 
+            mControllerStream = m_modelController->SaveToStream();
+            entryptr->SetCompressionStream(*mControllerStream);
         }
 
         zipArchive->WriteToStream(fstream);
 
         fstream.close();
+
+        if (mControllerStream != nullptr)
+        {
+            delete mControllerStream;
+        }
     }
 }
 void AppMain::SaveAs()
@@ -154,8 +198,10 @@ void AppMain::Update(double a_delta)
 
     m_webcamController->Bind();
 
-    glClearColor(m_backgroundColor[0], m_backgroundColor[1], m_backgroundColor[2], 1);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    if (m_modelController != nullptr)
+    {
+        m_modelController->DrawModel();
+    }
 
     m_webcamController->Update();
 
@@ -226,21 +272,10 @@ void AppMain::Update(double a_delta)
     {
         m_modelEditor->Update(a_delta);
     }
-
-    ImGui::SetNextWindowPos({ 10, 10 }, ImGuiCond_Appearing);
-    ImGui::SetNextWindowSize({ 660, 520 }, ImGuiCond_Appearing);
-    if (ImGui::Begin("Preview"))
+    if (m_modelController != nullptr)
     {
-        ImGui::Image((ImTextureID)m_webcamController->GetTexture()->GetHandle(), { 640, 480 });
+        m_modelController->Update(a_delta, *m_webcamController);
     }
-    ImGui::End();
-
-    ImGui::SetNextWindowPos({ 670, 10 }, ImGuiCond_Appearing);
-    if (ImGui::Begin("Options"))
-    {
-        ImGui::ColorPicker3("Background Color", m_backgroundColor);
-    }
-    ImGui::End();
 
     ImGui::Render();
 
