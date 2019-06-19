@@ -4,61 +4,42 @@
 #include "FileLoaders/KritaLoader.h"
 #include "FileLoaders/PSDLoader.h"
 
-ModelEditor::ModelEditor(const char* a_path) :
+ModelEditor::ModelEditor() : 
     m_selectedIndex(-1)
 {
-    // m_imageLoader = new KritaLoader(a_path);
+    m_layers = new std::vector<LayerTexture>();
+}
 
-    m_imageLoader = new PSDLoader(a_path);
+void ModelEditor::LoadTexture(const char* a_path)
+{
+    std::string path = a_path;
+    size_t index = path.find_last_of('.');
+    size_t len = path.length();
 
-    const int layerCount = m_imageLoader->GetLayerCount();
-
-    m_layerMeta = new std::list<LayerMeta*>(layerCount);
-    m_layers = new std::vector<LayerTexture>(layerCount);
-
-    int index = 0;
-    for (auto iter = m_layerMeta->begin(); iter != m_layerMeta->end(); ++iter)
-    {
-        *iter = m_imageLoader->GetLayerMeta(index);
-        (*m_layers)[index].LayerData = nullptr;
-        (*m_layers)[index++].Handle = -1;
-    }
+    std::string ext = path.substr(index, len - index);
 }
 
 void ModelEditor::Update(double a_delta)
 {
-    const int layerCount = m_imageLoader->GetLayerCount();
-
-    if (ImGui::Begin("Editor"))
+    if (ImGui::Begin("Editor Preview"))
     {
-        ImGui::BeginGroup();
-        ImGui::TextColored({1, 0, 0, 1}, "Preview");        
-
         int texture = 0;
         if (m_selectedIndex != -1)
         {
             LayerTexture layerTexture = m_layers->at(m_selectedIndex);
-            
-            if (layerTexture.Handle == -1)
-            {
-                layerTexture.LayerData = m_imageLoader->GetLayer(m_selectedIndex);
-            }
-
+            texture = layerTexture.Handle;
         }
         
         ImGui::Image((ImTextureID)texture, { 512, 512 });
+    }
+    ImGui::End();
 
-        ImGui::EndGroup();
-
-        ImGui::SameLine();
-
-        ImGui::BeginGroup();
-        ImGui::TextColored({ 1, 0, 0, 1}, "Layers");
-
+    if (ImGui::Begin("Editor Layers"))
+    {
         ImGui::BeginChild("Layer Scroll");
-        for (int i = 0; i < layerCount; ++i)
+        for (int i = 0; i < m_layers->size(); ++i)
         {
-            LayerMeta* layerMeta = m_imageLoader->GetLayerMeta(i);
+            LayerMeta* layerMeta = m_layers->at(i).Meta;
 
             if (ImGui::Button(layerMeta->Name, { 200, 20 }))
             {
@@ -68,27 +49,23 @@ void ModelEditor::Update(double a_delta)
             delete layerMeta;
         }
         ImGui::EndChild();
-        ImGui::EndGroup();
     }
     ImGui::End();
 }
 
 ModelEditor::~ModelEditor()
 {
-    delete m_imageLoader;
-
-    for (auto iter = m_layerMeta->begin(); iter != m_layerMeta->end(); ++iter)
-    {
-        delete *iter;
-    }
-    delete m_layerMeta;
-
     for (auto iter = m_layers->begin(); iter != m_layers->end(); ++iter)
     {
-        if (iter->LayerData != nullptr)
+        if (iter->Meta != nullptr)
         {
-            delete iter->LayerData;
+            delete iter->Meta;
         }
     }
     delete m_layers;
+}
+
+void ModelEditor::SaveToArchive(ZipArchive::Ptr& a_archive) const
+{
+    
 }

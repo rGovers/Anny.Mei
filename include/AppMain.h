@@ -16,6 +16,14 @@ private:
 
     bool*             m_menuState;
 
+    const char*       m_filePath;
+
+    void New();
+    void Open();
+    void Save() const;
+    void SaveAs();
+
+    void Input();
 protected:
     virtual void Update(double a_delta);
 

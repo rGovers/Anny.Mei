@@ -15,5 +15,6 @@ public:
     static bool Create();
     static void Destroy();
 
+    static const char* SaveFile(const char* a_title, const char* const* const a_filters, int a_filterNum);
     static const char* OpenFile(const char* a_title, const char* const* const a_filters, int a_filterNum);
 };

@@ -1,6 +1,7 @@
 #include "AppMain.h"
 
 #include <stdio.h>
+#include <fstream>
 
 #undef IMGUI_IMPL_OPENGL_LOADER_GL3W
 #undef IMGUI_IMPL_OPENGL_LOADER_GLEW
@@ -13,6 +14,7 @@
 #include "ModelEditor.h"
 #include "Texture.h"
 #include "WebcamController.h"
+#include "ZipLib/ZipFile.h"
 
 void GLAPIENTRY
 MessageCallback( GLenum a_source,
@@ -31,7 +33,8 @@ MessageCallback( GLenum a_source,
 AppMain::AppMain(int a_width, int a_height) : 
     Application(a_width, a_height, "Anny.Mei"),
     m_modelEditor(nullptr),
-    m_menuState(new bool(true))
+    m_menuState(new bool(true)),
+    m_filePath(nullptr)
 {
     m_webcamController = new WebcamController();
 
@@ -67,9 +70,87 @@ AppMain::~AppMain()
     }
 }
 
+void AppMain::New()
+{
+    if (m_modelEditor != nullptr)
+    {
+        delete m_modelEditor;
+    }    
+
+    m_modelEditor = new ModelEditor();
+    m_filePath = nullptr;
+}
+void AppMain::Open()
+{
+    char* const* const filters = new char*[1] { "*.aMei" };
+    m_filePath = FileDialog::OpenFile("Open Project File", filters, 1);
+
+    delete[] filters;
+}
+void AppMain::Save() const
+{
+    std::fstream fstream;
+    fstream.open(m_filePath, std::ios_base::openmode::_S_bin | std::ios_base::openmode::_S_out);
+    if (fstream.good())
+    {
+        ZipArchive::Ptr zipArchive = ZipArchive::Create();
+
+        if (m_modelEditor != nullptr)
+        {
+
+        }
+
+        zipArchive->WriteToStream(fstream);
+
+        fstream.close();
+    }
+}
+void AppMain::SaveAs()
+{
+    char* const* const filters = new char*[1] { "*.aMei" };
+    m_filePath = FileDialog::SaveFile("Save Project File", filters, 1);
+
+    delete[] filters;
+
+    Save();
+}
+
+void AppMain::Input()
+{
+    GLFWwindow* window = GetWindow();
+    if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) || glfwGetKey(window, GLFW_KEY_RIGHT_CONTROL))
+    {
+        if (glfwGetKey(window, GLFW_KEY_N))
+        {
+            New();
+        }
+        else if (glfwGetKey(window, GLFW_KEY_O))
+        {
+            Open();
+        }
+        else if (glfwGetKey(window, GLFW_KEY_S) && m_filePath != nullptr)
+        {
+            Save();
+        }
+        else if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) || glfwGetKey(window, GLFW_KEY_RIGHT_SHIFT))
+        {
+            if (glfwGetKey(window, GLFW_KEY_S))
+            {
+                SaveAs();
+            }
+        }
+    }
+}
+
 void AppMain::Update(double a_delta)
 {
     glEnable(GL_DEPTH_TEST);
+
+    ImGui_ImplOpenGL3_NewFrame();
+    ImGui_ImplGlfw_NewFrame();
+    ImGui::NewFrame();
+
+    Input();
 
     m_webcamController->Bind();
 
@@ -86,30 +167,45 @@ void AppMain::Update(double a_delta)
     // Does not happen as often when I am the only app running
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);    
 
-    ImGui_ImplOpenGL3_NewFrame();
-    ImGui_ImplGlfw_NewFrame();
-    ImGui::NewFrame();
-
     if (ImGui::BeginMainMenuBar())
     {
         if (ImGui::BeginMenu("File"))
         {
-            if (ImGui::MenuItem("Open Image File"))
+            if (ImGui::MenuItem("New", "Ctrl+N"))
             {
-                char* const* const filters = new char*[2] { "*.kra", "*.psd" };
+                New();
+            }
+            if (ImGui::MenuItem("Open", "Ctrl+O"))
+            {
+                Open();
+            }
+            
+            const bool enabledModel = m_modelEditor != nullptr;
 
-                const char* filePath = FileDialog::OpenFile("Open Image File", filters, 2);
+            if (ImGui::MenuItem("Save", "Ctrl+S", nullptr, m_filePath != nullptr))
+            {
+                Save();
+            }
+            if (ImGui::MenuItem("Save As", "Ctrl+Shift+S", nullptr, enabledModel))
+            {
+                SaveAs();   
+            }
+
+            ImGui::Separator();
+
+            if (ImGui::MenuItem("Open Image File", "", nullptr, enabledModel))
+            {
+                char* const* const filters = new char*[1] { "*.png" };
+                const char* filePath = FileDialog::OpenFile("Open Image File", filters, 1);
+                
                 delete[] filters;
-
-                if (filePath != nullptr && filePath[0] != 0)
+                
+                if (filePath != nullptr)
                 {
-                    if (m_modelEditor != nullptr)
+                    if (filePath[0] != 0)
                     {
-                        delete m_modelEditor;
-                        m_modelEditor = nullptr;
+                        m_modelEditor->LoadTexture(filePath);
                     }
-
-                    m_modelEditor = new ModelEditor(filePath);
                 }
             }
 

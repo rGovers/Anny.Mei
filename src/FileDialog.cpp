@@ -41,6 +41,10 @@ void FileDialog::Destroy()
     }
 }
 
+const char* FileDialog::SaveFile(const char* a_title, const char* const* const a_filters, int a_filterNum)
+{
+    return tinyfd_saveFileDialog(a_title, "", a_filterNum, a_filters, nullptr);
+}
 const char* FileDialog::OpenFile(const char* a_title, const char* const* const a_filters, int a_filterNum)
 {
     return tinyfd_openFileDialog(a_title, "", a_filterNum, a_filters, NULL, 0);
