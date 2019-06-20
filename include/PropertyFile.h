@@ -42,6 +42,8 @@ class PropertyFile
 private:
     std::list<PropertyFileProperty*>* m_properties;
 
+    int LoadProperty(PropertyFileProperty* a_parent, const char* a_data);
+
     void ToString(const PropertyFileProperty& a_property, std::string& a_data) const;
 protected:
 

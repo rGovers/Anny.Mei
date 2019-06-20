@@ -1,14 +1,121 @@
 #include "PropertyFile.h"
 
+#include <assert.h>
 #include <string.h>
+
+int PropertyFile::LoadProperty(PropertyFileProperty* a_parent, const char* a_data)
+{
+    PropertyFileProperty* property = nullptr;
+
+    int end = 0;
+
+    int spc = -1;
+    int open = -1;
+    int colon = -1;
+    int close = -1;
+    int quote = -1;
+
+    PropertyFileValue value;
+
+    for (int i = 0; a_data[i] != 0; ++i)
+    {
+        const char chr = a_data[i];
+
+        switch (chr)
+        {
+        case '<':
+        {
+            open = i;
+
+            property = new PropertyFileProperty();
+
+            break;
+        }
+        case '>':
+        {
+            close = i;
+
+            assert(property != nullptr);
+            property->SetParent(a_parent);
+            
+            m_properties->emplace_back(property);
+
+            break;
+        }
+        case ' ':
+        {
+            if (open > spc)
+            {
+                const int len = i - open;
+
+                char* name = new char[len];
+                memcpy(name, a_data + open + 1, len - 1);
+                name[len - 1] = 0;
+
+                property->SetName(name);
+
+                delete[] name;
+            }
+            
+            spc = i;
+
+            break;
+        }
+        case ':':
+        {
+            const int len = i - spc;
+            
+            value.Name = new char[len];
+            memcpy(value.Name, a_data + spc + 1, len - 1);
+            value.Name[len - 1] = 0;
+
+            colon = i;
+
+            break;
+        }
+        case '"':
+        {
+            if (quote > colon)
+            {
+                const int len = i - quote;
+
+                value.Value = new char[len];
+                memcpy(value.Value, a_data + quote + 1, len - 1);
+                value.Value[len - 1] = 0;
+
+                property->Values().emplace_back(value);
+            }
+
+            quote = i;
+
+            break;
+        }
+        case '{':
+        {
+            i += LoadProperty(property, a_data + i);
+
+            break;
+        }
+        case '}':
+        {
+            return i;
+        }
+        }
+
+        end = i;
+    }
+
+    return end;
+}
 
 PropertyFile::PropertyFile()
 {
     m_properties = new std::list<PropertyFileProperty*>();
 }
-PropertyFile::PropertyFile(const char* a_data)
+PropertyFile::PropertyFile(const char* a_data) :
+    PropertyFile()
 {
-   
+    LoadProperty(nullptr, a_data);
 }
 PropertyFile::~PropertyFile()
 {

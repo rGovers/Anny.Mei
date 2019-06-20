@@ -3,8 +3,7 @@
 #include <glad/glad.h>
 #include <stb/stb_image.h>
 
-#include "FileLoaders/KritaLoader.h"
-#include "FileLoaders/PSDLoader.h"
+#include "FileUtils.h"
 #include "imgui.h"
 #include "MemoryStream.h"
 #include "PropertyFile.h"
@@ -120,9 +119,54 @@ void ModelEditor::Update(double a_delta)
     ImGui::End();
 }
 
+void ModelEditor::GetImageData(PropertyFileProperty& a_property)
+{
+    const char* name = a_property.GetName();
+
+    LayerTexture layerTexture;
+    LayerMeta* meta = layerTexture.Meta = new LayerMeta();
+
+    for (auto iter = a_property.Values().begin(); iter != a_property.Values().end(); ++iter)
+    {
+        IFSETTOATTVAL("name", iter->Name, meta->Name, iter->Value)
+        else IFSETTOATTVALI("width", iter->Name, meta->Width, iter->Value)
+        else IFSETTOATTVALI("height", iter->Name, meta->Height, iter->Value)
+    }
+
+    m_layers->emplace_back(layerTexture);
+}
+
 ModelEditor* ModelEditor::Load(ZipArchive::Ptr& a_archive)
 {
+    ModelEditor* modelEditor = new ModelEditor();
 
+    std::shared_ptr<ZipArchiveEntry> modelEntry = a_archive->GetEntry("model.prop");
+    if (modelEntry != nullptr)
+    {
+        char* propertiesData;
+        GETFILEDATA(propertiesData, modelEntry);
+
+        PropertyFile* propertiesFile = new PropertyFile(propertiesData);
+
+        const std::list<PropertyFileProperty*> properties = propertiesFile->GetProperties();
+
+        for (auto iter = properties.begin(); iter != properties.end(); ++iter)
+        {
+            PropertyFileProperty* prop = *iter;
+
+            // Looking for root elements
+            // I am lazy and cant be stuff writing a iterator for the file
+            if (prop->GetParent() == nullptr)
+            {
+                modelEditor->GetImageData(*prop);
+            }            
+        }
+
+        delete propertiesFile;
+        delete[] propertiesData;
+    }
+
+    return modelEditor;
 }
 std::istream* ModelEditor::SaveToStream() const
 {

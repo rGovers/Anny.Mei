@@ -6,6 +6,8 @@
 
 #include "FileLoaders/ImageLoader.h"
 
+class PropertyFileProperty;
+
 struct LayerTexture
 {
     unsigned int Handle;
@@ -20,6 +22,8 @@ private:
 
     int                        m_selectedIndex;
     
+    void GetImageData(PropertyFileProperty& a_property);
+
 protected:
 
 public:

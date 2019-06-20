@@ -7,8 +7,6 @@
 
 // File IO helper defines
 // I dont normally use defines but IO can be a pain sometimes
-#define IFSETTOATTVAL(aCmp, bCmp, val, attVal) if (strcmp(aCmp, bCmp) == 0) { val = attVal; }
-#define IFSETTOATTVALI(aCmp, bCmp, val, attVal) if (strcmp(aCmp, bCmp) == 0) { val = std::stoi(attVal); }
 #define GETNAME(val, node) char* name = node->name(); int len = strlen(name); val = new char[len]; strcpy(val, name);
 
 void ToLower(char* a_string)

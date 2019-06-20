@@ -108,6 +108,7 @@ void AppMain::Open()
             }
 
             m_modelController = ModelController::Load(zip);
+            m_modelEditor = ModelEditor::Load(zip);
         }
         else
         {

@@ -45,7 +45,7 @@ ModelController* ModelController::Load(ZipArchive::Ptr& a_archive)
 {
     ModelController* modelController = new ModelController();
 
-    std::shared_ptr<ZipArchiveEntry> propertiesEntry = a_archive->GetEntry("properties.conf");
+    std::shared_ptr<ZipArchiveEntry> propertiesEntry = a_archive->GetEntry("main.conf");
 
     char* propertiesData;
     GETFILEDATA(propertiesData, propertiesEntry);

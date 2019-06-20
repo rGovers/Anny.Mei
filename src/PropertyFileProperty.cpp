@@ -66,7 +66,10 @@ void PropertyFileProperty::SetParent(PropertyFileProperty* a_parent)
 
     m_parent = a_parent;
 
-    m_parent->m_children.emplace_back(this);
+    if (m_parent != nullptr)
+    {
+        m_parent->m_children.emplace_back(this);
+    }
 }
 PropertyFileProperty* PropertyFileProperty::GetParent() const
 {
