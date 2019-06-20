@@ -5,8 +5,9 @@
 
 #include "FileLoaders/KritaLoader.h"
 #include "FileLoaders/PSDLoader.h"
-#include "MemoryStream.h"
 #include "imgui.h"
+#include "MemoryStream.h"
+#include "PropertyFile.h"
 
 ModelEditor::ModelEditor() : 
     m_selectedIndex(-1)
@@ -119,7 +120,37 @@ void ModelEditor::Update(double a_delta)
     ImGui::End();
 }
 
+ModelEditor* ModelEditor::Load(ZipArchive::Ptr& a_archive)
+{
+
+}
 std::istream* ModelEditor::SaveToStream() const
 {
-    // IMemoryStream memoryStream = new IMemoryStream();
+    if (m_layers->size() > 0)
+    {
+        PropertyFile* propertyFile = new PropertyFile();
+        
+        for (auto iter = m_layers->begin(); iter != m_layers->end(); ++iter)
+        {
+            const LayerMeta* layerMeta = iter->Meta;
+
+            PropertyFileProperty* property = propertyFile->InsertProperty();
+
+            property->SetName("image");
+
+            property->EmplaceValue("name", layerMeta->Name);
+            property->EmplaceValue("width", std::to_string(layerMeta->Width).c_str());
+            property->EmplaceValue("height", std::to_string(layerMeta->Height).c_str());
+        }
+
+        char* data = propertyFile->ToString();
+
+        IMemoryStream* memoryStream = new IMemoryStream(data, strlen(data));
+
+        delete[] data;
+
+        return memoryStream;
+    }
+
+    return nullptr;   
 }

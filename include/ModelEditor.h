@@ -30,5 +30,6 @@ public:
 
     void LoadTexture(const char* a_path);
 
+    static ModelEditor* Load(ZipArchive::Ptr& a_archive);
     std::istream* SaveToStream() const;
 };

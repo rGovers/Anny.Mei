@@ -15,10 +15,7 @@ include("FileToHeader")
 
 # Allows me to write GLSL shaders as seperate files 
 # and not have to go through the effort of file IO
-FILETOHEADER(
-    SOURCE_FILE "shaders/test.glsl" 
-    HEADER_FILE "include/Shaders/testShader.h" 
-    VARIABLE_NAME "test")
+
 
 include_directories("${PROJECT_SOURCE_DIR}")
 include_directories("${PROJECT_SOURCE_DIR}/include")

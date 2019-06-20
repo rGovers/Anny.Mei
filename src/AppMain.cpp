@@ -130,14 +130,17 @@ void AppMain::Save() const
 
         if (m_modelEditor != nullptr)
         {
-            std::shared_ptr<ZipArchiveEntry> entryptr = zipArchive->CreateEntry("properties.conf");
-
             mEditorStream = m_modelEditor->SaveToStream();
-            entryptr->SetCompressionStream(*mEditorStream);
+
+            if (mEditorStream != nullptr)
+            {
+                std::shared_ptr<ZipArchiveEntry> entryptr = zipArchive->CreateEntry("model.prop");
+                entryptr->SetCompressionStream(*mEditorStream);
+            }
         }
         if (m_modelController != nullptr)
         {
-            std::shared_ptr<ZipArchiveEntry> entryptr = zipArchive->CreateEntry("properties.conf");
+            std::shared_ptr<ZipArchiveEntry> entryptr = zipArchive->CreateEntry("main.conf");
 
             mControllerStream = m_modelController->SaveToStream();
             entryptr->SetCompressionStream(*mControllerStream);
