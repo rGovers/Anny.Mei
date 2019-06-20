@@ -14,7 +14,6 @@ private:
     ModelController*  m_modelController;
     ModelEditor*      m_modelEditor;
 
-
     bool*             m_menuState;
 
     const char*       m_filePath;

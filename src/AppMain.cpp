@@ -126,10 +126,14 @@ void AppMain::Save() const
         ZipArchive::Ptr zipArchive = ZipArchive::Create();
 
         std::istream* mControllerStream = nullptr;
+        std::istream* mEditorStream = nullptr;
 
         if (m_modelEditor != nullptr)
         {
-            m_modelEditor->SaveToArchive(zipArchive);
+            std::shared_ptr<ZipArchiveEntry> entryptr = zipArchive->CreateEntry("properties.conf");
+
+            mEditorStream = m_modelEditor->SaveToStream();
+            entryptr->SetCompressionStream(*mEditorStream);
         }
         if (m_modelController != nullptr)
         {
@@ -146,6 +150,10 @@ void AppMain::Save() const
         if (mControllerStream != nullptr)
         {
             delete mControllerStream;
+        }
+        if (mEditorStream != nullptr)
+        {
+            delete mEditorStream;
         }
     }
 }

@@ -2,7 +2,7 @@
 
 struct LayerMeta
 {
-    const char* Name;
+    char* Name;
 
     // It is possible for the size to be indepent of the image size
     int Width;

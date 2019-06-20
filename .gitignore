@@ -31,10 +31,6 @@
 *.out
 *.app
 
-# vscode 
-.vscode/ipch
-.vscode/settings.json
-
 #CMake
 CMakeFiles
 ApplicationConfig.h

@@ -221,8 +221,12 @@ LayerMeta* KritaLoader::GetLayerMeta(int a_index) const
 {
     KritaLayer* layer = m_layers[a_index];
 
+    const size_t len = layer->Name.length();
+
     LayerMeta* layerMeta = new LayerMeta();
-    layerMeta->Name = layer->Name.c_str();
+
+    layerMeta->Name = new char[len];
+    strcpy(layerMeta->Name, layer->Name.c_str());
     layerMeta->Width = layer->Image->Width;
     layerMeta->Height = layer->Image->Height;
 

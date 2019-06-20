@@ -15,7 +15,7 @@ ModelController::ModelController()
 }
 ModelController::~ModelController()
 {
-
+    
 }
 
 void ModelController::DrawModel()

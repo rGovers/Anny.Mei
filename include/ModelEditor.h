@@ -1,5 +1,6 @@
 #pragma once
 
+#include <istream>
 #include <vector>
 #include <ZipLib/ZipArchive.h>
 
@@ -7,17 +8,18 @@
 
 struct LayerTexture
 {
-    int Handle;
+    unsigned int Handle;
+    unsigned char* Data;
     LayerMeta* Meta;
 };
 
 class ModelEditor
 {
 private:
-
     std::vector<LayerTexture>* m_layers;
 
     int                        m_selectedIndex;
+    
 protected:
 
 public:
@@ -28,5 +30,5 @@ public:
 
     void LoadTexture(const char* a_path);
 
-    void SaveToArchive(ZipArchive::Ptr& a_archive) const;
+    std::istream* SaveToStream() const;
 };
