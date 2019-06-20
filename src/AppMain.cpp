@@ -141,7 +141,7 @@ void AppMain::Save() const
         }
         if (m_modelController != nullptr)
         {
-            std::shared_ptr<ZipArchiveEntry> entryptr = zipArchive->CreateEntry("main.conf");
+            std::shared_ptr<ZipArchiveEntry> entryptr = zipArchive->CreateEntry("main.prop");
 
             mControllerStream = m_modelController->SaveToStream();
             entryptr->SetCompressionStream(*mControllerStream);
