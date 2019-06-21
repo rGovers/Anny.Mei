@@ -128,6 +128,7 @@ void AppMain::Save() const
 
         std::istream* mControllerStream = nullptr;
         std::istream* mEditorStream = nullptr;
+        std::list<std::list<ModelFile>> modelStreams;
 
         if (m_modelEditor != nullptr)
         {
@@ -137,6 +138,35 @@ void AppMain::Save() const
             {
                 std::shared_ptr<ZipArchiveEntry> entryptr = zipArchive->CreateEntry("model.prop");
                 entryptr->SetCompressionStream(*mEditorStream);
+
+                const unsigned int size = m_modelEditor->GetLayerCount();
+
+                for (unsigned int i = 0; i < size; ++i)
+                {
+                    const LayerMeta layerMeta = m_modelEditor->GetLayerMeta(i);
+
+                    const std::list<ModelFile> models = m_modelEditor->SaveLayer(i);
+
+                    for (auto iter = models.begin(); iter != models.end(); ++iter)
+                    {
+                        std::string fileName;
+
+                        switch (iter->ModelType)
+                        {
+                        case e_ModelType::Image:
+                            {
+                                fileName = std::string(layerMeta.Name) + ".imgbin";
+
+                                break;
+                            }
+                        }
+
+                        entryptr = zipArchive->CreateEntry(fileName);
+                        entryptr->SetCompressionStream(*iter->Stream);
+                    }
+
+                    modelStreams.emplace_back(models);
+                }
             }
         }
         if (m_modelController != nullptr)
@@ -158,6 +188,14 @@ void AppMain::Save() const
         if (mEditorStream != nullptr)
         {
             delete mEditorStream;
+
+            for (auto iter = modelStreams.begin(); iter != modelStreams.end(); ++iter)
+            {
+                for (auto iterB = iter->begin(); iterB != iter->end(); ++iterB)
+                {
+                    delete iterB->Stream;
+                }
+            }
         }
     }
 }

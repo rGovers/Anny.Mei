@@ -25,10 +25,24 @@ ModelEditor::~ModelEditor()
 
         if (iter->Data != nullptr)
         {
+            glDeleteTextures(1, &iter->Handle);
             delete[] iter->Data;
         }
     }
     delete m_layers;
+}
+
+void ModelEditor::GenerateTexture(LayerTexture& a_layerTexture) const
+{
+    const LayerMeta* layerMeta = a_layerTexture.Meta;
+
+    glGenTextures(1, &a_layerTexture.Handle);
+    glBindTexture(GL_TEXTURE_2D, a_layerTexture.Handle);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, layerMeta->Width, layerMeta->Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, a_layerTexture.Data);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 }
 
 void ModelEditor::LoadTexture(const char* a_path)
@@ -76,13 +90,7 @@ void ModelEditor::LoadTexture(const char* a_path)
     layerTexture.Data = data;
     layerTexture.Meta = layerMeta;
 
-    glGenTextures(1, &layerTexture.Handle);
-    glBindTexture(GL_TEXTURE_2D, layerTexture.Handle);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, layerMeta->Width, layerMeta->Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    GenerateTexture(layerTexture);
 
     m_layers->emplace_back(layerTexture);
 }
@@ -119,7 +127,7 @@ void ModelEditor::Update(double a_delta)
     ImGui::End();
 }
 
-void ModelEditor::GetImageData(PropertyFileProperty& a_property)
+void ModelEditor::GetImageData(PropertyFileProperty& a_property, ZipArchive::Ptr& a_archive)
 {
     const char* name = a_property.GetName();
 
@@ -128,12 +136,33 @@ void ModelEditor::GetImageData(PropertyFileProperty& a_property)
 
     for (auto iter = a_property.Values().begin(); iter != a_property.Values().end(); ++iter)
     {
-        IFSETTOATTVAL("name", iter->Name, meta->Name, iter->Value)
+        IFSETTOATTVALCPY("name", iter->Name, meta->Name, iter->Value)
         else IFSETTOATTVALI("width", iter->Name, meta->Width, iter->Value)
         else IFSETTOATTVALI("height", iter->Name, meta->Height, iter->Value)
     }
 
+    std::shared_ptr<ZipArchiveEntry> entry = a_archive->GetEntry(std::string(meta->Name) + ".imgbin");
+
+    if (entry != nullptr)
+    {
+        char* data;
+        GETFILEDATA(data, entry);
+
+        layerTexture.Data = (unsigned char*)data;
+        GenerateTexture(layerTexture);
+    }
+
     m_layers->emplace_back(layerTexture);
+}
+
+unsigned int ModelEditor::GetLayerCount() const
+{
+    return m_layers->size();
+}
+
+LayerMeta ModelEditor::GetLayerMeta(unsigned int a_index) const
+{
+    return *m_layers->at(a_index).Meta;
 }
 
 ModelEditor* ModelEditor::Load(ZipArchive::Ptr& a_archive)
@@ -158,7 +187,7 @@ ModelEditor* ModelEditor::Load(ZipArchive::Ptr& a_archive)
             // I am lazy and cant be stuff writing a iterator for the file
             if (prop->GetParent() == nullptr)
             {
-                modelEditor->GetImageData(*prop);
+                modelEditor->GetImageData(*prop, a_archive);
             }            
         }
 
@@ -197,4 +226,16 @@ std::istream* ModelEditor::SaveToStream() const
     }
 
     return nullptr;   
+}
+std::list<ModelFile> ModelEditor::SaveLayer(unsigned int a_index) const
+{
+    std::list<ModelFile> outputStreams;
+    
+    const LayerTexture layerTexture = m_layers->at(a_index);
+    const size_t size = layerTexture.Meta->Width * layerTexture.Meta->Height * 4;
+
+    IMemoryStream* memoryStream = new IMemoryStream((char*)layerTexture.Data, size);
+    outputStreams.emplace_back(ModelFile{ e_ModelType::Image, memoryStream });
+
+    return outputStreams;
 }
