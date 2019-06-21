@@ -99,7 +99,7 @@ void ModelEditor::Update(double a_delta)
 {
     if (ImGui::Begin("Editor Preview"))
     {
-        int texture = 0;
+        unsigned int texture = 0;
         if (m_selectedIndex != -1)
         {
             LayerTexture layerTexture = m_layers->at(m_selectedIndex);
@@ -113,13 +113,40 @@ void ModelEditor::Update(double a_delta)
     if (ImGui::Begin("Editor Layers"))
     {
         ImGui::BeginChild("Layer Scroll");
+        
+        int remove = -1;
+
         for (int i = 0; i < m_layers->size(); ++i)
         {
             LayerMeta* layerMeta = m_layers->at(i).Meta;
 
-            if (ImGui::Button(layerMeta->Name, { 200, 20 }))
+            if (ImGui::SmallButton("X"))
+            {
+               remove = i;
+            }
+
+            ImGui::SameLine();
+
+            if (ImGui::Button(layerMeta->Name, { 180, 20 }))
             {
                 m_selectedIndex = i;
+            }
+        }
+
+        if (remove != -1)
+        {
+            auto iter = m_layers->begin() + remove;
+
+            glDeleteTextures(1, &iter->Handle);
+            delete[] iter->Data;
+            delete[] iter->Meta->Name;
+            delete iter->Meta;
+
+            m_layers->erase(iter);
+
+            if (remove == m_selectedIndex)
+            {
+                m_selectedIndex = -1;
             }
         }
         ImGui::EndChild();
