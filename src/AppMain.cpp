@@ -12,8 +12,8 @@
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
 #include "ModelController.h"
-#include "ModelEditor.h"
 #include "Texture.h"
+#include "TextureEditor.h"
 #include "WebcamController.h"
 #include "ZipLib/ZipFile.h"
 
@@ -34,7 +34,7 @@ MessageCallback( GLenum a_source,
 AppMain::AppMain(int a_width, int a_height) : 
     Application(a_width, a_height, "Anny.Mei"),
     m_modelController(nullptr),
-    m_modelEditor(nullptr),
+    m_textureEditor(nullptr),
     m_menuState(new bool(true)),
     m_filePath(nullptr)
 {
@@ -65,10 +65,9 @@ AppMain::~AppMain()
 
     delete m_webcamController;
 
-    if (m_modelEditor != nullptr)
+    if (m_textureEditor != nullptr)
     {
-        delete m_modelEditor;
-        m_modelEditor = nullptr;
+        delete m_textureEditor;
     }
 }
 
@@ -78,13 +77,13 @@ void AppMain::New()
     {
         delete m_modelController;
     }
-    if (m_modelEditor != nullptr)
+    if (m_textureEditor != nullptr)
     {
-        delete m_modelEditor;
+        delete m_textureEditor;
     }    
 
     m_modelController = new ModelController();
-    m_modelEditor = new ModelEditor();
+    m_textureEditor = new TextureEditor();
     m_filePath = nullptr;
 }
 void AppMain::Open()
@@ -102,13 +101,13 @@ void AppMain::Open()
             {
                 delete m_modelController;
             }
-            if (m_modelEditor != nullptr)
+            if (m_textureEditor != nullptr)
             {
-                delete m_modelEditor;
+                delete m_textureEditor;
             }
 
             m_modelController = ModelController::Load(zip);
-            m_modelEditor = ModelEditor::Load(zip);
+            m_textureEditor = TextureEditor::Load(zip);
         }
         else
         {
@@ -130,22 +129,22 @@ void AppMain::Save() const
         std::istream* mEditorStream = nullptr;
         std::list<std::list<ModelFile>> modelStreams;
 
-        if (m_modelEditor != nullptr)
+        if (m_textureEditor != nullptr)
         {
-            mEditorStream = m_modelEditor->SaveToStream();
+            mEditorStream = m_textureEditor->SaveToStream();
 
             if (mEditorStream != nullptr)
             {
                 std::shared_ptr<ZipArchiveEntry> entryptr = zipArchive->CreateEntry("model.prop");
                 entryptr->SetCompressionStream(*mEditorStream);
 
-                const unsigned int size = m_modelEditor->GetLayerCount();
+                const unsigned int size = m_textureEditor->GetLayerCount();
 
                 for (unsigned int i = 0; i < size; ++i)
                 {
-                    const LayerMeta layerMeta = m_modelEditor->GetLayerMeta(i);
+                    const LayerMeta layerMeta = m_textureEditor->GetLayerMeta(i);
 
-                    const std::list<ModelFile> models = m_modelEditor->SaveLayer(i);
+                    const std::list<ModelFile> models = m_textureEditor->SaveLayer(i);
 
                     for (auto iter = models.begin(); iter != models.end(); ++iter)
                     {
@@ -276,7 +275,7 @@ void AppMain::Update(double a_delta)
                 Open();
             }
             
-            const bool enabledModel = m_modelEditor != nullptr;
+            const bool enabledModel = m_textureEditor != nullptr;
 
             if (ImGui::MenuItem("Save", "Ctrl+S", nullptr, m_filePath != nullptr))
             {
@@ -300,7 +299,7 @@ void AppMain::Update(double a_delta)
                 {
                     if (filePath[0] != 0)
                     {
-                        m_modelEditor->LoadTexture(filePath);
+                        m_textureEditor->LoadTexture(filePath);
                     }
                 }
             }
@@ -318,9 +317,9 @@ void AppMain::Update(double a_delta)
         ImGui::EndMainMenuBar();
     }
 
-    if (m_modelEditor != nullptr)
+    if (m_textureEditor != nullptr)
     {
-        m_modelEditor->Update(a_delta);
+        m_textureEditor->Update(a_delta);
     }
     if (m_modelController != nullptr)
     {

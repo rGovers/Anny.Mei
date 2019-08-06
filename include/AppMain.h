@@ -3,7 +3,7 @@
 #include "Application.h"
 
 class ModelController;
-class ModelEditor;
+class TextureEditor;
 class WebcamController;
 
 class AppMain : public Application
@@ -12,7 +12,7 @@ private:
     WebcamController* m_webcamController;
     
     ModelController*  m_modelController;
-    ModelEditor*      m_modelEditor;
+    TextureEditor*    m_textureEditor;
 
     bool*             m_menuState;
 

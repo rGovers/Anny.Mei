@@ -8,10 +8,11 @@
 #include "FileLoaders/ImageLoader.h"
 
 class PropertyFileProperty;
+class Texture;
 
 struct LayerTexture
 {
-    unsigned int Handle;
+    Texture* TextureData;
     unsigned char* Data;
     LayerMeta* Meta;
 };
@@ -27,21 +28,23 @@ struct ModelFile
     std::istream* Stream;
 };
 
-class ModelEditor
+class TextureEditor
 {
 private:
     std::vector<LayerTexture>* m_layers;
 
     int                        m_selectedIndex;
     
+    unsigned int               m_stepXY[2];   
+
     void GenerateTexture(LayerTexture& a_layerTexture) const;
     void GetImageData(PropertyFileProperty& a_property, ZipArchive::Ptr& a_archive);
 
 protected:
 
 public:
-    ModelEditor();
-    ~ModelEditor();
+    TextureEditor();
+    ~TextureEditor();
 
     void Update(double a_delta);
 
@@ -51,7 +54,7 @@ public:
 
     LayerMeta GetLayerMeta(unsigned int a_index) const;
 
-    static ModelEditor* Load(ZipArchive::Ptr& a_archive);
+    static TextureEditor* Load(ZipArchive::Ptr& a_archive);
     std::istream* SaveToStream() const;
     std::list<ModelFile> SaveLayer(unsigned int a_index) const;
 };

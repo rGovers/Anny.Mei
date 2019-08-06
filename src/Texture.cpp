@@ -16,7 +16,7 @@ Texture::Texture(int a_width, int a_height, int a_pixelFormat) : m_width(a_width
 
 Texture::~Texture()
 {
-    glDeleteTextures(GL_TEXTURE_2D, &m_handle);
+    glDeleteTextures(1, &m_handle);
 }
 
 unsigned int Texture::GetHandle() const

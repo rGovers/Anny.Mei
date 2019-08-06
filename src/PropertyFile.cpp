@@ -186,7 +186,7 @@ char* PropertyFile::ToString() const
         }
     }
 
-    char* dataC = new char[data.length()];
+    char* dataC = new char[data.length() + 1];
     strcpy(dataC, data.c_str());
 
     return dataC;
