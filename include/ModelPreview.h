@@ -13,8 +13,12 @@ private:
     Model*         m_model;
     Material*      m_material;
 
+    bool m_solid;
+    bool m_wireframe;
+
     static unsigned int SHADER_PROGRAM_REF;
     static ShaderProgram* STANDARD_SHADER_PROGRAM;
+    static ShaderProgram* WIREFRAME_SHADER_PROGRAM;
 protected:
 
 public:
@@ -24,5 +28,6 @@ public:
 
     RenderTexture* GetRenderTexture() const;
 
+    void Update();
     void Render() const; 
 };

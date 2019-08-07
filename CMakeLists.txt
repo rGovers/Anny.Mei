@@ -23,6 +23,10 @@ FileToHeader(
     SOURCE_FILE "shaders/StandardPixel.glsl" 
     HEADER_FILE "include/Shaders/StandardPixel.h"
     VARIABLE_NAME "StandardPixel")
+FileToHeader(
+    SOURCE_FILE "shaders/SolidPixel.glsl" 
+    HEADER_FILE "include/Shaders/SolidPixel.h"
+    VARIABLE_NAME "SolidPixel")
 
 include_directories("${PROJECT_SOURCE_DIR}")
 include_directories("${PROJECT_SOURCE_DIR}/include")

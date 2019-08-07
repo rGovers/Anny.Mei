@@ -12,6 +12,7 @@
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
 #include "ModelController.h"
+#include "SkeletonController.h"
 #include "Texture.h"
 #include "TextureEditor.h"
 #include "WebcamController.h"
@@ -52,6 +53,8 @@ AppMain::AppMain(int a_width, int a_height) :
 
     ImGui_ImplGlfw_InitForOpenGL(GetWindow(), true);
     ImGui_ImplOpenGL3_Init("#version 130");
+
+    m_skeletonController = new SkeletonController();
 
     FileDialog::Create();
 }
@@ -319,7 +322,7 @@ void AppMain::Update(double a_delta)
 
     if (m_textureEditor != nullptr)
     {
-        m_textureEditor->Update(a_delta);
+        m_textureEditor->Update(a_delta, m_skeletonController);
     }
     if (m_modelController != nullptr)
     {

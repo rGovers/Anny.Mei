@@ -103,28 +103,26 @@ void TextureEditor::LoadTexture(const char* a_path)
     m_layers->emplace_back(layerTexture);
 }
 
-void TextureEditor::Update(double a_delta)
+void TextureEditor::Update(double a_delta, SkeletonController* a_skeletonController)
 {
-    if (ImGui::Begin("Texture Editor Preview"))
+    if (m_selectedIndex != -1)
     {
-        unsigned int texture = 0;
-        if (m_selectedIndex != -1)
-        {
-            LayerTexture layerTexture = m_layers->at(m_selectedIndex);
+        LayerTexture layerTexture = m_layers->at(m_selectedIndex);
+        ModelPreview* modelData = layerTexture.ModelData;
 
-            const ModelPreview* modelData = layerTexture.ModelData;
-            if (modelData != nullptr)
+        if (modelData != nullptr)
+        {
+            if (ImGui::Begin("Texture Editor Preview", nullptr, ImGuiWindowFlags_MenuBar))
             {
+                modelData->Update();
                 modelData->Render();
 
-                texture = modelData->GetRenderTexture()->GetTexture()->GetHandle();
+                ImGui::Image((ImTextureID)modelData->GetRenderTexture()->GetTexture()->GetHandle(), { 512, 512 });
             }
+            ImGui::End();
         }
-        
-        ImGui::Image((ImTextureID)texture, { 512, 512 });
     }
-    ImGui::End();
-
+        
     if (m_selectedIndex != -1)
     {
         if (ImGui::Begin("Texture Editor Toolbox"))

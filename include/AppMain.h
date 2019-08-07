@@ -3,16 +3,19 @@
 #include "Application.h"
 
 class ModelController;
+class SkeletonController;
 class TextureEditor;
 class WebcamController;
 
 class AppMain : public Application
 {
 private:
-    WebcamController* m_webcamController;
-    
-    ModelController*  m_modelController;
-    TextureEditor*    m_textureEditor;
+    WebcamController*   m_webcamController;
+      
+    ModelController*    m_modelController;
+    TextureEditor*      m_textureEditor;
+
+    SkeletonController* m_skeletonController;
 
     bool*             m_menuState;
 

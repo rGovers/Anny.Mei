@@ -9,6 +9,7 @@
 
 class ModelPreview;
 class PropertyFileProperty;
+class SkeletonController;
 class Texture;
 
 struct LayerTexture
@@ -48,7 +49,7 @@ public:
     TextureEditor();
     ~TextureEditor();
 
-    void Update(double a_delta);
+    void Update(double a_delta, SkeletonController* a_skeletonController);
 
     void LoadTexture(const char* a_path);
 
