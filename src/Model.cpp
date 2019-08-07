@@ -40,7 +40,12 @@ unsigned int Model::GetIBO() const
     return m_buffers[IBO];
 }
 
+void Model::SetIndicies(unsigned int a_indicies)
+{
+    m_indicies = a_indicies;
+}
 unsigned int Model::GetIndicies() const
 {
     return m_indicies;
 }
+

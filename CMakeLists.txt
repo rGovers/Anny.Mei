@@ -15,7 +15,14 @@ include("FileToHeader")
 
 # Allows me to write GLSL shaders as seperate files 
 # and not have to go through the effort of file IO
-
+FileToHeader(
+    SOURCE_FILE "shaders/ModelVertex.glsl" 
+    HEADER_FILE "include/Shaders/ModelVertex.h"
+    VARIABLE_NAME "ModelVertex")
+FileToHeader(
+    SOURCE_FILE "shaders/StandardPixel.glsl" 
+    HEADER_FILE "include/Shaders/StandardPixel.h"
+    VARIABLE_NAME "StandardPixel")
 
 include_directories("${PROJECT_SOURCE_DIR}")
 include_directories("${PROJECT_SOURCE_DIR}/include")

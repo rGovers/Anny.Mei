@@ -6,13 +6,15 @@
 #include "FileUtils.h"
 #include "imgui.h"
 #include "MemoryStream.h"
+#include "ModelPreview.h"
 #include "PropertyFile.h"
+#include "RenderTexture.h"
 #include "Texture.h"
 #include "TriImage.h"
 
 TextureEditor::TextureEditor() : 
     m_selectedIndex(-1),
-    m_stepXY({10, 10})
+    m_stepXY({128, 128})
 {
     m_layers = new std::vector<LayerTexture>();
 }
@@ -94,6 +96,7 @@ void TextureEditor::LoadTexture(const char* a_path)
     }
 
     layerTexture.Meta = layerMeta;
+    layerTexture.ModelData = nullptr;
 
     GenerateTexture(layerTexture);
 
@@ -108,7 +111,14 @@ void TextureEditor::Update(double a_delta)
         if (m_selectedIndex != -1)
         {
             LayerTexture layerTexture = m_layers->at(m_selectedIndex);
-            texture = layerTexture.TextureData->GetHandle();
+
+            const ModelPreview* modelData = layerTexture.ModelData;
+            if (modelData != nullptr)
+            {
+                modelData->Render();
+
+                texture = modelData->GetRenderTexture()->GetTexture()->GetHandle();
+            }
         }
         
         ImGui::Image((ImTextureID)texture, { 512, 512 });
@@ -125,8 +135,35 @@ void TextureEditor::Update(double a_delta)
             {
                 LayerTexture layerTexture = m_layers->at(m_selectedIndex);
 
+                if (layerTexture.ModelData != nullptr)
+                {
+                    delete layerTexture.ModelData;
+                }
+
                 TriImage* triImage = new TriImage(layerTexture.Data, m_stepXY[0], m_stepXY[1], layerTexture.Meta->Width, layerTexture.Meta->Height, 0.1f);
                 
+                const unsigned int indexCount = triImage->GetIndexCount();
+                unsigned int* indicies = triImage->GetIndicies();
+
+                const unsigned int vertexCount = triImage->GetVertexCount();
+                ModelVertex* modelVerticies = triImage->ToModelVerticies();
+
+                Model* model = new Model();
+                const unsigned int vbo = model->GetVBO();
+                const unsigned int ibo = model->GetIBO(); 
+
+                glBindBuffer(GL_ARRAY_BUFFER, vbo);
+                glBufferData(GL_ARRAY_BUFFER, vertexCount * sizeof(ModelVertex), modelVerticies, GL_STATIC_DRAW);
+
+                glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
+                glBufferData(GL_ELEMENT_ARRAY_BUFFER, indexCount * sizeof(int), indicies, GL_STATIC_DRAW);
+
+                model->SetIndicies(indexCount);
+
+                layerTexture.ModelData = new ModelPreview(layerTexture.TextureData, model);
+
+                (*m_layers)[m_selectedIndex] = layerTexture;
+
                 delete triImage;
             }
         }
@@ -202,6 +239,7 @@ void TextureEditor::GetImageData(PropertyFileProperty& a_property, ZipArchive::P
         GenerateTexture(layerTexture);
     }
 
+    layerTexture.ModelData = nullptr;
     m_layers->emplace_back(layerTexture);
 }
 

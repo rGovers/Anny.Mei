@@ -29,5 +29,6 @@ public:
     unsigned int GetVBO() const;
     unsigned int GetIBO() const;
 
+    void SetIndicies(unsigned int a_indicies);
     unsigned int GetIndicies() const;
 };

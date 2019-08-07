@@ -6,7 +6,7 @@
 
 #include "Voronoi.h"
 
-void TriImage::WindTriangle(int& a_a, int& a_b, int& a_c) const
+void TriImage::WindTriangle(unsigned int& a_a, unsigned int& a_b, unsigned int& a_c) const
 {
     const glm::vec2 mid = (m_verts[a_a] + m_verts[a_b] + m_verts[a_c]) * 0.33f;
 
@@ -20,7 +20,7 @@ void TriImage::WindTriangle(int& a_a, int& a_b, int& a_c) const
 
     if (angleB > angleC)
     {
-        const int temp = a_b;
+        const unsigned int temp = a_b;
         a_b = a_c;
         a_c = temp;
 
@@ -32,17 +32,17 @@ void TriImage::WindTriangle(int& a_a, int& a_b, int& a_c) const
     {
         if (angleA > angleC)
         {
-            const int temp = a_c;
+            const unsigned int temp = a_c;
             a_c = a_a;
             a_a = temp;
         }
 
-        const int temp = a_b;
+        const unsigned int temp = a_b;
         a_b = a_a;
         a_a = temp;
     }
 }
-void TriImage::WindQuad(int& a_a, int& a_b, int& a_c, int& a_d) const
+void TriImage::WindQuad(unsigned int& a_a, unsigned int& a_b, unsigned int& a_c, unsigned int& a_d) const
 {
     const glm::vec2 mid = (m_verts[a_a] + m_verts[a_b] + m_verts[a_c] + m_verts[a_d]) * 0.25f;
 
@@ -58,7 +58,7 @@ void TriImage::WindQuad(int& a_a, int& a_b, int& a_c, int& a_d) const
 
     if (angleC > angleD)
     {
-        const int tmp = a_c;
+        const unsigned int tmp = a_c;
         a_c = a_d;
         a_d = tmp;
 
@@ -71,7 +71,7 @@ void TriImage::WindQuad(int& a_a, int& a_b, int& a_c, int& a_d) const
     {
         if (angleB > angleD)
         {
-            const int tmp = a_b;
+            const unsigned int tmp = a_b;
             a_b = a_d;
             a_d = tmp;
 
@@ -80,7 +80,7 @@ void TriImage::WindQuad(int& a_a, int& a_b, int& a_c, int& a_d) const
             angleD = tmpAngle;
         }
 
-        const int tmp = a_b;
+        const unsigned int tmp = a_b;
         a_b = a_c;
         a_c = tmp;
 
@@ -95,17 +95,17 @@ void TriImage::WindQuad(int& a_a, int& a_b, int& a_c, int& a_d) const
         {
             if (angleA > angleD)
             {
-                const int tmp = a_a;
+                const unsigned int tmp = a_a;
                 a_a = a_d;
                 a_d = tmp;
             }
 
-            const int tmp = a_a;
+            const unsigned int tmp = a_a;
             a_a = a_c;
             a_c = tmp;
         }
 
-        const int tmp = a_a;
+        const unsigned int tmp = a_a;
         a_a = a_b;
         a_b = tmp;
     }
@@ -234,10 +234,10 @@ TriImage::TriImage(const unsigned char* a_textureData, int a_stepX, int a_stepY,
             }
             else if (count > 3)
             {
-                int indA = altIndex[0];
-                int indB = altIndex[1];
-                int indC = altIndex[2];
-                int indD = altIndex[3];
+                unsigned int indA = altIndex[0];
+                unsigned int indB = altIndex[1];
+                unsigned int indC = altIndex[2];
+                unsigned int indD = altIndex[3];
 
                 WindQuad(indA, indB, indC, indD);
 
@@ -249,9 +249,9 @@ TriImage::TriImage(const unsigned char* a_textureData, int a_stepX, int a_stepY,
                 };
                 TriImageTriangle triB = 
                 {
-                    indB,
-                    indD,
-                    indC
+                    indA,
+                    indC,
+                    indD
                 };
 
                 std::list<TriImageTriangle>::iterator iter;
@@ -269,7 +269,9 @@ TriImage::TriImage(const unsigned char* a_textureData, int a_stepX, int a_stepY,
             }
         }
     }
-    m_indicies = new int[triangles.size() * 3];
+    m_indexCount = triangles.size() * 3;
+    m_indicies = new unsigned int[m_indexCount];
+
     std::copy(triangles.begin(), triangles.end(), (TriImageTriangle*)m_indicies);
 
     delete voronoi;
@@ -278,4 +280,47 @@ TriImage::~TriImage()
 {
     delete[] m_verts;
     delete[] m_indicies;
+}
+
+unsigned int TriImage::GetIndexCount() const
+{
+    return m_indexCount;
+}
+unsigned int* TriImage::GetIndicies() const
+{
+    return m_indicies;
+}
+
+unsigned int TriImage::GetVertexCount() const
+{
+    return m_vertCount;
+}
+
+ModelVertex* TriImage::ToModelVerticies() const
+{
+    ModelVertex* verts = new ModelVertex[m_vertCount];
+
+    for (int i = 0; i < m_vertCount; ++i)
+    {
+        const glm::vec2 pos = m_verts[i];
+
+        verts[i].Position = glm::vec4(pos, 0, 1);
+        verts[i].TexCoord = pos;
+    }
+
+    return verts;
+}
+SkinnedVertex* TriImage::ToSkinnedVerticies() const
+{
+    SkinnedVertex* verts = new SkinnedVertex[m_vertCount];
+
+    for (int i = 0; i < m_vertCount; ++i)
+    {
+        const glm::vec2 pos = m_verts[i];
+
+        verts[i].Position = glm::vec4(pos, 0, 1);
+        verts[i].TexCoord = pos;
+    }
+
+    return verts;
 }

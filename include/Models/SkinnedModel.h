@@ -20,4 +20,6 @@ protected:
 
 public:
     SkinnedModel();
+
+
 };

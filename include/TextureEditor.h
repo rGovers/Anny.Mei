@@ -7,12 +7,14 @@
 
 #include "FileLoaders/ImageLoader.h"
 
+class ModelPreview;
 class PropertyFileProperty;
 class Texture;
 
 struct LayerTexture
 {
     Texture* TextureData;
+    ModelPreview* ModelData;
     unsigned char* Data;
     LayerMeta* Meta;
 };

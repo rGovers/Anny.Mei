@@ -4,7 +4,8 @@ function(FILETOHEADER)
     cmake_parse_arguments(FILETOHEADER "" "${singleValueArgs}" "" ${ARGN})
 
     file(READ "${FILETOHEADER_SOURCE_FILE}" FILESTRING)
-    string(REPLACE "\n" " " FILESTRING "${FILESTRING}")
+    #It just works do not question it
+    string(REPLACE "\n" "\\n\\\n" FILESTRING "${FILESTRING}")
 
     string(MAKE_C_IDENTIFIER "${FILETOHEADER_VARIABLE_NAME}" FILETOHEADER_VARIABLE_NAME)
     string(TOUPPER "${FILETOHEADER_VARIABLE_NAME}" FILETOHEADER_VARIABLE_NAME)
