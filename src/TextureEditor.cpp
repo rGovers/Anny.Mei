@@ -154,7 +154,14 @@ void TextureEditor::Update(double a_delta, SkeletonController* a_skeletonControl
                 const unsigned int vbo = model->GetVBO();
                 const unsigned int ibo = model->GetIBO(); 
 
-                a_skeletonController->SetModel(m_selectedIndex, model);
+                ModelData modelData;
+                modelData.VertexCount = vertexCount;
+                modelData.IndexCount = indexCount;
+                modelData.Vertices = modelVerticies;
+                modelData.Indices = indicies;
+                modelData.GModel = model;
+
+                a_skeletonController->SetModel(layerTexture.Meta->Name, modelData);
 
                 glBindBuffer(GL_ARRAY_BUFFER, vbo);
                 glBufferData(GL_ARRAY_BUFFER, vertexCount * sizeof(ModelVertex), modelVerticies, GL_STATIC_DRAW);
@@ -325,15 +332,12 @@ std::istream* TextureEditor::SaveToStream() const
 
     return nullptr;   
 }
-std::list<ModelFile> TextureEditor::SaveLayer(unsigned int a_index) const
+std::istream* TextureEditor::SaveLayer(unsigned int a_index) const
 {
-    std::list<ModelFile> outputStreams;
-    
     const LayerTexture layerTexture = m_layers->at(a_index);
     const size_t size = layerTexture.Meta->Width * layerTexture.Meta->Height * 4;
 
     IMemoryStream* memoryStream = new IMemoryStream((char*)layerTexture.Data, size);
-    outputStreams.emplace_back(ModelFile{ e_ModelType::Image, memoryStream });
 
-    return outputStreams;
+    return memoryStream;
 }

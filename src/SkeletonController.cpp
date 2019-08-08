@@ -1,8 +1,10 @@
 #include "SkeletonController.h"
 
 #include "imgui.h"
+#include "MemoryStream.h"
 #include "Models/Model.h"
 #include "Object.h"
+#include "PropertyFile.h"
 
 SkeletonController::SkeletonController() :
     m_baseObject(new Object()),
@@ -92,17 +94,17 @@ void SkeletonController::Update(double a_delta)
     }
 }
 
-void SkeletonController::SetModel(int a_index, Model* a_model)
+void SkeletonController::SetModel(const char* a_name, ModelData a_modelData)
 {
-    auto iter = m_models.find(a_index);
+    auto iter = m_models.find(a_name);
 
     if (iter != m_models.end())
     {
-        iter->second = a_model;
+        iter->second = a_modelData;
     }
     else
     {
-        m_models.emplace(a_index, a_model);
+        m_models.emplace(a_name, a_modelData);
     }
 }
 
@@ -111,4 +113,88 @@ SkeletonController* SkeletonController::Load(ZipArchive::Ptr a_archive)
     SkeletonController* skeletonController = new SkeletonController();
 
     return skeletonController;
+}
+
+int SkeletonController::GetModelCount() const
+{
+    return m_models.size();
+}
+
+std::istream* SkeletonController::SaveToStream() const
+{
+    if (m_models.size() > 0)
+    {
+        PropertyFile* propertyFile = new PropertyFile();
+
+        for (auto iter = m_models.begin(); iter != m_models.end(); ++iter)
+        {
+            PropertyFileProperty* prop = propertyFile->InsertProperty();
+
+            prop->SetName("model");
+
+            prop->EmplaceValue("name", iter->first);
+            prop->EmplaceValue("vertices", std::to_string(iter->second.VertexCount).c_str());
+            prop->EmplaceValue("indices", std::to_string(iter->second.IndexCount).c_str());
+        }
+
+        char* data = propertyFile->ToString();
+
+        IMemoryStream* memoryStream = new IMemoryStream(data, strlen(data));
+
+        delete[] data;
+
+        return memoryStream;
+    }
+
+    return nullptr;
+}
+
+const char* SkeletonController::GetModelName(int a_index) const
+{
+    auto iter = m_models.begin();
+
+    std::advance(iter, a_index);
+
+    return iter->first;
+}
+
+std::istream* SkeletonController::SaveModel(const char* a_name) const
+{
+    auto iter = m_models.find(a_name);
+
+    if (iter != m_models.end())
+    {
+        const unsigned int indexSize = iter->second.IndexCount * 4;
+        const unsigned int vertexSize = iter->second.VertexCount * sizeof(ModelVertex);
+        const unsigned int dataSize = indexSize + vertexSize;
+
+        char* data = new char[dataSize];
+        memcpy(data, iter->second.Vertices, vertexSize);
+        memcpy(data + vertexSize, iter->second.Indices, indexSize);
+
+        IMemoryStream* memoryStream = new IMemoryStream(data, dataSize);
+
+        return memoryStream;
+    }
+
+    return nullptr;
+}
+
+std::istream* SkeletonController::SaveModel(int a_index) const
+{
+    auto iter = m_models.begin();
+
+    std::advance(iter, a_index);
+
+    const unsigned int indexSize = iter->second.IndexCount * 4;
+    const unsigned int vertexSize = iter->second.VertexCount * sizeof(ModelVertex);
+    const unsigned int dataSize = indexSize + vertexSize;
+
+    char* data = new char[dataSize];
+    memcpy(data, iter->second.Vertices, vertexSize);
+    memcpy(data + vertexSize, iter->second.Indices, indexSize);
+
+    IMemoryStream* memoryStream = new IMemoryStream(data, dataSize);
+
+    return memoryStream;
 }

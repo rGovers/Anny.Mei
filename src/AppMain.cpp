@@ -1,7 +1,8 @@
 #include "AppMain.h"
 
-#include <stdio.h>
 #include <fstream>
+#include <list>
+#include <stdio.h>
 
 #undef IMGUI_IMPL_OPENGL_LOADER_GL3W
 #undef IMGUI_IMPL_OPENGL_LOADER_GLEW
@@ -107,6 +108,9 @@ void AppMain::Open()
 
     if (m_filePath != nullptr)
     {
+        const std::string str = std::string("Anny.Mei [") + m_filePath + "]";
+        glfwSetWindowTitle(GetWindow(), str.c_str());
+
         if (m_filePath[0] != 0)
         {
             ZipArchive::Ptr zip = ZipFile::Open(m_filePath);
@@ -146,7 +150,9 @@ void AppMain::Save() const
 
         std::istream* mControllerStream = nullptr;
         std::istream* mEditorStream = nullptr;
-        std::list<std::list<ModelFile>> modelStreams;
+        std::istream* mSkeletonStream = nullptr;
+        std::list<std::istream*> imageStreams;
+        std::list<std::istream*> modelStreams;
 
         if (m_textureEditor != nullptr)
         {
@@ -163,27 +169,14 @@ void AppMain::Save() const
                 {
                     const LayerMeta layerMeta = m_textureEditor->GetLayerMeta(i);
 
-                    const std::list<ModelFile> models = m_textureEditor->SaveLayer(i);
+                    std::istream* stream = m_textureEditor->SaveLayer(i);
 
-                    for (auto iter = models.begin(); iter != models.end(); ++iter)
-                    {
-                        std::string fileName;
+                    std::string fileName = std::string(layerMeta.Name) + ".imgbin";
 
-                        switch (iter->ModelType)
-                        {
-                        case e_ModelType::Image:
-                            {
-                                fileName = std::string(layerMeta.Name) + ".imgbin";
+                    entryptr = zipArchive->CreateEntry(fileName);
+                    entryptr->SetCompressionStream(*stream);
 
-                                break;
-                            }
-                        }
-
-                        entryptr = zipArchive->CreateEntry(fileName);
-                        entryptr->SetCompressionStream(*iter->Stream);
-                    }
-
-                    modelStreams.emplace_back(models);
+                    imageStreams.emplace_back(stream);
                 }
             }
         }
@@ -193,6 +186,32 @@ void AppMain::Save() const
 
             mControllerStream = m_modelController->SaveToStream();
             entryptr->SetCompressionStream(*mControllerStream);
+        }
+        if (m_skeletonController != nullptr)
+        {
+            std::shared_ptr<ZipArchiveEntry> entryptr = zipArchive->CreateEntry("skeleton.prop");
+
+            mSkeletonStream = m_skeletonController->SaveToStream();
+            entryptr->SetCompressionStream(*mSkeletonStream);
+
+            const int size = m_skeletonController->GetModelCount();
+
+            for (int i = 0; i < size; ++i)
+            {
+                const char* name = m_skeletonController->GetModelName(i);
+
+                std::string fileName = std::string(name) + ".mdlbin";
+
+                std::istream* stream = m_skeletonController->SaveModel(name);
+
+                if (stream != nullptr)
+                {
+                    entryptr = zipArchive->CreateEntry(fileName);
+                    entryptr->SetCompressionStream(*stream);
+
+                    modelStreams.emplace_back(stream);
+                }   
+            }
         }
 
         zipArchive->WriteToStream(fstream);
@@ -207,12 +226,18 @@ void AppMain::Save() const
         {
             delete mEditorStream;
 
+            for (auto iter = imageStreams.begin(); iter != imageStreams.end(); ++iter)
+            {
+                delete *iter;
+            }
+        }
+        if (mSkeletonStream != nullptr)
+        {
+            delete mSkeletonStream;
+
             for (auto iter = modelStreams.begin(); iter != modelStreams.end(); ++iter)
             {
-                for (auto iterB = iter->begin(); iterB != iter->end(); ++iterB)
-                {
-                    delete iterB->Stream;
-                }
+                delete *iter;
             }
         }
     }
@@ -221,6 +246,12 @@ void AppMain::SaveAs()
 {
     char* const* const filters = new char*[1] { "*.aMei" };
     m_filePath = FileDialog::SaveFile("Save Project File", filters, 1);
+
+    if (m_filePath != nullptr)
+    {
+        const std::string str = std::string("Anny.Mei [") + m_filePath + "]";
+        glfwSetWindowTitle(GetWindow(), str.c_str());
+    }
 
     delete[] filters;
 

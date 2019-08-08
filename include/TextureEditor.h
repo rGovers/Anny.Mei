@@ -1,7 +1,6 @@
 #pragma once
 
 #include <istream>
-#include <list>
 #include <vector>
 #include <ZipLib/ZipArchive.h>
 
@@ -18,17 +17,6 @@ struct LayerTexture
     ModelPreview* ModelData;
     unsigned char* Data;
     LayerMeta* Meta;
-};
-
-enum class e_ModelType : unsigned int
-{
-    Image
-};
-
-struct ModelFile
-{
-    e_ModelType ModelType;
-    std::istream* Stream;
 };
 
 class TextureEditor
@@ -60,5 +48,5 @@ public:
 
     static TextureEditor* Load(ZipArchive::Ptr& a_archive);
     std::istream* SaveToStream() const;
-    std::list<ModelFile> SaveLayer(unsigned int a_index) const;
+    std::istream* SaveLayer(unsigned int a_index) const;
 };
