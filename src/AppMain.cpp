@@ -54,8 +54,6 @@ AppMain::AppMain(int a_width, int a_height) :
     ImGui_ImplGlfw_InitForOpenGL(GetWindow(), true);
     ImGui_ImplOpenGL3_Init("#version 130");
 
-    m_skeletonController = new SkeletonController();
-
     FileDialog::Create();
 }
 AppMain::~AppMain()
@@ -68,6 +66,14 @@ AppMain::~AppMain()
 
     delete m_webcamController;
 
+    if (m_skeletonController != nullptr)
+    {
+        delete m_skeletonController;
+    }
+    if (m_modelController != nullptr)
+    {
+        delete m_modelController;
+    }
     if (m_textureEditor != nullptr)
     {
         delete m_textureEditor;
@@ -84,7 +90,12 @@ void AppMain::New()
     {
         delete m_textureEditor;
     }    
+    if (m_skeletonController != nullptr)
+    {
+        delete m_skeletonController;
+    }
 
+    m_skeletonController = new SkeletonController();
     m_modelController = new ModelController();
     m_textureEditor = new TextureEditor();
     m_filePath = nullptr;
@@ -108,9 +119,14 @@ void AppMain::Open()
             {
                 delete m_textureEditor;
             }
+            if (m_skeletonController != nullptr)
+            {
+                delete m_skeletonController;
+            }
 
             m_modelController = ModelController::Load(zip);
             m_textureEditor = TextureEditor::Load(zip);
+            m_skeletonController = SkeletonController::Load(zip);
         }
         else
         {
@@ -320,6 +336,10 @@ void AppMain::Update(double a_delta)
         ImGui::EndMainMenuBar();
     }
 
+    if (m_skeletonController != nullptr)
+    {
+        m_skeletonController->Update(a_delta);
+    }
     if (m_textureEditor != nullptr)
     {
         m_textureEditor->Update(a_delta, m_skeletonController);

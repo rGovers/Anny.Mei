@@ -9,6 +9,7 @@
 #include "ModelPreview.h"
 #include "PropertyFile.h"
 #include "RenderTexture.h"
+#include "SkeletonController.h"
 #include "Texture.h"
 #include "TriImage.h"
 
@@ -125,6 +126,7 @@ void TextureEditor::Update(double a_delta, SkeletonController* a_skeletonControl
         
     if (m_selectedIndex != -1)
     {
+        ImGui::SetNextWindowSize({ 200, 200 }, ImGuiCond_Appearing);
         if (ImGui::Begin("Texture Editor Toolbox"))
         {
             ImGui::InputInt2("StepXY", (int*)m_stepXY);
@@ -150,6 +152,8 @@ void TextureEditor::Update(double a_delta, SkeletonController* a_skeletonControl
                 const unsigned int vbo = model->GetVBO();
                 const unsigned int ibo = model->GetIBO(); 
 
+                a_skeletonController->SetModel(m_selectedIndex, model);
+
                 glBindBuffer(GL_ARRAY_BUFFER, vbo);
                 glBufferData(GL_ARRAY_BUFFER, vertexCount * sizeof(ModelVertex), modelVerticies, GL_STATIC_DRAW);
 
@@ -168,6 +172,7 @@ void TextureEditor::Update(double a_delta, SkeletonController* a_skeletonControl
         ImGui::End();
     }
 
+    ImGui::SetNextWindowSize({ 250, 600 }, ImGuiCond_Appearing);
     if (ImGui::Begin("Texture Editor Layers"))
     {
         ImGui::BeginChild("Layer Scroll");
@@ -176,7 +181,8 @@ void TextureEditor::Update(double a_delta, SkeletonController* a_skeletonControl
 
         for (int i = 0; i < m_layers->size(); ++i)
         {
-            LayerMeta* layerMeta = m_layers->at(i).Meta;
+            const LayerTexture layerTexture = m_layers->at(i);
+            const LayerMeta* layerMeta = layerTexture.Meta;
 
             if (ImGui::SmallButton("X"))
             {
@@ -189,6 +195,10 @@ void TextureEditor::Update(double a_delta, SkeletonController* a_skeletonControl
             {
                 m_selectedIndex = i;
             }
+
+            ImGui::SameLine();
+
+            ImGui::Image((ImTextureID)layerTexture.TextureData->GetHandle(), { 20, 20 });
         }
 
         if (remove != -1)

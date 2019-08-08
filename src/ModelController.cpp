@@ -26,7 +26,6 @@ void ModelController::DrawModel()
 }
 void ModelController::Update(double a_delta, const WebcamController& a_webcamController)
 {
-    ImGui::SetNextWindowPos({ 10, 10 }, ImGuiCond_Appearing);
     ImGui::SetNextWindowSize({ 660, 520 }, ImGuiCond_Appearing);
     if (ImGui::Begin("Preview"))
     {
@@ -34,7 +33,7 @@ void ModelController::Update(double a_delta, const WebcamController& a_webcamCon
     }
     ImGui::End();
 
-    ImGui::SetNextWindowPos({ 670, 10 }, ImGuiCond_Appearing);
+    ImGui::SetNextWindowSize({ 200, 300 }, ImGuiCond_Appearing);
     if (ImGui::Begin("Options"))
     {
         ImGui::ColorPicker3("Background Color", m_backgroundColor);
