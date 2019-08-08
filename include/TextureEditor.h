@@ -39,6 +39,7 @@ private:
     int                        m_selectedIndex;
     
     unsigned int               m_stepXY[2];   
+    int                        m_vSize[2];
 
     void GenerateTexture(LayerTexture& a_layerTexture) const;
     void GetImageData(PropertyFileProperty& a_property, ZipArchive::Ptr& a_archive);

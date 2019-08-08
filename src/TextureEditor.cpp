@@ -15,7 +15,8 @@
 
 TextureEditor::TextureEditor() : 
     m_selectedIndex(-1),
-    m_stepXY({128, 128})
+    m_stepXY({ 128, 128 }),
+    m_vSize({ 1024, 1024 })
 {
     m_layers = new std::vector<LayerTexture>();
 }
@@ -129,7 +130,8 @@ void TextureEditor::Update(double a_delta, SkeletonController* a_skeletonControl
         ImGui::SetNextWindowSize({ 200, 200 }, ImGuiCond_Appearing);
         if (ImGui::Begin("Texture Editor Toolbox"))
         {
-            ImGui::InputInt2("StepXY", (int*)m_stepXY);
+            ImGui::InputInt2("Step XY", (int*)m_stepXY);
+            ImGui::InputInt2("Voronoi Size", (int*)m_vSize);
 
             if (ImGui::Button("Triangulate", { 200, 20 }))
             {
@@ -140,7 +142,7 @@ void TextureEditor::Update(double a_delta, SkeletonController* a_skeletonControl
                     delete layerTexture.ModelData;
                 }
 
-                TriImage* triImage = new TriImage(layerTexture.Data, m_stepXY[0], m_stepXY[1], layerTexture.Meta->Width, layerTexture.Meta->Height, 0.1f);
+                TriImage* triImage = new TriImage(layerTexture.Data, m_stepXY[0], m_stepXY[1], layerTexture.Meta->Width, layerTexture.Meta->Height, m_vSize[0], m_vSize[1], 0.1f);
                 
                 const unsigned int indexCount = triImage->GetIndexCount();
                 unsigned int* indicies = triImage->GetIndicies();

@@ -31,7 +31,7 @@ protected:
 
 public:
     TriImage() = delete;
-    TriImage(const unsigned char* a_textureData, int a_stepX, int a_stepY, int a_width, int a_height, float a_alphaThreshold);
+    TriImage(const unsigned char* a_textureData, int a_stepX, int a_stepY, int a_width, int a_height, int a_vWidth, int a_vHeight, float a_alphaThreshold);
     ~TriImage();
 
     unsigned int GetIndexCount() const;

@@ -83,9 +83,8 @@ void SkeletonController::Update(double a_delta)
         }
     }
 
-
     ImGui::SetNextWindowSize({ 200, 600 }, ImGuiCond_Appearing);
-    if (ImGui::Begin("Skeleton Controller"))
+    if (ImGui::Begin("Skeleton Hierarchy"))
     {
         ListObjects(m_baseObject, 0.0f);
 

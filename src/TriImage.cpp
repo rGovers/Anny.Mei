@@ -111,7 +111,7 @@ void TriImage::WindQuad(unsigned int& a_a, unsigned int& a_b, unsigned int& a_c,
     }
 }
 
-TriImage::TriImage(const unsigned char* a_textureData, int a_stepX, int a_stepY, int a_width, int a_height, float a_alphaThreshold)
+TriImage::TriImage(const unsigned char* a_textureData, int a_stepX, int a_stepY, int a_width, int a_height, int a_vWidth, int a_vHeight, float a_alphaThreshold)
 {
     std::list<glm::vec2> verticies;
     std::list<TriImageTriangle> triangles;
@@ -170,14 +170,11 @@ TriImage::TriImage(const unsigned char* a_textureData, int a_stepX, int a_stepY,
     m_verts = new glm::vec2[m_vertCount];
     std::copy(verticies.begin(), verticies.end(), m_verts);
 
-    const unsigned int xRes = 1024;
-    const unsigned int yRes = 1024;
+    Voronoi* voronoi = new Voronoi(m_verts, m_vertCount, a_vWidth, a_vHeight);
 
-    Voronoi* voronoi = new Voronoi(m_verts, m_vertCount, xRes, yRes);
-
-    for (int x = 0; x < xRes; ++x)
+    for (int x = 0; x < a_vWidth; ++x)
     {
-        for (int y = 0; y < yRes; ++y)
+        for (int y = 0; y < a_vHeight; ++y)
         {
             std::vector<int> altIndex;
             altIndex.emplace_back(voronoi->GetIndex(x, y));
@@ -194,8 +191,8 @@ TriImage::TriImage(const unsigned char* a_textureData, int a_stepX, int a_stepY,
                     const int nX = x + xS;
                     const int nY = y + yS;
 
-                    if (nX >= 0 && nX < xRes &&
-                        nY >= 0 && nY < yRes)
+                    if (nX >= 0 && nX < a_vWidth &&
+                        nY >= 0 && nY < a_vHeight)
                     {
                         int nIndex = voronoi->GetIndex(nX, nY);
 
