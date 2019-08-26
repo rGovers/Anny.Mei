@@ -30,8 +30,9 @@ private:
     int                        m_vSize[2];
 
     void GenerateTexture(LayerTexture& a_layerTexture) const;
+    
     void GetImageData(PropertyFileProperty& a_property, ZipArchive::Ptr& a_archive);
-
+    void GetModelData(PropertyFileProperty& a_property, ZipArchive::Ptr& a_archive);
 protected:
 
 public:

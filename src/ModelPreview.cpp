@@ -77,6 +77,10 @@ ModelPreview::~ModelPreview()
     if (SHADER_PROGRAM_REF == 0)
     {
         delete STANDARD_SHADER_PROGRAM;
+        STANDARD_SHADER_PROGRAM = nullptr;
+
+        delete WIREFRAME_SHADER_PROGRAM;
+        WIREFRAME_SHADER_PROGRAM = nullptr;
     }
 }
 
@@ -113,6 +117,8 @@ void ModelPreview::Render() const
 
     glDisable(GL_DEPTH_TEST);
 
+    glBindVertexArray(m_model->GetVAO());
+    
     if (m_solid)
     {
         m_material->Bind();
@@ -121,11 +127,10 @@ void ModelPreview::Render() const
         const int location = glGetUniformLocation(handle, "model");
         glUniformMatrix4fv(location, 1, GL_FALSE, (float*)&transform);
 
-        glBindVertexArray(m_model->GetVAO());
         glDrawElements(GL_TRIANGLES, m_model->GetIndicies(), GL_UNSIGNED_INT, 0);
     }
 
-    if (m_wireframe)
+    if (m_wireframe)   
     {
         const unsigned int handle = WIREFRAME_SHADER_PROGRAM->GetHandle();
 
@@ -134,7 +139,6 @@ void ModelPreview::Render() const
         const int location = glGetUniformLocation(handle, "model");
         glUniformMatrix4fv(location, 1, GL_FALSE, (float*)&transform);
 
-        glBindVertexArray(m_model->GetVAO());
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
         glDrawElements(GL_TRIANGLES, m_model->GetIndicies(), GL_UNSIGNED_INT, 0);
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);

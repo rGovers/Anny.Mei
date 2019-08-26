@@ -233,8 +233,6 @@ void TextureEditor::Update(double a_delta, SkeletonController* a_skeletonControl
 
 void TextureEditor::GetImageData(PropertyFileProperty& a_property, ZipArchive::Ptr& a_archive)
 {
-    const char* name = a_property.GetName();
-
     LayerTexture layerTexture;
     LayerMeta* meta = layerTexture.Meta = new LayerMeta();
 
@@ -246,7 +244,6 @@ void TextureEditor::GetImageData(PropertyFileProperty& a_property, ZipArchive::P
     }
 
     std::shared_ptr<ZipArchiveEntry> entry = a_archive->GetEntry(std::string(meta->Name) + ".imgbin");
-
     if (entry != nullptr)
     {
         char* data;
@@ -258,6 +255,67 @@ void TextureEditor::GetImageData(PropertyFileProperty& a_property, ZipArchive::P
 
     layerTexture.ModelData = nullptr;
     m_layers->emplace_back(layerTexture);
+}
+void TextureEditor::GetModelData(PropertyFileProperty& a_property, ZipArchive::Ptr& a_archive)
+{
+    char* name;
+    int vertexCount;
+    int indexCount;
+
+    for (auto iter = a_property.Values().begin(); iter != a_property.Values().end(); ++iter)
+    {
+        IFSETTOATTVALCPY("name", iter->Name, name, iter->Value)
+        else IFSETTOATTVALI("vertices", iter->Name, vertexCount, iter->Value)
+        else IFSETTOATTVALI("indices", iter->Name, indexCount, iter->Value)
+    }
+
+    if (name != nullptr)
+    {
+        for (int i = 0; i < m_layers->size(); ++i)
+        {
+            LayerTexture layerTexture = m_layers->at(i);
+
+            if (strcmp(layerTexture.Meta->Name, name) == 0)
+            {
+                std::shared_ptr<ZipArchiveEntry> entry = a_archive->GetEntry(std::string(name) + ".mdlbin");
+
+                if (entry != nullptr)
+                {
+                    char* data;
+                    GETFILEDATA(data, entry);
+
+                    const unsigned int vertexSize = sizeof(ModelVertex) * vertexCount;
+                    const unsigned int indexSize = 4 * indexCount;
+
+                    ModelVertex* vertices = (ModelVertex*)data;
+                    // So it was possible for this to overflow and not trigger an exception appparently
+                    unsigned int* indicies = (unsigned int*)(data + vertexSize);
+
+                    Model* model = new Model();
+                    const unsigned int vbo = model->GetVBO();
+                    const unsigned int ibo = model->GetIBO(); 
+
+                    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+                    glBufferData(GL_ARRAY_BUFFER, vertexSize, vertices, GL_STATIC_DRAW);
+
+                    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
+                    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indexSize, indicies, GL_STATIC_DRAW);
+
+                    model->SetIndicies(indexCount);
+
+                    layerTexture.ModelData = new ModelPreview(layerTexture.TextureData, model);
+
+                    (*m_layers)[i] = layerTexture;
+
+                    delete[] data;
+                }
+
+                break;
+            }
+        }
+
+        delete[] name;
+    }
 }
 
 unsigned int TextureEditor::GetLayerCount() const
@@ -274,11 +332,11 @@ TextureEditor* TextureEditor::Load(ZipArchive::Ptr& a_archive)
 {
     TextureEditor* textureEditor = new TextureEditor();
 
-    std::shared_ptr<ZipArchiveEntry> modelEntry = a_archive->GetEntry("model.prop");
-    if (modelEntry != nullptr)
+    std::shared_ptr<ZipArchiveEntry> textureEntry = a_archive->GetEntry("model.prop");
+    if (textureEntry != nullptr)
     {
         char* propertiesData;
-        GETFILEDATA(propertiesData, modelEntry);
+        GETFILEDATA(propertiesData, textureEntry);
 
         PropertyFile* propertiesFile = new PropertyFile(propertiesData);
 
@@ -294,6 +352,30 @@ TextureEditor* TextureEditor::Load(ZipArchive::Ptr& a_archive)
             {
                 textureEditor->GetImageData(*prop, a_archive);
             }            
+        }
+
+        delete propertiesFile;
+        delete[] propertiesData;
+    }
+
+    std::shared_ptr<ZipArchiveEntry> skeletonEntry = a_archive->GetEntry("skeleton.prop");
+    if (skeletonEntry != nullptr)
+    {
+        char* propertiesData;
+        GETFILEDATA(propertiesData, skeletonEntry);
+
+        PropertyFile* propertiesFile = new PropertyFile(propertiesData);
+
+        const std::list<PropertyFileProperty*> properties = propertiesFile->GetProperties();
+
+        for (auto iter = properties.begin(); iter != properties.end(); ++iter)
+        {
+            PropertyFileProperty* prop = *iter;
+
+            if (prop->GetParent() == nullptr)
+            {
+                textureEditor->GetModelData(*prop, a_archive);
+            }
         }
 
         delete propertiesFile;

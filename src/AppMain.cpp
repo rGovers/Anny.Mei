@@ -129,8 +129,8 @@ void AppMain::Open()
             }
 
             m_modelController = ModelController::Load(zip);
-            m_textureEditor = TextureEditor::Load(zip);
             m_skeletonController = SkeletonController::Load(zip);
+            m_textureEditor = TextureEditor::Load(zip);
         }
         else
         {
