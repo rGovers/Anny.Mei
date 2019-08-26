@@ -99,13 +99,14 @@ void TextureEditor::LoadTexture(const char* a_path)
 
     layerTexture.Meta = layerMeta;
     layerTexture.ModelData = nullptr;
+    layerTexture.Update = false;
 
     GenerateTexture(layerTexture);
 
     m_layers->emplace_back(layerTexture);
 }
 
-void TextureEditor::Update(double a_delta, SkeletonController* a_skeletonController)
+void TextureEditor::Update(double a_delta)
 {
     if (m_selectedIndex != -1)
     {
@@ -154,14 +155,14 @@ void TextureEditor::Update(double a_delta, SkeletonController* a_skeletonControl
                 const unsigned int vbo = model->GetVBO();
                 const unsigned int ibo = model->GetIBO(); 
 
-                ModelData modelData;
-                modelData.VertexCount = vertexCount;
-                modelData.IndexCount = indexCount;
-                modelData.Vertices = modelVerticies;
-                modelData.Indices = indicies;
-                modelData.GModel = model;
-
-                a_skeletonController->SetModel(layerTexture.Meta->Name, modelData);
+                // ModelData modelData;
+                // modelData.VertexCount = vertexCount;
+                // modelData.IndexCount = indexCount;
+                // modelData.Vertices = modelVerticies;
+                // modelData.Indices = indicies;
+                // modelData.GModel = model;
+// 
+                // a_skeletonController->SetModel(layerTexture.Meta->Name, modelData);
 
                 glBindBuffer(GL_ARRAY_BUFFER, vbo);
                 glBufferData(GL_ARRAY_BUFFER, vertexCount * sizeof(ModelVertex), modelVerticies, GL_STATIC_DRAW);
@@ -171,7 +172,11 @@ void TextureEditor::Update(double a_delta, SkeletonController* a_skeletonControl
 
                 model->SetIndicies(indexCount);
 
+                layerTexture.Update = true;
                 layerTexture.ModelData = new ModelPreview(layerTexture.TextureData, model);
+                layerTexture.Indices = indicies;
+                layerTexture.Vertices = modelVerticies;
+                layerTexture.VertexCount = vertexCount;
 
                 (*m_layers)[m_selectedIndex] = layerTexture;
 
@@ -254,6 +259,8 @@ void TextureEditor::GetImageData(PropertyFileProperty& a_property, ZipArchive::P
     }
 
     layerTexture.ModelData = nullptr;
+    layerTexture.Update = false;
+
     m_layers->emplace_back(layerTexture);
 }
 void TextureEditor::GetModelData(PropertyFileProperty& a_property, ZipArchive::Ptr& a_archive)
@@ -303,6 +310,7 @@ void TextureEditor::GetModelData(PropertyFileProperty& a_property, ZipArchive::P
 
                     model->SetIndicies(indexCount);
 
+                    layerTexture.Update = true;
                     layerTexture.ModelData = new ModelPreview(layerTexture.TextureData, model);
 
                     (*m_layers)[i] = layerTexture;
@@ -422,4 +430,31 @@ std::istream* TextureEditor::SaveLayer(unsigned int a_index) const
     IMemoryStream* memoryStream = new IMemoryStream((char*)layerTexture.Data, size);
 
     return memoryStream;
+}
+
+void TextureEditor::SyncModels(SkeletonController* a_skeletonController) const
+{
+    ModelData modelData;
+
+    for (int i = 0; i < m_layers->size(); ++i)
+    {
+        LayerTexture layerTexture = m_layers->at(i);
+
+        if (layerTexture.Update)
+        {
+            Model* model = layerTexture.ModelData->GetModel();
+
+            modelData.VertexCount = layerTexture.VertexCount;
+            modelData.IndexCount = model->GetIndicies();
+            modelData.Vertices = layerTexture.Vertices;
+            modelData.Indices = layerTexture.Indices;
+            modelData.GModel = model;
+
+            a_skeletonController->SetModel(layerTexture.Meta->Name, modelData);
+
+            layerTexture.Update = false;
+
+            (*m_layers)[i] = layerTexture;
+        }
+    }
 }

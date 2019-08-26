@@ -1,5 +1,8 @@
 #include "SkeletonController.h"
 
+#include <list>
+#include <string>
+
 #include "imgui.h"
 #include "MemoryStream.h"
 #include "Models/Model.h"

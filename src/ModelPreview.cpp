@@ -89,6 +89,11 @@ RenderTexture* ModelPreview::GetRenderTexture() const
     return m_renderTexture;
 }
 
+Model* ModelPreview::GetModel() const
+{
+    return m_model;
+}
+
 void ModelPreview::Update()
 {
     if (ImGui::BeginMenuBar())

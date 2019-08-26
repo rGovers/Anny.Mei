@@ -28,6 +28,8 @@ public:
 
     RenderTexture* GetRenderTexture() const;
 
+    Model* GetModel() const;
+
     void Update();
     void Render() const; 
 };

@@ -373,7 +373,8 @@ void AppMain::Update(double a_delta)
     }
     if (m_textureEditor != nullptr)
     {
-        m_textureEditor->Update(a_delta, m_skeletonController);
+        m_textureEditor->Update(a_delta);
+        m_textureEditor->SyncModels(m_skeletonController);
     }
     if (m_modelController != nullptr)
     {
