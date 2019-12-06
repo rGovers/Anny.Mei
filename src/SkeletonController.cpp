@@ -43,6 +43,34 @@ void SkeletonController::ListObjects(Object* a_object, int& a_node)
     
     ImGui::Selectable(name, &selected);
 
+    if (ImGui::BeginPopupContextItem())
+    {
+        if (ImGui::MenuItem("Add Object"))
+        {
+            Object* object = new Object();
+            object->SetParent(a_object);
+        }
+
+        if (a_object != m_baseObject)
+        {
+            if (ImGui::MenuItem("Remove Object"))
+            {
+                delete a_object;
+
+                ImGui::EndPopup();
+
+                if (open)
+                {
+                    ImGui::TreePop();
+                }
+
+                return;
+            }
+        }
+        
+        ImGui::EndPopup();
+    }
+
     if (selected)
     {
         m_selectedObject = a_object;
@@ -83,22 +111,6 @@ void SkeletonController::Update(double a_delta)
             ImGui::InputText("Name", buffer, BUFFER_SIZE);
 
             m_selectedObject->SetTrueName(buffer);
-
-            if (ImGui::Button("Add Child Object"))
-            {
-                Object* object = new Object();
-                object->SetParent(m_selectedObject);
-            }
-
-            if (m_selectedObject != m_baseObject)
-            {
-                if (ImGui::Button("Remove Object"))
-                {
-                    delete m_selectedObject;
-
-                    m_selectedObject = nullptr;
-                }
-            }
 
             ImGui::End();
         }
