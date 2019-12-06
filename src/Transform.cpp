@@ -52,13 +52,26 @@ glm::vec3& Transform::Translation()
 {
     return m_translation;
 }
+glm::fquat& Transform::Rotation()
+{
+    return m_rotation;
+}
 glm::vec3& Transform::Scale()
 {
     return m_scale;
 }
-glm::fquat& Transform::Rotation()
+
+void Transform::SetTranslation(const glm::vec3& a_translation)
 {
-    return m_rotation;
+    m_translation = a_translation;
+}
+void Transform::SetRotation(const glm::fquat& a_rotation)
+{
+    m_rotation = a_rotation;
+}
+void Transform::SetScale(const glm::vec3& a_scale)
+{
+    m_scale = a_scale;
 }
 
 glm::mat4 Transform::GetRotationMatrix() const

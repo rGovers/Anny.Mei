@@ -8,6 +8,7 @@
 #include "Models/Model.h"
 #include "Object.h"
 #include "PropertyFile.h"
+#include "Transform.h"
 
 SkeletonController::SkeletonController() :
     m_baseObject(new Object()),
@@ -39,6 +40,10 @@ void SkeletonController::ListObjects(Object* a_object, int& a_node)
     {
         open = ImGui::TreeNode((void*)a_node, "");
         ImGui::SameLine();
+    }
+    else
+    {
+        ImGui::TreeAdvanceToLabelPos();
     }
     
     ImGui::Selectable(name, &selected);
@@ -110,7 +115,23 @@ void SkeletonController::Update(double a_delta)
 
             ImGui::InputText("Name", buffer, BUFFER_SIZE);
 
+            ImGui::Separator();
+
+            Transform* transform = m_selectedObject->GetTransform();
+
+            ImGui::InputFloat3("Translation", (float*)&transform->Translation(), 4);
+
+            glm::fquat quat = transform->Rotation();
+            ImGui::InputFloat4("Rotation", (float*)&quat, 4);
+            transform->SetRotation(glm::normalize(quat));
+
+            ImGui::InputFloat3("Scale", (float*)&transform->Scale(), 4);
+
             m_selectedObject->SetTrueName(buffer);
+
+            ImGui::Separator();
+
+            m_selectedObject->UpdateComponentUI();
 
             ImGui::End();
         }

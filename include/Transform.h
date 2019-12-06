@@ -25,11 +25,15 @@ public:
 
     std::list<Transform*> GetChildren() const;
 
-    inline glm::vec3& Translation();
-    inline glm::vec3& Scale();
-    inline glm::quat& Rotation();
+    glm::vec3& Translation();
+    glm::fquat& Rotation();
+    glm::vec3& Scale();
 
-    inline glm::mat4 GetRotationMatrix() const;
+    void SetTranslation(const glm::vec3& a_translation);
+    void SetRotation(const glm::fquat& a_rotation);
+    void SetScale(const glm::vec3& a_scale);
+
+    glm::mat4 GetRotationMatrix() const;
 
     glm::mat4 ToMatrix() const;
 };

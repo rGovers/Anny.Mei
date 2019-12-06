@@ -1,18 +1,20 @@
 #include "Object.h"
 
 #include <algorithm>
-#include <iostream>
 #include <string.h>
 
+#include "Components/Renderer.h"
+#include "imgui.h"
 #include "Transform.h"
 
 std::map<std::string, Object::ID>* Object::OBJECT_NAMES = nullptr;
 
 Object::Object() : 
+    m_name(nullptr),
+    m_trueName(nullptr),
     m_parent(nullptr),
     m_transform(new Transform()),
-    m_name(nullptr),
-    m_trueName(nullptr)
+    m_windowOpen(false)
 {
     if (OBJECT_NAMES == nullptr)
     {
@@ -26,7 +28,7 @@ Object::~Object()
     delete m_transform;
 
     auto iter = OBJECT_NAMES->find(m_trueName);
-    
+
     if (iter != OBJECT_NAMES->end())
     {
         if (--iter->second.Objects <= 0)
@@ -45,6 +47,11 @@ Object::~Object()
         (*iter)->m_parent = nullptr;
 
         delete *iter;
+    }
+
+    for (auto iter = m_components.begin(); iter != m_components.end(); ++iter)
+    {
+        delete iter->Comp;
     }
 }
 
@@ -119,7 +126,6 @@ void Object::SetTrueName(const char* a_trueName)
             strcpy(m_trueName, a_trueName);
         
             auto iter = OBJECT_NAMES->find(m_trueName);
-            std::cout << std::to_string(OBJECT_NAMES->size()) << std::endl;
 
             if (iter == OBJECT_NAMES->end())
             {
@@ -153,4 +159,60 @@ const char* Object::GetTrueName() const
 const char* Object::GetName() const
 {
     return m_name;
+}
+
+void Object::RemoveComponent(Component* a_component)
+{
+    for (auto iter = m_components.begin(); iter != m_components.end(); ++iter)
+    {
+        if (iter->Comp = a_component)
+        {
+            m_components.erase(iter);
+
+            return;
+        }
+    }
+}
+
+void Object::UpdateComponentUI()
+{
+    if (ImGui::Button("Add Component"))
+    {
+        m_windowOpen = !m_windowOpen;
+    }
+
+    if (m_windowOpen)
+    {
+        ImGui::ListBoxHeader("");
+
+        Component* component = nullptr;
+
+        if (ImGui::Selectable("Renderer"))
+        {
+            component = new Renderer(this);
+        }
+
+        if (component != nullptr)
+        {
+            m_windowOpen = false;
+
+            m_components.emplace_back(ComponentControl { true, component });
+        }
+
+        ImGui::ListBoxFooter();
+    }
+
+    int index = 0;
+
+    for (auto iter = m_components.begin(); iter != m_components.end(); ++iter)
+    {
+        if (ImGui::TreeNode((void*)index, iter->Comp->ComponentName()))
+        {
+            iter->Comp->UpdateGUI();
+
+            ImGui::TreePop();
+        }
+
+        ++index;
+    }
 }
