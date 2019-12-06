@@ -26,7 +26,7 @@ private:
     
     Object*                          m_selectedObject;
 
-    void ListObjects(Object* a_object, float a_offset);
+    void ListObjects(Object* a_object, int& a_node);
 
 protected:
 

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <map>
 #include <list>
 
 class Transform;
@@ -7,13 +8,21 @@ class Transform;
 class Object
 {
 private:
-    char*              m_name;
+    struct ID
+    {
+        long ID;
+        long Objects;
+    };
 
-    Object*            m_parent;
+    static std::map<std::string, ID>* OBJECT_NAMES;
 
-    std::list<Object*> m_children;
+    char*                              m_name;
+    char*                              m_trueName;
 
-    Transform*         m_transform;
+    Object*                            m_parent;
+    std::list<Object*>                 m_children;
+
+    Transform*                         m_transform;
 protected:
 
 public:
@@ -27,6 +36,7 @@ public:
 
     std::list<Object*> GetChildren() const;
 
-    void SetName(const char* a_name);
+    void SetTrueName(const char* a_trueName);
+    const char* GetTrueName() const;
     const char* GetName() const;
 };

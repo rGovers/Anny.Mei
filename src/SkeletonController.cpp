@@ -13,7 +13,7 @@ SkeletonController::SkeletonController() :
     m_baseObject(new Object()),
     m_selectedObject(nullptr)
 {
-    m_baseObject->SetName("Root Object");
+    m_baseObject->SetTrueName("Root Object");
 }
 
 SkeletonController::~SkeletonController()
@@ -21,10 +21,8 @@ SkeletonController::~SkeletonController()
     delete m_baseObject;
 }
 
-void SkeletonController::ListObjects(Object* a_object, float a_offset)
+void SkeletonController::ListObjects(Object* a_object, int& a_node)
 {
-    ImGui::SetCursorPosX(a_offset);
-
     const char* name = a_object->GetName();
 
     if (name == nullptr || name[0] == 0)
@@ -32,17 +30,35 @@ void SkeletonController::ListObjects(Object* a_object, float a_offset)
         name = "NULL";
     }
 
-    if (ImGui::Button(name))
+    const std::list<Object*> children = a_object->GetChildren();
+
+    bool open = false;
+    bool selected = false;
+
+    if (children.size() > 0)
+    {
+        open = ImGui::TreeNode((void*)a_node, "");
+        ImGui::SameLine();
+    }
+    
+    ImGui::Selectable(name, &selected);
+
+    if (selected)
     {
         m_selectedObject = a_object;
     }
 
-    const std::list<Object*> children = a_object->GetChildren();
+    ++a_node;
 
-    for (auto iter = children.begin(); iter != children.end(); ++iter)
+    if (open)
     {
-        ListObjects(*iter, a_offset + 10.0f);
-    }
+        for (auto iter = children.begin(); iter != children.end(); ++iter)
+        {
+            ListObjects(*iter, a_node);
+        }
+
+        ImGui::TreePop();
+    }   
 }
 
 void SkeletonController::Update(double a_delta)
@@ -57,16 +73,16 @@ void SkeletonController::Update(double a_delta)
             char* buffer = new char[BUFFER_SIZE];
             buffer[0] = 0;
             
-            const char* name = m_selectedObject->GetName();
+            const char* name = m_selectedObject->GetTrueName();
 
             if (name != nullptr)
             {
-                strcpy(buffer, m_selectedObject->GetName());
+                strcpy(buffer, name);
             }
 
             ImGui::InputText("Name", buffer, BUFFER_SIZE);
 
-            m_selectedObject->SetName(buffer);
+            m_selectedObject->SetTrueName(buffer);
 
             if (ImGui::Button("Add Child Object"))
             {
@@ -91,7 +107,9 @@ void SkeletonController::Update(double a_delta)
     ImGui::SetNextWindowSize({ 200, 600 }, ImGuiCond_Appearing);
     if (ImGui::Begin("Skeleton Hierarchy"))
     {
-        ListObjects(m_baseObject, 0.0f);
+        int node = 0;
+
+        ListObjects(m_baseObject, node);
 
         ImGui::End();
     }
