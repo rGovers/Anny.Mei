@@ -168,7 +168,7 @@ char* PropertyFile::ToString() const
 
         if (prop->GetParent() == nullptr)
         {
-            data += "<";
+            data += "\n<";
             data += prop->GetName();
 
             for (auto valIter = prop->Values().begin(); valIter != prop->Values().end(); ++valIter)
@@ -180,13 +180,14 @@ char* PropertyFile::ToString() const
                 data += "\"";
             }
 
-            data += ">\n";
+            data += ">";
 
             ToString(*prop, data);
         }
     }
 
     char* dataC = new char[data.length() + 1];
+    memset(dataC, 0, data.length() + 1);
     strcpy(dataC, data.c_str());
 
     return dataC;
@@ -208,4 +209,9 @@ PropertyFileProperty* PropertyFile::InsertProperty()
 void PropertyFile::RemoveProperty(PropertyFileProperty* a_property)
 {
     m_properties->remove(a_property);
+}
+
+size_t PropertyFile::PropertyCount() const
+{
+    return m_properties->size();
 }

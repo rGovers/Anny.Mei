@@ -1,6 +1,7 @@
 #include "TriImage.h"
 
 #include <algorithm>
+#include <iostream>
 #include <list>
 #include <vector>
 
@@ -120,11 +121,11 @@ TriImage::TriImage(const unsigned char* a_textureData, int a_stepX, int a_stepY,
     {
         for (int y = 0; y < a_height; ++y)
         {
-            const int index = (x + y * a_width) * 4;
+            const int index = (x + y * a_width) * 4 + 3;
 
             if (a_textureData[index] > a_alphaThreshold * 255)
             {
-                if (x == 0 || y == 0 || (x % a_stepX == 0 && y % a_stepY == 0))
+                if ((x % a_stepX == 0 && y % a_stepY == 0))
                 {
                     const glm::vec2 pos = { x / (float)a_width, y / (float)a_height };
 
@@ -147,7 +148,7 @@ TriImage::TriImage(const unsigned char* a_textureData, int a_stepX, int a_stepY,
                         const int nX = x + xS;
                         const int nY = y + yS;
 
-                        const int nIndex = (nX + nY * a_width) * 4;
+                        const int nIndex = (nX + nY * a_width) * 4 + 3;
 
                         if (a_textureData[nIndex] <= a_alphaThreshold)
                         {
@@ -229,7 +230,7 @@ TriImage::TriImage(const unsigned char* a_textureData, int a_stepX, int a_stepY,
                     triangles.emplace_back(tri);
                 }
             }
-            else if (count > 3)
+            else if (count == 4)
             {
                 unsigned int indA = altIndex[0];
                 unsigned int indB = altIndex[1];

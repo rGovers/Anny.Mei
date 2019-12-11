@@ -12,12 +12,12 @@
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
+#include "miniz.h"
 #include "ModelController.h"
-#include "SkeletonController.h"
+#include "SkeletonEditor.h"
 #include "Texture.h"
 #include "TextureEditor.h"
 #include "WebcamController.h"
-#include "ZipLib/ZipFile.h"
 
 void GLAPIENTRY
 MessageCallback( GLenum a_source,
@@ -38,7 +38,8 @@ AppMain::AppMain(int a_width, int a_height) :
     m_modelController(nullptr),
     m_textureEditor(nullptr),
     m_menuState(new bool(true)),
-    m_filePath(nullptr)
+    m_filePath(nullptr),
+    m_dataStore(nullptr)
 {
     m_webcamController = new WebcamController();
 
@@ -67,9 +68,9 @@ AppMain::~AppMain()
 
     delete m_webcamController;
 
-    if (m_skeletonController != nullptr)
+    if (m_skeletonEditor != nullptr)
     {
-        delete m_skeletonController;
+        delete m_skeletonEditor;
     }
     if (m_modelController != nullptr)
     {
@@ -91,14 +92,21 @@ void AppMain::New()
     {
         delete m_textureEditor;
     }    
-    if (m_skeletonController != nullptr)
+    if (m_skeletonEditor != nullptr)
     {
-        delete m_skeletonController;
+        delete m_skeletonEditor;
     }
 
-    m_skeletonController = new SkeletonController();
+    if (m_dataStore != nullptr)
+    {
+        delete m_dataStore;
+    }
+
+    m_dataStore = new DataStore();
+
+    m_skeletonEditor = new SkeletonEditor();
     m_modelController = new ModelController();
-    m_textureEditor = new TextureEditor();
+    m_textureEditor = new TextureEditor(m_dataStore);
     m_filePath = nullptr;
 }
 void AppMain::Open()
@@ -113,24 +121,49 @@ void AppMain::Open()
 
         if (m_filePath[0] != 0)
         {
-            ZipArchive::Ptr zip = ZipFile::Open(m_filePath);
+            mz_zip_archive zip;
+            memset(&zip, 0, sizeof(zip));
 
-            if (m_modelController != nullptr)
+            if (mz_zip_reader_init_file(&zip, m_filePath, 0))
             {
-                delete m_modelController;
-            }
-            if (m_textureEditor != nullptr)
-            {
-                delete m_textureEditor;
-            }
-            if (m_skeletonController != nullptr)
-            {
-                delete m_skeletonController;
-            }
+                if (m_modelController != nullptr)
+                {
+                    delete m_modelController;
+                }
+                if (m_textureEditor != nullptr)
+                {
+                    delete m_textureEditor;
+                }
+                if (m_skeletonEditor != nullptr)
+                {
+                    delete m_skeletonEditor;
+                }
 
-            m_modelController = ModelController::Load(zip);
-            m_skeletonController = SkeletonController::Load(zip);
-            m_textureEditor = TextureEditor::Load(zip);
+                if (m_dataStore != nullptr)
+                {
+                    delete m_dataStore;
+                }
+
+                m_dataStore = new DataStore();
+
+                m_modelController = ModelController::Load(zip);
+                if (m_modelController == nullptr)
+                {
+                    m_modelController = new ModelController();
+                }
+                m_skeletonEditor = SkeletonEditor::Load(zip);
+                if (m_skeletonEditor == nullptr)
+                {
+                    m_skeletonEditor = new SkeletonEditor();
+                }
+                m_textureEditor = TextureEditor::Load(zip, m_dataStore);
+                if (m_textureEditor == nullptr)
+                {
+                    m_textureEditor = new TextureEditor(m_dataStore);
+                }
+            } 
+
+            mz_zip_reader_end(&zip);
         }
         else
         {
@@ -142,104 +175,16 @@ void AppMain::Open()
 }
 void AppMain::Save() const
 {
-    std::fstream fstream;
-    fstream.open(m_filePath, std::ios_base::openmode::_S_bin | std::ios_base::openmode::_S_out);
-    if (fstream.good())
+    mz_zip_archive zip;
+    memset(&zip, 0, sizeof(zip));
+
+    if (mz_zip_writer_init_file(&zip, m_filePath, 0))
     {
-        ZipArchive::Ptr zipArchive = ZipArchive::Create();
-
-        std::istream* mControllerStream = nullptr;
-        std::istream* mEditorStream = nullptr;
-        std::istream* mSkeletonStream = nullptr;
-        std::list<std::istream*> imageStreams;
-        std::list<std::istream*> modelStreams;
-
-        if (m_textureEditor != nullptr)
-        {
-            mEditorStream = m_textureEditor->SaveToStream();
-
-            if (mEditorStream != nullptr)
-            {
-                std::shared_ptr<ZipArchiveEntry> entryptr = zipArchive->CreateEntry("model.prop");
-                entryptr->SetCompressionStream(*mEditorStream);
-
-                const unsigned int size = m_textureEditor->GetLayerCount();
-
-                for (unsigned int i = 0; i < size; ++i)
-                {
-                    const LayerMeta layerMeta = m_textureEditor->GetLayerMeta(i);
-
-                    std::istream* stream = m_textureEditor->SaveLayer(i);
-
-                    std::string fileName = std::string(layerMeta.Name) + ".imgbin";
-
-                    entryptr = zipArchive->CreateEntry(fileName);
-                    entryptr->SetCompressionStream(*stream);
-
-                    imageStreams.emplace_back(stream);
-                }
-            }
-        }
-        if (m_modelController != nullptr)
-        {
-            std::shared_ptr<ZipArchiveEntry> entryptr = zipArchive->CreateEntry("main.prop");
-
-            mControllerStream = m_modelController->SaveToStream();
-            entryptr->SetCompressionStream(*mControllerStream);
-        }
-        if (m_skeletonController != nullptr)
-        {
-            std::shared_ptr<ZipArchiveEntry> entryptr = zipArchive->CreateEntry("skeleton.prop");
-
-            mSkeletonStream = m_skeletonController->SaveToStream();
-            entryptr->SetCompressionStream(*mSkeletonStream);
-
-            const int size = m_skeletonController->GetModelCount();
-
-            for (int i = 0; i < size; ++i)
-            {
-                const char* name = m_skeletonController->GetModelName(i);
-
-                std::string fileName = std::string(name) + ".mdlbin";
-
-                std::istream* stream = m_skeletonController->SaveModel(name);
-
-                if (stream != nullptr)
-                {
-                    entryptr = zipArchive->CreateEntry(fileName);
-                    entryptr->SetCompressionStream(*stream);
-
-                    modelStreams.emplace_back(stream);
-                }   
-            }
-        }
-
-        zipArchive->WriteToStream(fstream);
-
-        fstream.close();
-
-        if (mControllerStream != nullptr)
-        {
-            delete mControllerStream;
-        }
-        if (mEditorStream != nullptr)
-        {
-            delete mEditorStream;
-
-            for (auto iter = imageStreams.begin(); iter != imageStreams.end(); ++iter)
-            {
-                delete *iter;
-            }
-        }
-        if (mSkeletonStream != nullptr)
-        {
-            delete mSkeletonStream;
-
-            for (auto iter = modelStreams.begin(); iter != modelStreams.end(); ++iter)
-            {
-                delete *iter;
-            }
-        }
+        m_modelController->Save(zip);
+        m_textureEditor->Save(zip);
+        
+        mz_zip_writer_finalize_archive(&zip);
+        mz_zip_writer_end(&zip);
     }
 }
 void AppMain::SaveAs()
@@ -251,11 +196,11 @@ void AppMain::SaveAs()
     {
         const std::string str = std::string("Anny.Mei [") + m_filePath + "]";
         glfwSetWindowTitle(GetWindow(), str.c_str());
+
+        Save();
     }
 
     delete[] filters;
-
-    Save();
 }
 
 void AppMain::Input()
@@ -367,14 +312,13 @@ void AppMain::Update(double a_delta)
         ImGui::EndMainMenuBar();
     }
 
-    if (m_skeletonController != nullptr)
+    if (m_skeletonEditor != nullptr)
     {
-        m_skeletonController->Update(a_delta);
+        m_skeletonEditor->Update(a_delta);
     }
     if (m_textureEditor != nullptr)
     {
         m_textureEditor->Update(a_delta);
-        m_textureEditor->SyncModels(m_skeletonController);
     }
     if (m_modelController != nullptr)
     {

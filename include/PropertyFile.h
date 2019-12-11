@@ -1,7 +1,7 @@
 #pragma once
 
 #include <list>
-#include <ZipLib/ZipArchive.h>
+#include <string>
 
 struct PropertyFileValue
 {
@@ -58,4 +58,6 @@ public:
 
     PropertyFileProperty* InsertProperty();
     void RemoveProperty(PropertyFileProperty* a_property);
+
+    size_t PropertyCount() const;
 };

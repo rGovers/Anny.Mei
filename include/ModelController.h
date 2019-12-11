@@ -1,7 +1,8 @@
 #pragma once
 
 #include <istream>
-#include <ZipLib/ZipArchive.h>
+
+#include "miniz.h"
 
 class WebcamController;
 
@@ -18,6 +19,6 @@ public:
     void DrawModel();
     void Update(double a_delta, const WebcamController& a_webcamController);
 
-    static ModelController* Load(ZipArchive::Ptr& a_archive);
-    std::istream* SaveToStream() const;
+    static ModelController* Load(mz_zip_archive& a_archive);
+    void Save(mz_zip_archive& a_archive) const;
 };

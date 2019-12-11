@@ -2,9 +2,10 @@
 
 #include <istream>
 #include <vector>
-#include <ZipLib/ZipArchive.h>
 
+#include "DataStore.h"
 #include "FileLoaders/ImageLoader.h"
+#include "miniz.h"
 
 class ModelPreview;
 class PropertyFileProperty;
@@ -15,12 +16,9 @@ struct ModelVertex;
 
 struct LayerTexture
 {
-    bool Update;
-    Texture* TextureData;
     ModelPreview* ModelData;
     unsigned char* Data;
     LayerMeta* Meta;
-    unsigned int VertexCount;
     ModelVertex* Vertices;
     unsigned int* Indices;
 };
@@ -29,20 +27,24 @@ class TextureEditor
 {
 private:
     std::vector<LayerTexture>* m_layers;
+    DataStore*                 m_dataStore;
 
     int                        m_selectedIndex;
     
     unsigned int               m_stepXY[2];   
     int                        m_vSize[2];
 
-    void GenerateTexture(LayerTexture& a_layerTexture) const;
+    Texture* GenerateTexture(LayerTexture& a_layerTexture) const;
     
-    void GetImageData(PropertyFileProperty& a_property, ZipArchive::Ptr& a_archive);
-    void GetModelData(PropertyFileProperty& a_property, ZipArchive::Ptr& a_archive);
+    void GetImageData(PropertyFileProperty& a_property, mz_zip_archive& a_archive);
+    void GetModelData(PropertyFileProperty& a_property, mz_zip_archive& a_archive);
+
+    void SaveImageData(mz_zip_archive& a_archive) const;
+    void SaveModelData(mz_zip_archive& a_archive) const;
 protected:
 
 public:
-    TextureEditor();
+    TextureEditor(DataStore* a_dataStore);
     ~TextureEditor();
 
     void Update(double a_delta);
@@ -53,9 +55,6 @@ public:
 
     LayerMeta GetLayerMeta(unsigned int a_index) const;
 
-    static TextureEditor* Load(ZipArchive::Ptr& a_archive);
-    std::istream* SaveToStream() const;
-    std::istream* SaveLayer(unsigned int a_index) const;
-
-    void SyncModels(SkeletonController* a_skeletonController) const;
+    static TextureEditor* Load(mz_zip_archive& a_archive, DataStore* a_dataStore);
+    void Save(mz_zip_archive& a_archive) const;
 };

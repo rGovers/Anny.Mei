@@ -2,23 +2,26 @@
 
 #include "Application.h"
 
+class DataStore;
 class ModelController;
-class SkeletonController;
+class SkeletonEditor;
 class TextureEditor;
 class WebcamController;
 
 class AppMain : public Application
 {
 private:
-    WebcamController*   m_webcamController;
-      
-    ModelController*    m_modelController;
-    TextureEditor*      m_textureEditor;
+    DataStore*        m_dataStore;
 
-    SkeletonController* m_skeletonController;
+    WebcamController* m_webcamController;
+      
+    ModelController*  m_modelController;
+
+    SkeletonEditor*   m_skeletonEditor;
+    TextureEditor*    m_textureEditor;
 
     bool*             m_menuState;
-
+    
     const char*       m_filePath;
 
     void New();

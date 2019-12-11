@@ -41,44 +41,47 @@ void ModelController::Update(double a_delta, const WebcamController& a_webcamCon
     ImGui::End();
 }
 
-ModelController* ModelController::Load(ZipArchive::Ptr& a_archive)
+ModelController* ModelController::Load(mz_zip_archive& a_archive)
 {
     ModelController* modelController = new ModelController();
 
-    std::shared_ptr<ZipArchiveEntry> propertiesEntry = a_archive->GetEntry("main.prop");
+    char* propertiesData = ExtractFileFromArchive("main.prop", a_archive);
 
-    char* propertiesData;
-    GETFILEDATA(propertiesData, propertiesEntry);
-
-    PropertyFile* propertiesFile = new PropertyFile(propertiesData);
-
-    const std::list<PropertyFileProperty*> properties = propertiesFile->GetProperties();
-
-    for (auto iter = properties.begin(); iter != properties.end(); ++iter)
+    if (propertiesData != nullptr)
     {
-        PropertyFileProperty* prop = *iter;
+        PropertyFile* propertiesFile = new PropertyFile(propertiesData);
 
-        const char* name = prop->GetName();
+        const std::list<PropertyFileProperty*> properties = propertiesFile->GetProperties();
 
-        if (strcmp("backcolor", name) == 0)
+        for (auto iter = properties.begin(); iter != properties.end(); ++iter)
         {
-            for (auto valIter = prop->Values().begin(); valIter != prop->Values().end(); ++valIter)
+            PropertyFileProperty* prop = *iter;
+
+            const char* name = prop->GetName();
+
+            if (strcmp("backcolor", name) == 0)
             {
-                IFSETTOATTVALF("r", valIter->Name, modelController->m_backgroundColor[0], valIter->Value)
-                else IFSETTOATTVALF("g", valIter->Name, modelController->m_backgroundColor[1], valIter->Value)
-                else IFSETTOATTVALF("b", valIter->Name, modelController->m_backgroundColor[2], valIter->Value)
+                for (auto valIter = prop->Values().begin(); valIter != prop->Values().end(); ++valIter)
+                {
+                    IFSETTOATTVALF("r", valIter->Name, modelController->m_backgroundColor[0], valIter->Value)
+                    else IFSETTOATTVALF("g", valIter->Name, modelController->m_backgroundColor[1], valIter->Value)
+                    else IFSETTOATTVALF("b", valIter->Name, modelController->m_backgroundColor[2], valIter->Value)
+                }
             }
         }
+
+        delete propertiesFile;
+        mz_free(propertiesData);
+
+        return modelController;
     }
 
-    delete propertiesFile;
-    delete[] propertiesData;
-
-    return modelController;
+    return nullptr;
 }
-std::istream* ModelController::SaveToStream() const
+void ModelController::Save(mz_zip_archive& a_archive) const
 {
     PropertyFile* propertyFile = new PropertyFile();
+
     PropertyFileProperty* prop = propertyFile->InsertProperty();
 
     prop->SetName("backcolor");
@@ -88,9 +91,8 @@ std::istream* ModelController::SaveToStream() const
 
     char* data = propertyFile->ToString();
 
-    IMemoryStream* memStream = new IMemoryStream(data, strlen(data));
+    mz_zip_writer_add_mem(&a_archive, "main.prop", data, strlen(data), MZ_DEFAULT_COMPRESSION);
 
     delete[] data;
-
-    return memStream;
+    delete propertyFile;
 }

@@ -40,11 +40,20 @@ unsigned int Model::GetIBO() const
     return m_buffers[IBO];
 }
 
-void Model::SetIndicies(unsigned int a_indicies)
+void Model::SetVerticiesCount(unsigned int a_verticies)
+{
+    m_verticies = a_verticies;
+}
+unsigned int Model::GetVerticiesCount() const
+{
+    return m_verticies;
+}
+
+void Model::SetIndiciesCount(unsigned int a_indicies)
 {
     m_indicies = a_indicies;
 }
-unsigned int Model::GetIndicies() const
+unsigned int Model::GetIndiciesCount() const
 {
     return m_indicies;
 }

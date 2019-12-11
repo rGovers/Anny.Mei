@@ -2,7 +2,9 @@
 
 #include <istream>
 
-#define GETFILEDATA(dataBuffer, file) { std::istream* stream = file->GetDecompressionStream(); std::size_t len = file->GetSize(); dataBuffer = new char[len]; stream->read(dataBuffer, len); file->CloseDecompressionStream(); }
+#include "miniz.h"
+
+char* ExtractFileFromArchive(const char* a_fileName, mz_zip_archive& a_archive);
 #define IFSETTOATTVAL(aCmp, bCmp, val, attVal) if (strcmp(aCmp, bCmp) == 0) { val = attVal; }
 #define IFSETTOATTVALCPY(aCmp, bCmp, val, attVal) if (strcmp(aCmp, bCmp) == 0) { val = new char[strlen(attVal)]; strcpy(val, attVal); }
 #define IFSETTOATTVALI(aCmp, bCmp, val, attVal) if (strcmp(aCmp, bCmp) == 0) { val = std::stoi(attVal); }

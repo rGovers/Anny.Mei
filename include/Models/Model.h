@@ -3,6 +3,12 @@
 #define GLM_SWIZZLE
 #include <glm/glm.hpp>
 
+enum class e_ModelType
+{
+    Base,
+    Skinned
+};
+
 struct ModelVertex
 {
     glm::vec4 Position;
@@ -19,6 +25,7 @@ private:
     unsigned int  m_vao;
 
     unsigned int  m_indicies;
+    unsigned int  m_verticies;
 protected:
 
 public:
@@ -29,6 +36,9 @@ public:
     unsigned int GetVBO() const;
     unsigned int GetIBO() const;
 
-    void SetIndicies(unsigned int a_indicies);
-    unsigned int GetIndicies() const;
+    void SetVerticiesCount(unsigned int a_verticies);
+    unsigned int GetVerticiesCount() const;
+
+    void SetIndiciesCount(unsigned int a_indicies);
+    unsigned int GetIndiciesCount() const;
 };

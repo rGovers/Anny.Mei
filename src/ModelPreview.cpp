@@ -6,6 +6,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <string.h>
 
+#include "DataStore.h"
 #include "imgui.h"
 #include "Material.h"
 #include "Models/Model.h"
@@ -21,12 +22,16 @@ unsigned int ModelPreview::SHADER_PROGRAM_REF = 0;
 ShaderProgram* ModelPreview::STANDARD_SHADER_PROGRAM = nullptr;
 ShaderProgram* ModelPreview::WIREFRAME_SHADER_PROGRAM = nullptr;
 
-ModelPreview::ModelPreview(Texture* a_texture, Model* a_model) :
-    m_model(a_model),
+ModelPreview::ModelPreview(const char* a_textureName, const char* a_modelName, DataStore* a_dataStore) :
+    m_dataStore(a_dataStore),
+    m_textureName(a_textureName),
+    m_modelName(a_modelName),
     m_solid(true),
-    m_wireframe(false)
+    m_wireframe(true)
 {
-    m_renderTexture = new RenderTexture(a_texture->GetWidth(), a_texture->GetHeight(), GL_RGBA);
+    Texture* tex = m_dataStore->GetTexture(m_textureName);
+
+    m_renderTexture = new RenderTexture(tex->GetWidth(), tex->GetHeight(), GL_RGBA);
 
     ++SHADER_PROGRAM_REF;
 
@@ -63,14 +68,14 @@ ModelPreview::ModelPreview(Texture* a_texture, Model* a_model) :
     }
 
     m_material = new Material(STANDARD_SHADER_PROGRAM);
-    m_material->AddTexture("MainTex", a_texture);
+    m_material->AddTexture("MainTex", tex);
 }
 
 ModelPreview::~ModelPreview()
 {
     delete m_material;
     delete m_renderTexture;
-    delete m_model;
+    delete m_dataStore->GetModel(m_modelName, e_ModelType::Base);
 
     --SHADER_PROGRAM_REF;
 
@@ -87,11 +92,6 @@ ModelPreview::~ModelPreview()
 RenderTexture* ModelPreview::GetRenderTexture() const
 {
     return m_renderTexture;
-}
-
-Model* ModelPreview::GetModel() const
-{
-    return m_model;
 }
 
 void ModelPreview::Update()
@@ -122,31 +122,36 @@ void ModelPreview::Render() const
 
     glDisable(GL_DEPTH_TEST);
 
-    glBindVertexArray(m_model->GetVAO());
-    
-    if (m_solid)
+    const Model* model = m_dataStore->GetModel(m_modelName, e_ModelType::Base);
+
+    if (model != nullptr)
     {
-        m_material->Bind();
-        const unsigned int handle = STANDARD_SHADER_PROGRAM->GetHandle();
+        glBindVertexArray(model->GetVAO());
         
-        const int location = glGetUniformLocation(handle, "model");
-        glUniformMatrix4fv(location, 1, GL_FALSE, (float*)&transform);
-
-        glDrawElements(GL_TRIANGLES, m_model->GetIndicies(), GL_UNSIGNED_INT, 0);
-    }
-
-    if (m_wireframe)   
-    {
-        const unsigned int handle = WIREFRAME_SHADER_PROGRAM->GetHandle();
-
-        glUseProgram(handle);
-
-        const int location = glGetUniformLocation(handle, "model");
-        glUniformMatrix4fv(location, 1, GL_FALSE, (float*)&transform);
-
-        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-        glDrawElements(GL_TRIANGLES, m_model->GetIndicies(), GL_UNSIGNED_INT, 0);
-        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+        if (m_solid)
+        {
+            m_material->Bind();
+            const unsigned int handle = STANDARD_SHADER_PROGRAM->GetHandle();
+            
+            const int location = glGetUniformLocation(handle, "model");
+            glUniformMatrix4fv(location, 1, GL_FALSE, (float*)&transform);
+    
+            glDrawElements(GL_TRIANGLES, model->GetIndiciesCount(), GL_UNSIGNED_INT, 0);
+        }
+    
+        if (m_wireframe)   
+        {
+            const unsigned int handle = WIREFRAME_SHADER_PROGRAM->GetHandle();
+    
+            glUseProgram(handle);
+    
+            const int location = glGetUniformLocation(handle, "model");
+            glUniformMatrix4fv(location, 1, GL_FALSE, (float*)&transform);
+    
+            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+            glDrawElements(GL_TRIANGLES, model->GetIndiciesCount(), GL_UNSIGNED_INT, 0);
+            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+        }
     }
 
     glEnable(GL_DEPTH_TEST);

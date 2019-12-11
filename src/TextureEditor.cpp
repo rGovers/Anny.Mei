@@ -9,14 +9,15 @@
 #include "ModelPreview.h"
 #include "PropertyFile.h"
 #include "RenderTexture.h"
-#include "SkeletonController.h"
+#include "SkeletonEditor.h"
 #include "Texture.h"
 #include "TriImage.h"
 
-TextureEditor::TextureEditor() : 
+TextureEditor::TextureEditor(DataStore* a_dataStore) : 
     m_selectedIndex(-1),
-    m_stepXY({ 128, 128 }),
-    m_vSize({ 1024, 1024 })
+    m_stepXY({ 64, 64 }),
+    m_vSize({ 512, 512 }),
+    m_dataStore(a_dataStore)
 {
     m_layers = new std::vector<LayerTexture>();
 }
@@ -24,6 +25,9 @@ TextureEditor::~TextureEditor()
 {
     for (auto iter = m_layers->begin(); iter != m_layers->end(); ++iter)
     {
+        delete m_dataStore->GetTexture(iter->Meta->Name);
+        m_dataStore->RemoveTexture(iter->Meta->Name);
+
         if (iter->Meta != nullptr)
         {
             delete[] iter->Meta->Name;
@@ -34,23 +38,21 @@ TextureEditor::~TextureEditor()
         {
             delete[] iter->Data;
         }
-        if (iter->TextureData != nullptr)
-        {
-            delete iter->TextureData;
-        }
     }
     delete m_layers;
 }
 
-void TextureEditor::GenerateTexture(LayerTexture& a_layerTexture) const
+Texture* TextureEditor::GenerateTexture(LayerTexture& a_layerTexture) const
 {
     const LayerMeta* layerMeta = a_layerTexture.Meta;
 
-    a_layerTexture.TextureData = new Texture(layerMeta->Width, layerMeta->Height, GL_RGBA);
-    const unsigned int handle = a_layerTexture.TextureData->GetHandle();
+    Texture* texture = new Texture(layerMeta->Width, layerMeta->Height, GL_RGBA);
+    const unsigned int handle = texture->GetHandle();
 
     glBindTexture(GL_TEXTURE_2D, handle);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, layerMeta->Width, layerMeta->Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, a_layerTexture.Data);
+
+    return texture;
 }
 
 void TextureEditor::LoadTexture(const char* a_path)
@@ -99,9 +101,8 @@ void TextureEditor::LoadTexture(const char* a_path)
 
     layerTexture.Meta = layerMeta;
     layerTexture.ModelData = nullptr;
-    layerTexture.Update = false;
 
-    GenerateTexture(layerTexture);
+    m_dataStore->AddTexture(layerMeta->Name, GenerateTexture(layerTexture));
 
     m_layers->emplace_back(layerTexture);
 }
@@ -155,28 +156,20 @@ void TextureEditor::Update(double a_delta)
                 const unsigned int vbo = model->GetVBO();
                 const unsigned int ibo = model->GetIBO(); 
 
-                // ModelData modelData;
-                // modelData.VertexCount = vertexCount;
-                // modelData.IndexCount = indexCount;
-                // modelData.Vertices = modelVerticies;
-                // modelData.Indices = indicies;
-                // modelData.GModel = model;
-// 
-                // a_skeletonController->SetModel(layerTexture.Meta->Name, modelData);
-
                 glBindBuffer(GL_ARRAY_BUFFER, vbo);
                 glBufferData(GL_ARRAY_BUFFER, vertexCount * sizeof(ModelVertex), modelVerticies, GL_STATIC_DRAW);
 
                 glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
-                glBufferData(GL_ELEMENT_ARRAY_BUFFER, indexCount * sizeof(int), indicies, GL_STATIC_DRAW);
+                glBufferData(GL_ELEMENT_ARRAY_BUFFER, indexCount * sizeof(unsigned int), indicies, GL_STATIC_DRAW);
 
-                model->SetIndicies(indexCount);
+                model->SetIndiciesCount(indexCount);
+                model->SetVerticiesCount(vertexCount);
 
-                layerTexture.Update = true;
-                layerTexture.ModelData = new ModelPreview(layerTexture.TextureData, model);
+                m_dataStore->AddModel(layerTexture.Meta->Name, e_ModelType::Base, model);
+
+                layerTexture.ModelData = new ModelPreview(layerTexture.Meta->Name, layerTexture.Meta->Name, m_dataStore);
                 layerTexture.Indices = indicies;
                 layerTexture.Vertices = modelVerticies;
-                layerTexture.VertexCount = vertexCount;
 
                 (*m_layers)[m_selectedIndex] = layerTexture;
 
@@ -210,33 +203,35 @@ void TextureEditor::Update(double a_delta)
                 m_selectedIndex = i;
             }
 
-            ImGui::SameLine();
+            const Texture* tex = m_dataStore->GetTexture(layerTexture.Meta->Name);
 
-            ImGui::Image((ImTextureID)layerTexture.TextureData->GetHandle(), { 20, 20 });
+            if (tex != nullptr)
+            {
+                ImGui::SameLine();
+                ImGui::Image((ImTextureID)tex->GetHandle(), { 20, 20 });
+            }
         }
 
         if (remove != -1)
         {
             auto iter = m_layers->begin() + remove;
-
-            delete iter->TextureData;
+            
+            delete m_dataStore->GetTexture(iter->Meta->Name);
+            m_dataStore->RemoveTexture(iter->Meta->Name);
             delete[] iter->Data;
             delete[] iter->Meta->Name;
             delete iter->Meta;
 
             m_layers->erase(iter);
 
-            if (remove == m_selectedIndex)
-            {
-                m_selectedIndex = -1;
-            }
+            m_selectedIndex = -1;
         }
         ImGui::EndChild();
     }
     ImGui::End();
 }
 
-void TextureEditor::GetImageData(PropertyFileProperty& a_property, ZipArchive::Ptr& a_archive)
+void TextureEditor::GetImageData(PropertyFileProperty& a_property, mz_zip_archive& a_archive)
 {
     LayerTexture layerTexture;
     LayerMeta* meta = layerTexture.Meta = new LayerMeta();
@@ -248,35 +243,32 @@ void TextureEditor::GetImageData(PropertyFileProperty& a_property, ZipArchive::P
         else IFSETTOATTVALI("height", iter->Name, meta->Height, iter->Value)
     }
 
-    std::shared_ptr<ZipArchiveEntry> entry = a_archive->GetEntry(std::string(meta->Name) + ".imgbin");
-    if (entry != nullptr)
+    std::string fileName = "img/" + std::string(meta->Name) + ".imgbin";
+    char* data = ExtractFileFromArchive(fileName.c_str(), a_archive);
+    if (data != nullptr)
     {
-        char* data;
-        GETFILEDATA(data, entry);
-
         layerTexture.Data = (unsigned char*)data;
-        GenerateTexture(layerTexture);
+        m_dataStore->AddTexture(layerTexture.Meta->Name, GenerateTexture(layerTexture));
     }
 
     layerTexture.ModelData = nullptr;
-    layerTexture.Update = false;
 
     m_layers->emplace_back(layerTexture);
 }
-void TextureEditor::GetModelData(PropertyFileProperty& a_property, ZipArchive::Ptr& a_archive)
+void TextureEditor::GetModelData(PropertyFileProperty& a_property, mz_zip_archive& a_archive)
 {
-    char* name;
-    int vertexCount;
-    int indexCount;
+    char* name = nullptr;
+    int vertexCount = -1;
+    int indexCount = -1;
 
     for (auto iter = a_property.Values().begin(); iter != a_property.Values().end(); ++iter)
     {
         IFSETTOATTVALCPY("name", iter->Name, name, iter->Value)
-        else IFSETTOATTVALI("vertices", iter->Name, vertexCount, iter->Value)
-        else IFSETTOATTVALI("indices", iter->Name, indexCount, iter->Value)
+        else IFSETTOATTVALI("verticies", iter->Name, vertexCount, iter->Value)
+        else IFSETTOATTVALI("indicies", iter->Name, indexCount, iter->Value)
     }
 
-    if (name != nullptr)
+    if (name != nullptr && vertexCount > 0 && indexCount > 0)
     {
         for (int i = 0; i < m_layers->size(); ++i)
         {
@@ -284,19 +276,16 @@ void TextureEditor::GetModelData(PropertyFileProperty& a_property, ZipArchive::P
 
             if (strcmp(layerTexture.Meta->Name, name) == 0)
             {
-                std::shared_ptr<ZipArchiveEntry> entry = a_archive->GetEntry(std::string(name) + ".mdlbin");
+                std::string vertexFileName = "mdl/" + std::string(name) + ".verbin";
+                std::string indexFileName = "mdl/" + std::string(name) + ".indbin";
 
-                if (entry != nullptr)
+                unsigned int* indicies = (unsigned int*)ExtractFileFromArchive(indexFileName.c_str(), a_archive);
+                ModelVertex* vertices = (ModelVertex*)ExtractFileFromArchive(vertexFileName.c_str(), a_archive);
+
+                if (indicies != nullptr && vertices != nullptr)
                 {
-                    char* data;
-                    GETFILEDATA(data, entry);
-
                     const unsigned int vertexSize = sizeof(ModelVertex) * vertexCount;
-                    const unsigned int indexSize = 4 * indexCount;
-
-                    ModelVertex* vertices = (ModelVertex*)data;
-                    // So it was possible for this to overflow and not trigger an exception appparently
-                    unsigned int* indicies = (unsigned int*)(data + vertexSize);
+                    const unsigned int indexSize = sizeof(unsigned int) * indexCount;
 
                     Model* model = new Model();
                     const unsigned int vbo = model->GetVBO();
@@ -308,14 +297,17 @@ void TextureEditor::GetModelData(PropertyFileProperty& a_property, ZipArchive::P
                     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
                     glBufferData(GL_ELEMENT_ARRAY_BUFFER, indexSize, indicies, GL_STATIC_DRAW);
 
-                    model->SetIndicies(indexCount);
+                    model->SetIndiciesCount(indexCount);
+                    model->SetVerticiesCount(vertexCount);
 
-                    layerTexture.Update = true;
-                    layerTexture.ModelData = new ModelPreview(layerTexture.TextureData, model);
+                    m_dataStore->AddModel(name, e_ModelType::Base, model);
+
+                    layerTexture.ModelData = new ModelPreview(layerTexture.Meta->Name, layerTexture.Meta->Name, m_dataStore);
+
+                    layerTexture.Vertices = vertices;
+                    layerTexture.Indices = indicies;
 
                     (*m_layers)[i] = layerTexture;
-
-                    delete[] data;
                 }
 
                 break;
@@ -336,42 +328,36 @@ LayerMeta TextureEditor::GetLayerMeta(unsigned int a_index) const
     return *m_layers->at(a_index).Meta;
 }
 
-TextureEditor* TextureEditor::Load(ZipArchive::Ptr& a_archive)
+TextureEditor* TextureEditor::Load(mz_zip_archive& a_archive, DataStore* a_dataStore)
 {
-    TextureEditor* textureEditor = new TextureEditor();
+    TextureEditor* textureEditor = new TextureEditor(a_dataStore);
 
-    std::shared_ptr<ZipArchiveEntry> textureEntry = a_archive->GetEntry("model.prop");
-    if (textureEntry != nullptr)
+    char* propertiesData;
+
+    propertiesData = ExtractFileFromArchive("texture.prop", a_archive);
+    if (propertiesData != nullptr)
     {
-        char* propertiesData;
-        GETFILEDATA(propertiesData, textureEntry);
-
         PropertyFile* propertiesFile = new PropertyFile(propertiesData);
 
         const std::list<PropertyFileProperty*> properties = propertiesFile->GetProperties();
-
         for (auto iter = properties.begin(); iter != properties.end(); ++iter)
         {
             PropertyFileProperty* prop = *iter;
-
             // Looking for root elements
             // I am lazy and cant be stuff writing a iterator for the file
             if (prop->GetParent() == nullptr)
             {
                 textureEditor->GetImageData(*prop, a_archive);
-            }            
-        }
+            } 
+        } 
 
         delete propertiesFile;
-        delete[] propertiesData;
+        mz_free(propertiesData);     
     }
 
-    std::shared_ptr<ZipArchiveEntry> skeletonEntry = a_archive->GetEntry("skeleton.prop");
-    if (skeletonEntry != nullptr)
+    propertiesData = ExtractFileFromArchive("model.prop", a_archive);
+    if (propertiesData != nullptr)
     {
-        char* propertiesData;
-        GETFILEDATA(propertiesData, skeletonEntry);
-
         PropertyFile* propertiesFile = new PropertyFile(propertiesData);
 
         const std::list<PropertyFileProperty*> properties = propertiesFile->GetProperties();
@@ -387,74 +373,101 @@ TextureEditor* TextureEditor::Load(ZipArchive::Ptr& a_archive)
         }
 
         delete propertiesFile;
-        delete[] propertiesData;
+        mz_free(propertiesData);
     }
 
     return textureEditor;
 }
-std::istream* TextureEditor::SaveToStream() const
+
+void TextureEditor::SaveImageData(mz_zip_archive& a_archive) const
 {
-    if (m_layers->size() > 0)
+    PropertyFile* propertyFile = new PropertyFile();
+    for (auto iter = m_layers->begin(); iter != m_layers->end(); ++iter)
     {
-        PropertyFile* propertyFile = new PropertyFile();
-        
-        for (auto iter = m_layers->begin(); iter != m_layers->end(); ++iter)
-        {
-            const LayerMeta* layerMeta = iter->Meta;
+        const LayerMeta* layerMeta = iter->Meta;
 
-            PropertyFileProperty* property = propertyFile->InsertProperty();
+        PropertyFileProperty* property = propertyFile->InsertProperty();
 
-            property->SetName("image");
-
-            property->EmplaceValue("name", layerMeta->Name);
-            property->EmplaceValue("width", std::to_string(layerMeta->Width).c_str());
-            property->EmplaceValue("height", std::to_string(layerMeta->Height).c_str());
-        }
-
-        char* data = propertyFile->ToString();
-
-        IMemoryStream* memoryStream = new IMemoryStream(data, strlen(data));
-
-        delete[] data;
-
-        return memoryStream;
+        property->SetName("image");
+        property->EmplaceValue("name", layerMeta->Name);
+        property->EmplaceValue("width", std::to_string(layerMeta->Width).c_str());
+        property->EmplaceValue("height", std::to_string(layerMeta->Height).c_str());
     }
 
-    return nullptr;   
-}
-std::istream* TextureEditor::SaveLayer(unsigned int a_index) const
-{
-    const LayerTexture layerTexture = m_layers->at(a_index);
-    const size_t size = layerTexture.Meta->Width * layerTexture.Meta->Height * 4;
+    char* data = propertyFile->ToString();
 
-    IMemoryStream* memoryStream = new IMemoryStream((char*)layerTexture.Data, size);
+    mz_zip_writer_add_mem(&a_archive, "texture.prop", data, strlen(data), MZ_DEFAULT_COMPRESSION);
 
-    return memoryStream;
-}
+    delete propertyFile;
+    delete[] data;
 
-void TextureEditor::SyncModels(SkeletonController* a_skeletonController) const
-{
-    ModelData modelData;
-
-    for (int i = 0; i < m_layers->size(); ++i)
+    for (auto iter = m_layers->begin(); iter != m_layers->end(); ++iter)
     {
-        LayerTexture layerTexture = m_layers->at(i);
+        const LayerMeta* layerMeta = iter->Meta;
+        const size_t size = layerMeta->Width * layerMeta->Height * 4;
 
-        if (layerTexture.Update)
+        const std::string name = "img/" + std::string(layerMeta->Name) + ".imgbin";
+
+        mz_zip_writer_add_mem(&a_archive, name.c_str(), iter->Data, size, MZ_DEFAULT_COMPRESSION);
+    }
+}
+void TextureEditor::SaveModelData(mz_zip_archive& a_archive) const
+{
+    PropertyFile* propertyFile = new PropertyFile();
+    for (auto iter = m_layers->begin(); iter != m_layers->end(); ++iter)
+    {
+        const char* name = iter->Meta->Name;
+
+        const Model* model = m_dataStore->GetModel(name, e_ModelType::Base);
+
+        if (model != nullptr)
         {
-            Model* model = layerTexture.ModelData->GetModel();
+            const unsigned int vertexCount = model->GetVerticiesCount(); 
+            const unsigned int indexCount = model->GetIndiciesCount();
+    
+            if (vertexCount != 0 && indexCount != 0)
+            {
+                PropertyFileProperty* property = propertyFile->InsertProperty();
+    
+                property->SetName("model");
+                property->EmplaceValue("name", name);
+                property->EmplaceValue("indicies", std::to_string(indexCount).c_str());
+                property->EmplaceValue("verticies", std::to_string(vertexCount).c_str());
+                property->EmplaceValue("modeltype", std::to_string((int)e_ModelType::Base).c_str());
 
-            modelData.VertexCount = layerTexture.VertexCount;
-            modelData.IndexCount = model->GetIndicies();
-            modelData.Vertices = layerTexture.Vertices;
-            modelData.Indices = layerTexture.Indices;
-            modelData.GModel = model;
+                const unsigned int indiciesSize = indexCount * sizeof(unsigned int);
+                const unsigned int verticiesSize = vertexCount * sizeof(ModelVertex);
 
-            a_skeletonController->SetModel(layerTexture.Meta->Name, modelData);
+                std::string indexFileName = "mdl/" + std::string(name) + ".indbin";
+                std::string vertexFileName = "mdl/" + std::string(name) + ".verbin";
 
-            layerTexture.Update = false;
-
-            (*m_layers)[i] = layerTexture;
+                mz_zip_writer_add_mem(&a_archive, indexFileName.c_str(), iter->Indices, indiciesSize, MZ_DEFAULT_COMPRESSION);
+                mz_zip_writer_add_mem(&a_archive, vertexFileName.c_str(), iter->Vertices, verticiesSize, MZ_DEFAULT_COMPRESSION);
+            }
         }
+    }
+
+
+    if (propertyFile->PropertyCount() > 0)
+    {
+        char* data = propertyFile->ToString();
+
+        mz_zip_writer_add_mem(&a_archive, "model.prop", data, strlen(data), MZ_DEFAULT_COMPRESSION);
+    
+        delete[] data;
+    }
+    
+    delete propertyFile; 
+}
+
+void TextureEditor::Save(mz_zip_archive& a_archive) const
+{
+    PropertyFile* propertyFile;
+    char* data;
+
+    if (m_layers->size() > 0)
+    {
+        SaveImageData(a_archive);
+        SaveModelData(a_archive);
     }
 }

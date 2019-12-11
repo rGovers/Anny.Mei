@@ -33,16 +33,14 @@ include_directories("${PROJECT_SOURCE_DIR}/include")
 include_directories("${PROJECT_SOURCE_DIR}/glad")
 include_directories("${PROJECT_SOURCE_DIR}/glm")
 include_directories("${PROJECT_SOURCE_DIR}/imgui")
+include_directories("${PROJECT_SOURCE_DIR}/miniz-2.1.0")
 include_directories("${PROJECT_SOURCE_DIR}/rapidxml-1.13")
 include_directories("${PROJECT_SOURCE_DIR}/stb")
 include_directories("${PROJECT_SOURCE_DIR}/tinyfiledialogs")
-file(GLOB SOURCES "src/*.cpp" "imgui/*.cpp" "glad/*.c" "tinyfiledialogs/*.c")
+file(GLOB SOURCES "src/*.cpp" "miniz-2.1.0/*.c" "imgui/*.cpp" "glad/*.c" "tinyfiledialogs/*.c")
 
 add_subdirectory("glfw-3.3")
 include_directories("glfw-3.3/include")
 
-add_subdirectory("ZipLib")
-
 add_executable (Application ${SOURCES})
 target_link_libraries(Application glfw ${GLFW_LIBRARIES})
-target_link_libraries(Application ZipLib)
