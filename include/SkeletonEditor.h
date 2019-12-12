@@ -7,6 +7,8 @@
 #include "Models/Model.h"
 
 class Object;
+class PropertyFile;
+class PropertyFileProperty;
 
 struct ModelData
 {
@@ -26,6 +28,8 @@ private:
 
     void ListObjects(Object* a_object, int& a_node);
 
+    void LoadObject(Object* a_object, PropertyFileProperty* a_property);
+    void SaveObject(PropertyFile* a_propertyFile, PropertyFileProperty* a_parent, Object* a_object) const;
 protected:
 
 public:

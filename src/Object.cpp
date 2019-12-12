@@ -156,6 +156,26 @@ const char* Object::GetTrueName() const
 {
     return m_trueName;
 }
+void Object::SetName(const char* a_name)
+{
+    if (m_name != nullptr)
+    {
+        if (strcmp(a_name, m_name) == 0)
+        {
+            return;
+        }
+
+        delete[] m_name;
+        m_name = nullptr;
+    }
+
+    if (a_name != nullptr)
+    {
+        m_name = new char[strlen(a_name)];
+
+        strcpy(m_name, a_name);
+    }
+}
 const char* Object::GetName() const
 {
     return m_name;

@@ -53,6 +53,7 @@ public:
     ~PropertyFile();
 
     std::list<PropertyFileProperty*> GetProperties() const;
+    std::list<PropertyFileProperty*> GetBaseProperties() const;
     
     char* ToString() const;
 

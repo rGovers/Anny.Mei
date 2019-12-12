@@ -49,6 +49,9 @@ public:
 
     void SetTrueName(const char* a_trueName);
     const char* GetTrueName() const;
+    // Note that true name takes priority and can overwrite the name
+    // Only use when necessary
+    void SetName(const char* a_name);
     const char* GetName() const;
 
     void RemoveComponent(Component* a_component);

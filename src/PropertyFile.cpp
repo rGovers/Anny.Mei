@@ -14,6 +14,7 @@ int PropertyFile::LoadProperty(PropertyFileProperty* a_parent, const char* a_dat
     int colon = -1;
     int close = -1;
     int quote = -1;
+    int closeQuote = -1;
 
     PropertyFileValue value;
 
@@ -57,19 +58,25 @@ int PropertyFile::LoadProperty(PropertyFileProperty* a_parent, const char* a_dat
                 delete[] name;
             }
             
-            spc = i;
+            if (quote == closeQuote)
+            {
+                spc = i;
+            }
 
             break;
         }
         case ':':
         {
-            const int len = i - spc;
+            if (spc > quote)
+            {
+                const int len = i - spc;
             
-            value.Name = new char[len];
-            memcpy(value.Name, a_data + spc + 1, len - 1);
-            value.Name[len - 1] = 0;
+                value.Name = new char[len];
+                memcpy(value.Name, a_data + spc + 1, len - 1);
+                value.Name[len - 1] = 0;
 
-            colon = i;
+                colon = i;
+            }
 
             break;
         }
@@ -84,6 +91,8 @@ int PropertyFile::LoadProperty(PropertyFileProperty* a_parent, const char* a_dat
                 value.Value[len - 1] = 0;
 
                 property->Values().emplace_back(value);
+
+                closeQuote = i;
             }
 
             quote = i;
@@ -92,13 +101,19 @@ int PropertyFile::LoadProperty(PropertyFileProperty* a_parent, const char* a_dat
         }
         case '{':
         {
-            i += LoadProperty(property, a_data + i);
+            if (quote == closeQuote)
+            {
+                i += LoadProperty(property, a_data + i + 1);
+            }
 
             break;
         }
         case '}':
         {
-            return i;
+            if (quote == closeQuote)
+            {
+                return i + 1;
+            }
         }
         }
 
@@ -146,8 +161,9 @@ void PropertyFile::ToString(const PropertyFileProperty& a_property, std::string&
             {
                 a_string += " ";
                 a_string += valIter->Name;
-                a_string += ":";
+                a_string += ":\"";
                 a_string += valIter->Value;
+                a_string += "\"";
             }
 
             a_string += ">\n";
@@ -168,7 +184,7 @@ char* PropertyFile::ToString() const
 
         if (prop->GetParent() == nullptr)
         {
-            data += "\n<";
+            data += "<";
             data += prop->GetName();
 
             for (auto valIter = prop->Values().begin(); valIter != prop->Values().end(); ++valIter)
@@ -180,7 +196,7 @@ char* PropertyFile::ToString() const
                 data += "\"";
             }
 
-            data += ">";
+            data += ">\n";
 
             ToString(*prop, data);
         }
@@ -196,6 +212,20 @@ char* PropertyFile::ToString() const
 std::list<PropertyFileProperty*> PropertyFile::GetProperties() const
 {
     return *m_properties;
+}
+std::list<PropertyFileProperty*> PropertyFile::GetBaseProperties() const
+{
+    std::list<PropertyFileProperty*> properties;
+
+    for (auto iter = m_properties->begin(); iter != m_properties->end(); ++iter)
+    {
+        if ((*iter)->GetParent() == nullptr)
+        {
+            properties.emplace_back(*iter);
+        }
+    }
+
+    return properties;
 }
 
 PropertyFileProperty* PropertyFile::InsertProperty()

@@ -182,7 +182,8 @@ void AppMain::Save() const
     {
         m_modelController->Save(zip);
         m_textureEditor->Save(zip);
-        
+        m_skeletonEditor->Save(zip);
+
         mz_zip_writer_finalize_archive(&zip);
         mz_zip_writer_end(&zip);
     }

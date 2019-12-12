@@ -36,4 +36,7 @@ public:
     glm::mat4 GetRotationMatrix() const;
 
     glm::mat4 ToMatrix() const;
+
+    void Parse(const char* a_string);
+    char* ToString() const;
 };

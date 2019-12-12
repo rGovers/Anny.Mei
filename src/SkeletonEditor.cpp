@@ -3,6 +3,7 @@
 #include <list>
 #include <string>
 
+#include "FileUtils.h"
 #include "imgui.h"
 #include "MemoryStream.h"
 #include "Models/Model.h"
@@ -155,9 +156,115 @@ SkeletonEditor* SkeletonEditor::Load(mz_zip_archive& a_archive)
 {
     SkeletonEditor* skeletonController = new SkeletonEditor();
 
+    char* data = ExtractFileFromArchive("skeleton.prop", a_archive);
+
+    PropertyFile* propertyFile = new PropertyFile(data);
+
+    std::list<PropertyFileProperty*> properties = propertyFile->GetBaseProperties();
+
+    for (auto iter = properties.begin(); iter != properties.end(); ++iter)
+    {
+        std::list<PropertyFileValue> values = (*iter)->Values();
+
+        bool name = false;
+        bool trueName = false;
+
+        for (auto vIter = values.begin(); vIter != values.end(); ++vIter)
+        {
+            if (strcmp(vIter->Name, "name") == 0 && strcmp(vIter->Value, "Root Object") == 0)
+            {
+                name = true;
+            }
+            if (strcmp(vIter->Name, "truename") == 0 && strcmp(vIter->Value, "Root Object") == 0)
+            {
+                trueName = true;
+            }
+        }
+
+        if (name && trueName)
+        {
+            skeletonController->LoadObject(skeletonController->m_baseObject, *iter);
+
+            break;
+        }
+    }
+
+    delete propertyFile;
+    delete[] data;
+
     return skeletonController;
 }
 void SkeletonEditor::Save(mz_zip_archive& a_archive) const
 {
+    PropertyFile* propertyFile = new PropertyFile();
+
+    SaveObject(propertyFile, nullptr, m_baseObject);
+
+    const char* data = propertyFile->ToString();
+
+    mz_zip_writer_add_mem(&a_archive, "skeleton.prop", data, strlen(data), MZ_DEFAULT_COMPRESSION);
+
+    delete[] data;
+    delete propertyFile;
+}
+
+void SkeletonEditor::LoadObject(Object* a_object, PropertyFileProperty* a_property)
+{
+    const std::list<PropertyFileValue> values = a_property->Values();
+
+    char* name = nullptr;
+    char* trueName = nullptr;
+    char* transformString = nullptr;
+
+    for (auto iter = values.begin(); iter != values.end(); ++iter)
+    {
+        IFSETTOATTVALCPY(iter->Name, "name", name, iter->Value)
+        else IFSETTOATTVALCPY(iter->Name, "truename", trueName, iter->Value)
+        else IFSETTOATTVALCPY(iter->Name, "transform", transformString, iter->Value)
+    }
+
+    if (name != nullptr && trueName != nullptr)
+    {
+        a_object->SetTrueName(trueName);
+        a_object->SetName(name);
+        
+        if (transformString != nullptr)
+        {
+            a_object->GetTransform()->Parse(transformString);
+        }
+    }
+
+    const std::list<PropertyFileProperty*> children = a_property->GetChildren();
+
+    for (auto iter = children.begin(); iter != children.end(); ++iter)
+    {
+        if (strcmp((*iter)->GetName(), "object") == 0)
+        {
+            Object* object = new Object();
+            object->SetParent(a_object);
+
+            LoadObject(object, *iter);
+        }
+    }
+}
+void SkeletonEditor::SaveObject(PropertyFile* a_propertyFile, PropertyFileProperty* a_parent, Object* a_object) const
+{
+    if (a_object != nullptr)
+    {
+        PropertyFileProperty* property = a_propertyFile->InsertProperty();
+        property->SetName("object");
+        property->SetParent(a_parent);
+        property->EmplaceValue("name", a_object->GetName());
+        property->EmplaceValue("truename", a_object->GetTrueName());
+        
+        char* sTransform = a_object->GetTransform()->ToString();
+        property->EmplaceValue("transform", sTransform);
+        delete[] sTransform;
     
+        const std::list<Object*> children = a_object->GetChildren();
+        for (auto iter = children.begin(); iter != children.end(); ++iter)
+        {
+            SaveObject(a_propertyFile, property, *iter);
+        }
+    }
 }
