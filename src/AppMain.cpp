@@ -146,24 +146,25 @@ void AppMain::Open()
 
                 m_dataStore = new DataStore();
 
-                m_modelController = ModelController::Load(zip);
-                if (m_modelController == nullptr)
-                {
-                    m_modelController = new ModelController();
-                }
+                m_modelController = ModelController::Load(zip); 
                 m_skeletonEditor = SkeletonEditor::Load(zip);
-                if (m_skeletonEditor == nullptr)
-                {
-                    m_skeletonEditor = new SkeletonEditor();
-                }
                 m_textureEditor = TextureEditor::Load(zip, m_dataStore);
-                if (m_textureEditor == nullptr)
-                {
-                    m_textureEditor = new TextureEditor(m_dataStore);
-                }
             } 
 
             mz_zip_reader_end(&zip);
+
+            if (m_modelController == nullptr)
+            {
+                m_modelController = new ModelController();
+            }
+            if (m_skeletonEditor == nullptr)
+            {
+                m_skeletonEditor = new SkeletonEditor();
+            }
+            if (m_textureEditor == nullptr)
+            {
+                m_textureEditor = new TextureEditor(m_dataStore);
+            }
         }
         else
         {

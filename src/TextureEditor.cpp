@@ -69,6 +69,8 @@ void TextureEditor::LoadTexture(const char* a_path)
     layerMeta->Name = nullptr;
 
     LayerTexture layerTexture;
+    layerTexture.Vertices = nullptr;
+    layerTexture.Indices = nullptr;
 
     // .png
     if (iExt == 0x676E702E)
@@ -143,11 +145,22 @@ void TextureEditor::Update(double a_delta)
                 {
                     delete layerTexture.ModelData;
                 }
+                if (layerTexture.Indices != nullptr)
+                {
+                    delete[] layerTexture.Indices;
+                }
+                if (layerTexture.Vertices != nullptr)
+                {
+                    delete[] layerTexture.Vertices;
+                }
 
                 TriImage* triImage = new TriImage(layerTexture.Data, m_stepXY[0], m_stepXY[1], layerTexture.Meta->Width, layerTexture.Meta->Height, m_vSize[0], m_vSize[1], 0.1f);
                 
                 const unsigned int indexCount = triImage->GetIndexCount();
-                unsigned int* indicies = triImage->GetIndicies();
+
+                const unsigned int indexSize = indexCount * sizeof(unsigned int);
+                unsigned int* indicies = new unsigned int[indexSize];
+                memcpy(indicies, triImage->GetIndicies(), indexSize);
 
                 const unsigned int vertexCount = triImage->GetVertexCount();
                 ModelVertex* modelVerticies = triImage->ToModelVerticies();
@@ -234,6 +247,9 @@ void TextureEditor::Update(double a_delta)
 void TextureEditor::GetImageData(PropertyFileProperty& a_property, mz_zip_archive& a_archive)
 {
     LayerTexture layerTexture;
+    layerTexture.Vertices = nullptr;
+    layerTexture.Indices = nullptr;
+
     LayerMeta* meta = layerTexture.Meta = new LayerMeta();
 
     for (auto iter = a_property.Values().begin(); iter != a_property.Values().end(); ++iter)
