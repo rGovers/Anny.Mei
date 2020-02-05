@@ -274,7 +274,7 @@ void AppMain::Update(double a_delta)
             
             const bool enabledModel = m_textureEditor != nullptr;
 
-            if (ImGui::MenuItem("Save", "Ctrl+S", nullptr, m_filePath != nullptr))
+            if (ImGui::MenuItem("Save", "Ctrl+S", nullptr, m_filePath != nullptr && enabledModel))
             {
                 Save();
             }

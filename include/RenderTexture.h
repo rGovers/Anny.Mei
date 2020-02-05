@@ -10,6 +10,8 @@ private:
     unsigned int   m_depthTexture;
   
     unsigned int   m_bufferHandle;
+
+    float*         m_viewCache;
 protected:
 
 public:

@@ -11,18 +11,18 @@ class WebcamController;
 class AppMain : public Application
 {
 private:
-    DataStore*        m_dataStore;
-
-    WebcamController* m_webcamController;
+    DataStore*            m_dataStore;
       
-    ModelController*  m_modelController;
+    WebcamController*     m_webcamController;
+          
+    ModelController*      m_modelController;
+      
+    SkeletonEditor*       m_skeletonEditor;
+    TextureEditor*        m_textureEditor;
 
-    SkeletonEditor*   m_skeletonEditor;
-    TextureEditor*    m_textureEditor;
-
-    bool*             m_menuState;
+    bool*                 m_menuState;
     
-    const char*       m_filePath;
+    const char*           m_filePath;
 
     void New();
     void Open();

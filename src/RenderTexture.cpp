@@ -9,6 +9,8 @@ RenderTexture::RenderTexture(int a_width, int a_height, int a_pixelFormat)
 RenderTexture::RenderTexture(Texture* a_texture) 
     : m_texture(a_texture)
 {
+    m_viewCache = new float[4];
+
     glGenTextures(1, &m_depthTexture);
     glBindTexture(GL_TEXTURE_2D, m_depthTexture);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, m_texture->GetWidth(), m_texture->GetHeight(), 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, 0);
@@ -27,6 +29,8 @@ RenderTexture::RenderTexture(Texture* a_texture)
 RenderTexture::~RenderTexture()
 {
     delete m_texture;
+
+    delete[] m_viewCache;
 
     glDeleteFramebuffers(1, &m_bufferHandle);
     glDeleteTextures(1, &m_depthTexture);
@@ -48,12 +52,16 @@ unsigned int RenderTexture::GetDepthHandle() const
 
 void RenderTexture::Bind() const
 {
-    glViewport(0, 0, m_texture->GetWidth(), m_texture->GetHeight());
+    glGetFloatv(GL_VIEWPORT, m_viewCache);
     
+    glViewport(0, 0, m_texture->GetWidth(), m_texture->GetHeight());
+
     glBindFramebuffer(GL_FRAMEBUFFER, m_bufferHandle);
     glDrawBuffer(GL_COLOR_ATTACHMENT0);
 }
 void RenderTexture::Unbind() const
 {
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    glViewport(m_viewCache[0], m_viewCache[1], m_viewCache[2], m_viewCache[3]);
 }

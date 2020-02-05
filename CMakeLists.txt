@@ -15,14 +15,26 @@ include("FileToHeader")
 
 # Allows me to write GLSL shaders as seperate files 
 # and not have to go through the effort of file IO
+
+FileToHeader(
+    SOURCE_FILE "shaders/ViewVertex.glsl"
+    HEADER_FILE "include/Shaders/ViewVertex.h"
+    VARIABLE_NAME "ViewVertex"
+)
 FileToHeader(
     SOURCE_FILE "shaders/ModelVertex.glsl" 
     HEADER_FILE "include/Shaders/ModelVertex.h"
     VARIABLE_NAME "ModelVertex")
+
 FileToHeader(
     SOURCE_FILE "shaders/StandardPixel.glsl" 
     HEADER_FILE "include/Shaders/StandardPixel.h"
     VARIABLE_NAME "StandardPixel")
+FileToHeader(
+    SOURCE_FILE "shaders/SolidPixelColor.glsl"
+    HEADER_FILE "include/Shaders/SolidPixelColor.h"
+    VARIABLE_NAME "SolidPixelColor"
+)
 FileToHeader(
     SOURCE_FILE "shaders/SolidPixel.glsl" 
     HEADER_FILE "include/Shaders/SolidPixel.h"

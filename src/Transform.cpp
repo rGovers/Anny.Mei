@@ -159,7 +159,7 @@ char* Transform::ToString() const
 {
     std::string str;
 
-    str += std::string("{ { ");
+    str += "{ { ";
     str += std::to_string(m_translation.x) + ", ";
     str += std::to_string(m_translation.y) + ", ";
     str += std::to_string(m_translation.z) + " }";

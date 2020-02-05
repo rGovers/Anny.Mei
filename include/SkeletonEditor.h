@@ -6,9 +6,11 @@
 #include "miniz.h"
 #include "Models/Model.h"
 
+class IntermediateRenderer;
 class Object;
 class PropertyFile;
 class PropertyFileProperty;
+class RenderTexture;
 
 struct ModelData
 {
@@ -22,9 +24,11 @@ struct ModelData
 class SkeletonEditor
 {
 private:
-    Object*                          m_baseObject;
-    
-    Object*                          m_selectedObject;
+    Object*               m_baseObject;
+    Object*               m_selectedObject;
+
+    IntermediateRenderer* m_imRenderer;
+    RenderTexture*        m_renderTexture;
 
     void ListObjects(Object* a_object, int& a_node);
 

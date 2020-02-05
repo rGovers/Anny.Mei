@@ -1,5 +1,6 @@
 #include "SkeletonEditor.h"
 
+#include <glad/glad.h>
 #include <list>
 #include <string>
 
@@ -9,18 +10,28 @@
 #include "Models/Model.h"
 #include "Object.h"
 #include "PropertyFile.h"
+#include "RenderTexture.h"
+#include "Texture.h"
 #include "Transform.h"
+
+#include "IntermediateRenderer.h"
 
 SkeletonEditor::SkeletonEditor() :
     m_baseObject(new Object()),
     m_selectedObject(nullptr)
 {
     m_baseObject->SetTrueName("Root Object");
+
+    m_renderTexture = new RenderTexture(1920, 1080, GL_RGB);
+
+    m_imRenderer = new IntermediateRenderer();
 }
 
 SkeletonEditor::~SkeletonEditor()
 {
     delete m_baseObject;
+
+    delete m_imRenderer;
 }
 
 void SkeletonEditor::ListObjects(Object* a_object, int& a_node)
@@ -133,9 +144,8 @@ void SkeletonEditor::Update(double a_delta)
             ImGui::Separator();
 
             m_selectedObject->UpdateComponentUI();
-
-            ImGui::End();
         }
+        ImGui::End();
     }
 
     if (m_baseObject != nullptr)
@@ -146,9 +156,30 @@ void SkeletonEditor::Update(double a_delta)
             int node = 0;
         
             ListObjects(m_baseObject, node);
-
-            ImGui::End();
         }
+        ImGui::End();
+
+        ImGui::SetNextWindowSize({ 660, 520 }, ImGuiCond_Appearing);
+        if (ImGui::Begin("Skeleton Preview"))
+        {
+            const ImVec2 winPos = ImGui::GetWindowPos();
+            const ImVec2 winSize = ImGui::GetWindowSize();
+
+            m_imRenderer->Reset();
+
+            m_imRenderer->DrawLine({ 0.5f, 0.5f, 0.0f }, { 0.5f, 1.5f, 0.0f }, 0.01f);
+
+            m_renderTexture->Bind();
+
+            glClearColor(0.0, 0.0, 0.0, 1);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);    
+
+            m_imRenderer->Draw();
+            m_renderTexture->Unbind();
+
+            ImGui::Image((ImTextureID)m_renderTexture->GetTexture()->GetHandle(), { 640, 480 });
+        }
+        ImGui::End();
     }
 }
 
