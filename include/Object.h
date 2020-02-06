@@ -57,4 +57,5 @@ public:
     void RemoveComponent(Component* a_component);
 
     void UpdateComponentUI();
+    void UpdateComponents(bool a_preview, double a_delta);
 };

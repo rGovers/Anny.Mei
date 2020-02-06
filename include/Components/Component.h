@@ -20,7 +20,8 @@ public:
     Component(Object* a_object);
     virtual ~Component();
 
-    virtual void Update() = 0;
+    virtual void Update(double a_delta) = 0;
+    virtual void UpdatePreview(double a_delta) = 0;
     virtual void UpdateGUI() = 0;
 
     virtual const char* ComponentName() const = 0;

@@ -1,13 +1,20 @@
 #include "DataStore.h"
 
+#include <string.h>
+
 #include "Models/Model.h"
 #include "Texture.h"
+
+DataStore* DataStore::Instance = nullptr;
 
 DataStore::DataStore()  :
     m_textures(),
     m_models()
 {
-
+    if (Instance == nullptr)
+    {
+        Instance = this;
+    }
 }
 DataStore::~DataStore()
 {
@@ -15,6 +22,16 @@ DataStore::~DataStore()
     {
         delete iter->second;
     }
+
+    if (Instance == this)
+    {
+        Instance = nullptr;
+    }
+}
+
+DataStore* DataStore::GetInstance()
+{
+    return Instance;
 }
 
 void DataStore::AddModel(const char* a_name, e_ModelType a_modelType, Model* a_model)
@@ -91,6 +108,52 @@ void DataStore::RemoteModel(const char* a_name, e_ModelType a_modelType)
         }
         }
     }
+}
+
+void DataStore::SetModelTextureName(const char* a_modelName, const char* a_textureName)
+{
+    auto iter = m_models.find(a_modelName);
+
+    if (iter != m_models.end())
+    {
+        if (a_textureName == nullptr)
+        {
+            if (iter->second->TextureName != nullptr)
+            {
+                delete[] iter->second->TextureName;
+                iter->second->TextureName = nullptr;
+            }
+            
+            return;
+        }
+
+        if (a_textureName != nullptr && iter->second->TextureName != nullptr)
+        {
+            if (strcmp(a_textureName, iter->second->TextureName) == 0)
+            {
+                return;
+            }
+
+            delete[] iter->second->TextureName;
+        }
+
+        const size_t len = strlen(a_textureName);
+
+        iter->second->TextureName = new char[len + 1] { 0 };
+
+        memcpy(iter->second->TextureName, a_textureName, len);        
+    }
+}
+const char* DataStore::GetModelTextureName(const char* a_modelName) const
+{
+    auto iter = m_models.find(a_modelName);
+
+    if (iter != m_models.end())
+    {
+        return iter->second->TextureName;
+    }
+
+    return nullptr;
 }
 
 void DataStore::AddTexture(const char* a_name, Texture* a_texture)

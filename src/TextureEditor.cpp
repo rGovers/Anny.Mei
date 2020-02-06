@@ -179,6 +179,7 @@ void TextureEditor::Update(double a_delta)
                 model->SetVerticiesCount(vertexCount);
 
                 m_dataStore->AddModel(layerTexture.Meta->Name, e_ModelType::Base, model);
+                m_dataStore->SetModelTextureName(layerTexture.Meta->Name, layerTexture.Meta->Name);
 
                 layerTexture.ModelData = new ModelPreview(layerTexture.Meta->Name, layerTexture.Meta->Name, m_dataStore);
                 layerTexture.Indices = indicies;
@@ -317,6 +318,7 @@ void TextureEditor::GetModelData(PropertyFileProperty& a_property, mz_zip_archiv
                     model->SetVerticiesCount(vertexCount);
 
                     m_dataStore->AddModel(name, e_ModelType::Base, model);
+                    m_dataStore->SetModelTextureName(name, layerTexture.Meta->Name);
 
                     layerTexture.ModelData = new ModelPreview(layerTexture.Meta->Name, layerTexture.Meta->Name, m_dataStore);
 

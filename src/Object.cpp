@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <string.h>
 
-#include "Components/Renderer.h"
+#include "Components/ImageRenderer.h"
 #include "imgui.h"
 #include "Transform.h"
 
@@ -207,9 +207,9 @@ void Object::UpdateComponentUI()
 
         Component* component = nullptr;
 
-        if (ImGui::Selectable("Renderer"))
+        if (ImGui::Selectable("ImageRenderer"))
         {
-            component = new Renderer(this);
+            component = new ImageRenderer(this);
         }
 
         if (component != nullptr)
@@ -235,4 +235,23 @@ void Object::UpdateComponentUI()
 
         ++index;
     }
+}
+
+void Object::UpdateComponents(bool a_preview, double a_delta)
+{
+    if (!a_preview)
+    {
+        for (auto iter = m_components.begin(); iter != m_components.end(); ++iter)
+        {
+            iter->Comp->Update(a_delta);
+        }
+    }
+    else
+    {
+        for (auto iter = m_components.begin(); iter != m_components.end(); ++iter)
+        {
+            iter->Comp->UpdatePreview(a_delta);
+        }
+    }
+    
 }

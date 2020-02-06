@@ -24,11 +24,11 @@ IntermediateRenderer::IntermediateRenderer()
     glVertexAttribPointer(0, 4, GL_FLOAT, false, vertexSize, (void*)offsetof(Vertex, Position));
     glVertexAttribPointer(1, 4, GL_FLOAT, false, vertexSize, (void*)offsetof(Vertex, Color));
 
-    int vertexS = glCreateShader(GL_VERTEX_SHADER);
+    const int vertexS = glCreateShader(GL_VERTEX_SHADER);
     glShaderSource(vertexS, 1, &VIEWVERTEX, nullptr);
     glCompileShader(vertexS);
 
-    int pixelS = glCreateShader(GL_FRAGMENT_SHADER);
+    const int pixelS = glCreateShader(GL_FRAGMENT_SHADER);
     glShaderSource(pixelS, 1, &SOLIDPIXELCOLOR, nullptr);
     glCompileShader(pixelS);
 

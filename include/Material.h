@@ -18,6 +18,8 @@ public:
     Material(const ShaderProgram* a_shaderProgram);
     ~Material();
 
+    const ShaderProgram* GetShaderProgram() const;
+
     void AddTexture(const char* a_textureName, const Texture* a_texture);
     void RemoveTexture(const char* a_textureName);
 

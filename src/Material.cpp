@@ -15,6 +15,11 @@ Material::~Material()
 
 }
 
+const ShaderProgram* Material::GetShaderProgram() const
+{
+    return m_shaderProgram;
+}
+
 void Material::AddTexture(const char* a_textureName, const Texture* a_texture)
 {
     m_textures.emplace(a_textureName, a_texture);

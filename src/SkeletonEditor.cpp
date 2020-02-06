@@ -133,6 +133,21 @@ void SkeletonEditor::DrawObjectDetail(Object* a_object) const
     }
 }
 
+void UpdateObject(Object* a_object, double a_delta)
+{
+    if (a_object != nullptr)
+    {
+        a_object->UpdateComponents(true, a_delta);
+
+        const std::list<Object*> children = a_object->GetChildren();
+
+        for (auto iter = children.begin(); iter != children.end(); ++iter)
+        {
+            UpdateObject(*iter, a_delta);
+        }
+    }
+}
+
 void SkeletonEditor::Update(double a_delta)
 {
     if (m_selectedObject != nullptr)
@@ -194,8 +209,6 @@ void SkeletonEditor::Update(double a_delta)
 
             m_imRenderer->Reset();
 
-            // m_imRenderer->DrawLine({0, 0, 0}, {0, 0, 0}, 0.025f, {0, 0, 1, 0});
-
             DrawObjectDetail(m_baseObject);
 
             m_renderTexture->Bind();
@@ -204,6 +217,9 @@ void SkeletonEditor::Update(double a_delta)
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);    
 
             m_imRenderer->Draw();
+            
+            UpdateObject(m_baseObject, a_delta);
+
             m_renderTexture->Unbind();
 
             ImGui::Image((ImTextureID)m_renderTexture->GetTexture()->GetHandle(), { 640, 480 });
