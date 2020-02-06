@@ -62,13 +62,17 @@ void ImageRenderer::Draw()
         const int handle = m_material->GetShaderProgram()->GetHandle();
 
         const glm::mat4 transform = object->GetTransform()->GetWorldMatrix();
-
         const glm::mat4 offsetTransform = glm::translate(transform, -m_anchor);
 
         const int location = glGetUniformLocation(handle, "model");
         glUniformMatrix4fv(location, 1, GL_FALSE, (float*)&offsetTransform);
 
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
         glDrawElements(GL_TRIANGLES, m_model->GetIndiciesCount(), GL_UNSIGNED_INT, 0);
+
+        glDisable(GL_BLEND);
     }
 }
 

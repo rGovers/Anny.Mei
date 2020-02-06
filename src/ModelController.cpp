@@ -6,7 +6,9 @@
 #include "FileUtils.h"
 #include "imgui.h"
 #include "MemoryStream.h"
+#include "Object.h"
 #include "PropertyFile.h"
+#include "SkeletonEditor.h"
 #include "Texture.h"
 #include "WebcamController.h"
 
@@ -19,12 +21,31 @@ ModelController::~ModelController()
     
 }
 
-void ModelController::DrawModel()
+void DrawObjects(Object* a_object, double a_delta)
+{
+    if (a_object != nullptr)
+    {
+        a_object->UpdateComponents(false, a_delta);
+
+        std::list<Object*> children = a_object->GetChildren();
+
+        for (auto iter = children.begin(); iter != children.end(); ++iter)
+        {
+            DrawObjects(*iter, a_delta);
+        }
+    }
+}
+
+void ModelController::DrawModel(const SkeletonEditor* a_skeletonEditor, double a_delta)
 {
     glClearColor(m_backgroundColor[0], m_backgroundColor[1], m_backgroundColor[2], 1);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    Object* baseObject = a_skeletonEditor->GetBaseObject();
+
+    DrawObjects(baseObject, a_delta);
 }
-void ModelController::Update(double a_delta, const WebcamController& a_webcamController)
+void ModelController::Update(const WebcamController& a_webcamController)
 {
     ImGui::SetNextWindowSize({ 660, 520 }, ImGuiCond_Appearing);
     if (ImGui::Begin("Preview"))

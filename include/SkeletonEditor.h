@@ -40,6 +40,8 @@ public:
     SkeletonEditor();
     ~SkeletonEditor();
 
+    Object* GetBaseObject() const;
+
     void DrawObjectDetail(Object* a_object) const;
 
     void Update(double a_delta);

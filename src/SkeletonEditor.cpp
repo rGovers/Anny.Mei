@@ -33,6 +33,12 @@ SkeletonEditor::~SkeletonEditor()
     delete m_imRenderer;
 }
 
+
+Object* SkeletonEditor::GetBaseObject() const
+{
+    return m_baseObject;
+}
+
 void SkeletonEditor::ListObjects(Object* a_object, int& a_node)
 {
     const char* name = a_object->GetName();

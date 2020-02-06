@@ -246,7 +246,7 @@ void AppMain::Update(double a_delta)
 
     if (m_modelController != nullptr)
     {
-        m_modelController->DrawModel();
+        m_modelController->DrawModel(m_skeletonEditor, a_delta);
     }
 
     m_webcamController->Update();
@@ -324,7 +324,7 @@ void AppMain::Update(double a_delta)
     }
     if (m_modelController != nullptr)
     {
-        m_modelController->Update(a_delta, *m_webcamController);
+        m_modelController->Update(*m_webcamController);
     }
 
     ImGui::Render();

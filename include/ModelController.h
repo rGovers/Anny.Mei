@@ -4,6 +4,7 @@
 
 #include "miniz.h"
 
+class SkeletonEditor; 
 class WebcamController;
 
 class ModelController
@@ -16,8 +17,8 @@ public:
     ModelController();
     ~ModelController();
 
-    void DrawModel();
-    void Update(double a_delta, const WebcamController& a_webcamController);
+    void DrawModel(const SkeletonEditor* a_skeletonEditor, double a_delta);
+    void Update(const WebcamController& a_webcamController);
 
     static ModelController* Load(mz_zip_archive& a_archive);
     void Save(mz_zip_archive& a_archive) const;
