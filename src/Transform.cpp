@@ -1,6 +1,7 @@
 #include "Transform.h"
 
 #include <glm/common.hpp>
+#include <glm/gtx/matrix_decompose.hpp>
 #include <glm/gtx/quaternion.hpp>
 #include <string>
 #include <string.h>
@@ -63,6 +64,49 @@ glm::vec3& Transform::Scale()
     return m_scale;
 }
 
+glm::vec3 Transform::GetWorldPosition() const
+{
+    glm::mat4 matrix = GetWorldMatrix();
+
+    glm::vec3 translation;
+    glm::quat rotation;
+    glm::vec3 scale;
+    glm::vec3 skew;
+    glm::vec4 perspective;
+
+    glm::decompose(matrix, scale, rotation, translation, skew, perspective);
+
+    return translation;
+}
+glm::fquat Transform::GetWorldRotation() const
+{
+    glm::mat4 matrix = GetWorldMatrix();
+
+    glm::vec3 translation;
+    glm::quat rotation;
+    glm::vec3 scale;
+    glm::vec3 skew;
+    glm::vec4 perspective;
+
+    glm::decompose(matrix, scale, rotation, translation, skew, perspective);
+
+    return glm::fquat(rotation);
+}
+glm::vec3 Transform::GetWorldScale() const
+{
+    glm::mat4 matrix = GetWorldMatrix();
+
+    glm::vec3 translation;
+    glm::quat rotation;
+    glm::vec3 scale;
+    glm::vec3 skew;
+    glm::vec4 perspective;
+
+    glm::decompose(matrix, scale, rotation, translation, skew, perspective);
+
+    return glm::vec3(scale);
+}
+
 void Transform::SetTranslation(const glm::vec3& a_translation)
 {
     m_translation = a_translation;
@@ -89,7 +133,16 @@ glm::mat4 Transform::ToMatrix() const
     const glm::mat4 scale = glm::scale(iden, m_scale);
     const glm::mat4 rotation = glm::toMat4(m_rotation);
 
-    return scale * rotation* translation;
+    return scale * rotation * translation;
+}
+glm::mat4 Transform::GetWorldMatrix() const
+{
+    if (m_parent != nullptr)
+    {
+        return m_parent->GetWorldMatrix() * ToMatrix();
+    }
+
+    return ToMatrix();
 }
 
 float StringToFloat(const char* a_stringStart, const char* a_stringEnd)

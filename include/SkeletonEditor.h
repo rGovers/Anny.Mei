@@ -40,6 +40,8 @@ public:
     SkeletonEditor();
     ~SkeletonEditor();
 
+    void DrawObjectDetail(Object* a_object) const;
+
     void Update(double a_delta);
 
     static SkeletonEditor* Load(mz_zip_archive& a_archive);

@@ -6,6 +6,7 @@
 
 #include "FileUtils.h"
 #include "imgui.h"
+#include "IntermediateRenderer.h"
 #include "MemoryStream.h"
 #include "Models/Model.h"
 #include "Object.h"
@@ -13,8 +14,6 @@
 #include "RenderTexture.h"
 #include "Texture.h"
 #include "Transform.h"
-
-#include "IntermediateRenderer.h"
 
 SkeletonEditor::SkeletonEditor() :
     m_baseObject(new Object()),
@@ -106,6 +105,34 @@ void SkeletonEditor::ListObjects(Object* a_object, int& a_node)
     }   
 }
 
+void SkeletonEditor::DrawObjectDetail(Object* a_object) const
+{
+    if (a_object != nullptr)
+    {
+        const std::list<Object*> children = a_object->GetChildren();
+
+        const Transform* transform = a_object->GetTransform();
+        // My brain hurts after this so aparently if I call the variable pos and it is a vector3 I get runtime exceptions 
+        // However if I try to use pos there is no type or variable called it and the compilation fails 
+        // This is fixed by using either a vec4 or just simply renaming it 
+        // This also persisted through me cleaning all build files
+        // It also only occurs in Debug
+        // This is exclusive to GCC by what I can tell
+        // Only this function aswell...
+        const glm::vec3 posi = transform->GetWorldPosition();
+
+        for (auto iter = children.begin(); iter != children.end(); ++iter)
+        {
+            const Transform* cTransform = (*iter)->GetTransform();
+            const glm::vec3 cPos = cTransform->GetWorldPosition();
+
+            m_imRenderer->DrawLine(posi, cPos, 0.025f, { 1, 0, 0, 1 });
+
+            DrawObjectDetail(*iter);
+        }
+    }
+}
+
 void SkeletonEditor::Update(double a_delta)
 {
     if (m_selectedObject != nullptr)
@@ -167,7 +194,9 @@ void SkeletonEditor::Update(double a_delta)
 
             m_imRenderer->Reset();
 
-            m_imRenderer->DrawLine({ 0.5f, 0.5f, 0.0f }, { 0.5f, 1.5f, 0.0f }, 0.01f);
+            // m_imRenderer->DrawLine({0, 0, 0}, {0, 0, 0}, 0.025f, {0, 0, 1, 0});
+
+            DrawObjectDetail(m_baseObject);
 
             m_renderTexture->Bind();
 

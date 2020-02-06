@@ -29,7 +29,7 @@ private:
     Object*                           m_parent;
     std::list<Object*>                m_children;
 
-    std::list<ComponentControl>      m_components;
+    std::list<ComponentControl>       m_components;
 
     Transform*                        m_transform;
 

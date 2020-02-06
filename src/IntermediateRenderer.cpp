@@ -54,13 +54,18 @@ void IntermediateRenderer::Reset()
 
 void IntermediateRenderer::DrawLine(const glm::vec3& a_start, const glm::vec3& a_end, float a_width, const glm::vec4& a_color)
 {
-    glm::vec3 up = glm::vec3(0, 1, 0);
+    if (a_start == a_end)
+    {
+        return;
+    }
+
+    glm::vec3 up = glm::vec3(0, 0, 1);
 
     const glm::vec3 dir = glm::normalize(a_end - a_start);
 
-    if (glm::dot(dir, up) >= 0.9f)
+    if (abs(glm::dot(dir, up)) >= 0.9f)
     {
-        up = glm::vec3(0, 0, 1);
+        up = glm::vec3(0, 1, 0);
     }
 
     const glm::vec3 right = glm::cross(up, dir);
@@ -93,15 +98,17 @@ void IntermediateRenderer::Draw()
     const size_t indexCount = m_indices.size();
     if (indexCount > 0)
     {
+        const size_t vertexCount = m_vertices.size();
+
         glUseProgram(m_program->GetHandle());
 
         glBindVertexArray(m_vao);
 
         glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
-        glBufferData(GL_ARRAY_BUFFER, m_vertices.size() * sizeof(Vertex), &m_vertices.front(), GL_STATIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, vertexCount * sizeof(Vertex), m_vertices.data(), GL_STATIC_DRAW);
 
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_ibo);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, indexCount * sizeof(unsigned int), &m_indices.front(), GL_STATIC_DRAW);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, indexCount * sizeof(unsigned int), m_indices.data(), GL_STATIC_DRAW);
 
         glDrawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_INT, 0);
     }
