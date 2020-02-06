@@ -21,7 +21,7 @@ SkeletonEditor::SkeletonEditor() :
 {
     m_baseObject->SetTrueName("Root Object");
 
-    m_renderTexture = new RenderTexture(1920, 1080, GL_RGB);
+    m_renderTexture = new RenderTexture(2048, 2048, GL_RGB);
 
     m_imRenderer = new IntermediateRenderer();
 }
@@ -32,7 +32,6 @@ SkeletonEditor::~SkeletonEditor()
 
     delete m_imRenderer;
 }
-
 
 Object* SkeletonEditor::GetBaseObject() const
 {
@@ -111,7 +110,7 @@ void SkeletonEditor::ListObjects(Object* a_object, int& a_node)
     }   
 }
 
-void SkeletonEditor::DrawObjectDetail(Object* a_object) const
+void SkeletonEditor::DrawObjectDetail(Object* a_object, const glm::mat4& a_ortho) const
 {
     if (a_object != nullptr)
     {
@@ -125,16 +124,19 @@ void SkeletonEditor::DrawObjectDetail(Object* a_object) const
         // It also only occurs in Debug
         // This is exclusive to GCC by what I can tell
         // Only this function aswell...
-        const glm::vec3 posi = transform->GetWorldPosition();
+        const glm::vec4 posi = glm::vec4(transform->GetWorldPosition(), 1.0f);
 
         for (auto iter = children.begin(); iter != children.end(); ++iter)
         {
             const Transform* cTransform = (*iter)->GetTransform();
-            const glm::vec3 cPos = cTransform->GetWorldPosition();
+            const glm::vec4 cPos = glm::vec4(cTransform->GetWorldPosition(), 1.0f);
 
-            m_imRenderer->DrawLine(posi, cPos, 0.025f, { 1, 0, 0, 1 });
+            const glm::vec3 fPos = a_ortho * posi;
+            const glm::vec3 fCPos = a_ortho * cPos;
 
-            DrawObjectDetail(*iter);
+            m_imRenderer->DrawLine(fPos, fCPos, 0.01f, { 1, 0, 0, 1 });
+
+            DrawObjectDetail(*iter, a_ortho);
         }
     }
 }
@@ -181,6 +183,7 @@ void SkeletonEditor::Update(double a_delta)
 
             ImGui::InputFloat3("Translation", (float*)&transform->Translation(), 4);
 
+            // Need to a some point implement euler angles for easy user control
             glm::fquat quat = transform->Rotation();
             ImGui::InputFloat4("Rotation", (float*)&quat, 4);
             transform->SetRotation(glm::normalize(quat));
@@ -207,15 +210,18 @@ void SkeletonEditor::Update(double a_delta)
         }
         ImGui::End();
 
-        ImGui::SetNextWindowSize({ 660, 520 }, ImGuiCond_Appearing);
+        ImGui::SetNextWindowSize({ 660, 400 }, ImGuiCond_Appearing);
         if (ImGui::Begin("Skeleton Preview"))
         {
-            const ImVec2 winPos = ImGui::GetWindowPos();
-            const ImVec2 winSize = ImGui::GetWindowSize();
+            const ImVec2 size = ImGui::GetWindowSize();
+
+            const glm::vec2 trueSize = { (size.x - 20) / 2048, (size.y - 40) / 2048 };
+
+            const glm::mat4 orth = glm::orthoRH(0.0f, trueSize.x, 0.0f, trueSize.y, -1.0f, 1.0f);
 
             m_imRenderer->Reset();
 
-            DrawObjectDetail(m_baseObject);
+            DrawObjectDetail(m_baseObject, orth);
 
             m_renderTexture->Bind();
 
@@ -228,7 +234,7 @@ void SkeletonEditor::Update(double a_delta)
 
             m_renderTexture->Unbind();
 
-            ImGui::Image((ImTextureID)m_renderTexture->GetTexture()->GetHandle(), { 640, 480 });
+            ImGui::Image((ImTextureID)m_renderTexture->GetTexture()->GetHandle(), { size.x - 20, size.y - 40 });
         }
         ImGui::End();
     }

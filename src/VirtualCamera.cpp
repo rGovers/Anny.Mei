@@ -46,14 +46,20 @@ VirtualCamera::VirtualCamera(unsigned int a_width, unsigned int a_height, unsign
     GetSize(a_pixelFormat, a_width, a_height, lineWidth, m_frameSize);
 
     videoFormat.type = V4L2_BUF_TYPE_VIDEO_OUTPUT;
+
+    ioctl(m_driver, VIDIOC_G_FMT, &videoFormat);
     videoFormat.fmt.pix.width = a_width;
     videoFormat.fmt.pix.height = a_height;
+    videoFormat.fmt.pix.bytesperline = lineWidth;
     videoFormat.fmt.pix.pixelformat = a_pixelFormat;
     videoFormat.fmt.pix.sizeimage = m_frameSize;
-    
+    videoFormat.fmt.pix.field = V4L2_FIELD_NONE;
+    videoFormat.fmt.pix.colorspace = V4L2_COLORSPACE_SRGB;
+
     m_videoBuffer = new unsigned char[m_frameSize];
 
     returnCode = ioctl(m_driver, VIDIOC_S_FMT, &videoFormat);
+
     if (returnCode == -1)
     {
         printf("Error getting video format: %s \n", strerror(errno));
@@ -83,5 +89,7 @@ unsigned char* VirtualCamera::GetVideoBuffer() const
 
 void VirtualCamera::PushFrame() const
 {
-    assert(write(m_driver, m_videoBuffer, m_frameSize) == m_frameSize);
+    const size_t dataPushed = write(m_driver, m_videoBuffer, m_frameSize);
+
+    assert(dataPushed == m_frameSize);
 }

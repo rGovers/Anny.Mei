@@ -6,6 +6,8 @@
 class Application
 {
 private:
+    static Application* Instance;
+
     GLFWwindow* m_window;
 
     int         m_width;
@@ -18,6 +20,8 @@ public:
     Application() = delete;
     Application(int a_width, int a_height, const char* a_title = "Application");
     virtual ~Application();
+
+    static Application* GetInstance();
 
     GLFWwindow* GetWindow() const;
 

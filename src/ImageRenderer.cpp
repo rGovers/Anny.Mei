@@ -49,7 +49,7 @@ ImageRenderer::~ImageRenderer()
     }
 }
 
-void ImageRenderer::Draw()
+void ImageRenderer::Draw(bool a_preview)
 {
     const Object* object = GetObject();
 
@@ -61,14 +61,36 @@ void ImageRenderer::Draw()
             
         const int handle = m_material->GetShaderProgram()->GetHandle();
 
-        const glm::mat4 transform = object->GetTransform()->GetWorldMatrix();
-        const glm::mat4 offsetTransform = glm::translate(transform, -m_anchor);
+        Transform* transform = object->GetTransform();
+
+        const glm::vec3 scale = transform->Scale();
+
+        const glm::mat4 transformMat = transform->GetWorldMatrix();
+        const glm::mat4 shift = transformMat * glm::translate(glm::mat4(1), -m_anchor);
+
+        glm::mat4 orth;
+
+        if (a_preview)
+        {
+            const ImVec2 size = ImGui::GetWindowSize();
+
+            const glm::vec2 trueSize = { (size.x - 20) / 2048, (size.y - 40) / 2048 };
+            const glm::vec2 halfSize = trueSize * 0.5f;
+
+            orth = glm::orthoRH(0.0f, trueSize.x, 0.0f, trueSize.y, -1.0f, 1.0f);
+        }
+        else
+        {
+            orth = glm::orthoRH(0.0f, 1.0f, 0.0f, 0.5625f, -1.0f, 1.0f);
+        }
+
+        const glm::mat4 finalTransform = orth * shift;
 
         const int location = glGetUniformLocation(handle, "model");
-        glUniformMatrix4fv(location, 1, GL_FALSE, (float*)&offsetTransform);
+        glUniformMatrix4fv(location, 1, GL_FALSE, (float*)&finalTransform);
 
         glEnable(GL_BLEND);
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);        
 
         glDrawElements(GL_TRIANGLES, m_model->GetIndiciesCount(), GL_UNSIGNED_INT, 0);
 
@@ -78,11 +100,11 @@ void ImageRenderer::Draw()
 
 void ImageRenderer::Update(double a_delta)
 {
-    Draw();
+    Draw(false);
 }
 void ImageRenderer::UpdatePreview(double a_delta)
 {
-    Draw();
+    Draw(true);
 }
 void ImageRenderer::UpdateGUI()
 {

@@ -47,10 +47,32 @@ void ModelController::DrawModel(const SkeletonEditor* a_skeletonEditor, double a
 }
 void ModelController::Update(const WebcamController& a_webcamController)
 {
-    ImGui::SetNextWindowSize({ 660, 520 }, ImGuiCond_Appearing);
+    ImGui::SetNextWindowSize({ 660, 400 }, ImGuiCond_Appearing);
     if (ImGui::Begin("Preview"))
     {
-        ImGui::Image((ImTextureID)a_webcamController.GetTexture()->GetHandle(), { 640, 480 });
+        const Texture* tex = a_webcamController.GetTexture();
+
+        const ImVec2 size = ImGui::GetWindowSize();
+
+        const glm::vec2 sScale = { size.x / 16, size.y / 9 };
+
+        glm::vec2 fSize;
+
+        if (sScale.x < sScale.y)
+        {
+            const float xSize = size.x - 20;
+
+            fSize = { xSize, xSize * 0.5625f };
+        }
+        else
+        {
+            const float ySize = size.y - 40;
+
+            fSize = { ySize * 1.77777777778f, ySize };
+        }
+        
+
+        ImGui::Image((ImTextureID)tex->GetHandle(), { fSize.x, fSize.y });
     }
     ImGui::End();
 

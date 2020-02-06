@@ -23,7 +23,7 @@ private:
 
     glm::vec3 m_anchor;
 
-    void Draw();
+    void Draw(bool a_preview);
 protected:
 
 public:

@@ -42,7 +42,7 @@ public:
 
     Object* GetBaseObject() const;
 
-    void DrawObjectDetail(Object* a_object) const;
+    void DrawObjectDetail(Object* a_object, const glm::mat4& a_ortho) const;
 
     void Update(double a_delta);
 

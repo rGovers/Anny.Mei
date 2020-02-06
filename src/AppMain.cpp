@@ -41,7 +41,7 @@ AppMain::AppMain(int a_width, int a_height) :
     m_filePath(nullptr),
     m_dataStore(nullptr)
 {
-    m_webcamController = new WebcamController();
+    m_webcamController = new WebcamController(1280, 720);
 
     glEnable(GL_DEBUG_OUTPUT);
     glDebugMessageCallback(MessageCallback, 0);
