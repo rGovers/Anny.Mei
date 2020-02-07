@@ -205,24 +205,31 @@ void TextureEditor::Update(double a_delta)
             const LayerTexture layerTexture = m_layers->at(i);
             const LayerMeta* layerMeta = layerTexture.Meta;
 
-            if (ImGui::SmallButton("X"))
-            {
-               remove = i;
-            }
-
-            ImGui::SameLine();
-
-            if (ImGui::Button(layerMeta->Name, { 180, 20 }))
-            {
-                m_selectedIndex = i;
-            }
-
             const Texture* tex = m_dataStore->GetTexture(layerTexture.Meta->Name);
 
             if (tex != nullptr)
             {
-                ImGui::SameLine();
                 ImGui::Image((ImTextureID)tex->GetHandle(), { 20, 20 });
+                ImGui::SameLine();
+            }
+            else
+            {
+                ImGui::Indent(20.0f);
+            }
+
+            if (ImGui::Selectable(layerMeta->Name))
+            {
+                m_selectedIndex = i;
+            }
+
+            if (ImGui::BeginPopupContextItem())
+            {
+                if (ImGui::MenuItem("Remove Texture"))
+                {
+                    remove = i;
+                }
+
+                ImGui::EndPopup();
             }
         }
 
