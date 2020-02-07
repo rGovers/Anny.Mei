@@ -1,7 +1,7 @@
 #pragma once
 
-#include <map>
 #include <list>
+#include <map>
 
 class Component;
 class PropertyFile;
@@ -17,13 +17,8 @@ private:
         long Objects;
     };
 
-    struct ComponentControl
-    {
-        bool Open;
-        Component* Comp;
-    };
-
-    static std::map<std::string, ID>* OBJECT_NAMES;
+    static std::map<std::string, ID>* ObjectNames;
+    static std::list<const char*>*     NameList;
 
     char*                             m_name;
     char*                             m_trueName;
@@ -31,11 +26,13 @@ private:
     Object*                           m_parent;
     std::list<Object*>                m_children;
 
-    std::list<ComponentControl>       m_components;
+    std::list<Component*>             m_components;
 
     Transform*                        m_transform;
 
     bool                              m_windowOpen;
+
+    void CreateName(ID& a_id);
 protected:
 
 public:
