@@ -4,6 +4,8 @@
 #include <list>
 
 class Component;
+class PropertyFile;
+class PropertyFileProperty;
 class Transform;
 
 class Object
@@ -55,6 +57,9 @@ public:
     const char* GetName() const;
 
     void RemoveComponent(Component* a_component);
+
+    void LoadComponent(PropertyFileProperty* a_propertyFile);
+    void SaveComponents(PropertyFile* a_propertyFile, PropertyFileProperty* a_parent) const;
 
     void UpdateComponentUI();
     void UpdateComponents(bool a_preview, double a_delta);

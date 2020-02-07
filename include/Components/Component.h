@@ -1,6 +1,8 @@
 #pragma once
 
 class Object;
+class PropertyFile;
+class PropertyFileProperty;
 
 enum class e_ComponentType
 {
@@ -25,4 +27,7 @@ public:
     virtual void UpdateGUI() = 0;
 
     virtual const char* ComponentName() const = 0;
+
+    virtual void Load(PropertyFileProperty* a_property) = 0;
+    virtual void Save(PropertyFile* a_propertyFile, PropertyFileProperty* a_parent) const = 0;
 };

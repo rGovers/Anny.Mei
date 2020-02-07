@@ -175,9 +175,12 @@ void SkeletonEditor::Update(double a_delta)
                 strcpy(buffer, name);
             }
 
-            ImGui::InputText("Name", buffer, BUFFER_SIZE);
-
-            ImGui::Separator();
+            if (m_selectedObject != m_baseObject)
+            {
+                ImGui::InputText("Name", buffer, BUFFER_SIZE);
+                
+                ImGui::Separator();
+            }
 
             Transform* transform = m_selectedObject->GetTransform();
 
@@ -315,7 +318,7 @@ void SkeletonEditor::LoadObject(Object* a_object, PropertyFileProperty* a_proper
     {
         a_object->SetTrueName(trueName);
         a_object->SetName(name);
-        
+
         if (transformString != nullptr)
         {
             a_object->GetTransform()->Parse(transformString);
@@ -323,7 +326,6 @@ void SkeletonEditor::LoadObject(Object* a_object, PropertyFileProperty* a_proper
     }
 
     const std::list<PropertyFileProperty*> children = a_property->GetChildren();
-
     for (auto iter = children.begin(); iter != children.end(); ++iter)
     {
         if (strcmp((*iter)->GetName(), "object") == 0)
@@ -332,6 +334,10 @@ void SkeletonEditor::LoadObject(Object* a_object, PropertyFileProperty* a_proper
             object->SetParent(a_object);
 
             LoadObject(object, *iter);
+        }
+        else
+        {
+            a_object->LoadComponent(*iter);
         }
     }
 }
@@ -349,6 +355,8 @@ void SkeletonEditor::SaveObject(PropertyFile* a_propertyFile, PropertyFileProper
         property->EmplaceValue("transform", sTransform);
         delete[] sTransform;
     
+        a_object->SaveComponents(a_propertyFile, property);
+
         const std::list<Object*> children = a_object->GetChildren();
         for (auto iter = children.begin(); iter != children.end(); ++iter)
         {

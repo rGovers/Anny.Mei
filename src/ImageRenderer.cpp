@@ -3,15 +3,19 @@
 #include <glad/glad.h>
 
 #include "DataStore.h"
+#include "FileUtils.h"
 #include "imgui.h"
 #include "Material.h"
 #include "Models/Model.h"
 #include "Object.h"
+#include "PropertyFile.h"
 #include "ShaderProgram.h"
 #include "Shaders/ModelVertex.h"
 #include "Shaders/StandardPixel.h"
 #include "Texture.h"
 #include "Transform.h"
+
+const char* ImageRenderer::COMPONENT_NAME = "ImageRenderer";
 
 ImageRenderer::ImageRenderer(Object* a_object) :
     Renderer(a_object)
@@ -96,6 +100,30 @@ void ImageRenderer::Draw(bool a_preview)
 
         glDisable(GL_BLEND);
     }
+    else 
+    {
+        const DataStore* store = DataStore::GetInstance();
+
+        if (m_model == nullptr)
+        {
+            m_model = store->GetModel(m_modelName, e_ModelType::Base);
+        }
+
+        if (m_texture == nullptr)
+        {
+            const char* texName = store->GetModelTextureName(m_modelName);
+
+            if (texName != nullptr)
+            {
+                m_texture = store->GetTexture(texName);
+
+                if (m_texture != nullptr)
+                {
+                    m_material->AddTexture("MainTex", m_texture);
+                }
+            }
+        }
+    }
 }
 
 void ImageRenderer::Update(double a_delta)
@@ -123,21 +151,8 @@ void ImageRenderer::UpdateGUI()
             m_material->RemoveTexture(m_modelName);
         }
 
-        const DataStore* store = DataStore::GetInstance();
-
-        const char* texName = store->GetModelTextureName(buff);
-
-        m_model = store->GetModel(buff, e_ModelType::Base);
-
-        if (texName != nullptr)
-        {
-            m_texture = store->GetTexture(texName);
-
-            if (m_texture != nullptr)
-            {
-                m_material->AddTexture("MainTex", m_texture);
-            }
-        }
+        m_model = nullptr;
+        m_texture = nullptr;
 
         delete[] m_modelName;
         m_modelName = buff;
@@ -150,5 +165,27 @@ void ImageRenderer::UpdateGUI()
 
 const char* ImageRenderer::ComponentName() const
 {
-    return "ImageRenderer";
+    return COMPONENT_NAME;
+}
+
+void ImageRenderer::Load(PropertyFileProperty* a_property)
+{
+    const std::list<PropertyFileValue> values = a_property->Values();
+
+    for (auto iter = values.begin(); iter != values.end(); ++iter)
+    {
+        IFSETTOATTVALCPY(iter->Name, "modelName", m_modelName, iter->Value)
+        else IFSETTOATTVALV3(iter->Name, "anchor", m_anchor, iter->Value)
+    }
+}
+void ImageRenderer::Save(PropertyFile* a_propertyFile, PropertyFileProperty* a_parent) const
+{
+    PropertyFileProperty* property = a_propertyFile->InsertProperty();
+    property->SetParent(a_parent);
+    property->SetName(ComponentName());
+
+    property->EmplaceValue("modelName", m_modelName);
+
+    const std::string anchorStr = "{ " + std::to_string(m_anchor.x) + ", " + std::to_string(m_anchor.y) + ", " + std::to_string(m_anchor.z) + " }";
+    property->EmplaceValue("anchor", anchorStr.c_str());
 }

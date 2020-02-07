@@ -1,5 +1,6 @@
 #include "Transform.h"
 
+#include "FileUtils.h"
 #include <glm/common.hpp>
 #include <glm/gtx/matrix_decompose.hpp>
 #include <glm/gtx/quaternion.hpp>
@@ -133,7 +134,7 @@ glm::mat4 Transform::ToMatrix() const
     const glm::mat4 scale = glm::scale(iden, m_scale);
     const glm::mat4 rotation = glm::toMat4(m_rotation);
 
-    return scale * rotation * translation;
+    return translation * rotation * scale;
 }
 glm::mat4 Transform::GetWorldMatrix() const
 {
@@ -143,21 +144,6 @@ glm::mat4 Transform::GetWorldMatrix() const
     }
 
     return ToMatrix();
-}
-
-float StringToFloat(const char* a_stringStart, const char* a_stringEnd)
-{
-    int diff = a_stringEnd - a_stringStart;
-
-    char* tmp = new char[diff];
-    memcpy(tmp, a_stringStart + 1, diff);
-    tmp[diff - 1] = 0;
-
-    float val = std::stof(tmp);
-
-    delete[] tmp;
-
-    return val;
 }
 
 void Transform::Parse(const char* a_string)

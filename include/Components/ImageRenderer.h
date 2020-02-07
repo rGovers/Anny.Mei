@@ -27,6 +27,8 @@ private:
 protected:
 
 public:
+    const static char* COMPONENT_NAME;
+
     ImageRenderer(Object* a_object);
     virtual ~ImageRenderer();
 
@@ -35,4 +37,7 @@ public:
     virtual void UpdateGUI();
 
     virtual const char* ComponentName() const;
+
+    virtual void Load(PropertyFileProperty* a_property);
+    virtual void Save(PropertyFile* a_propertyFile, PropertyFileProperty* a_parent) const;
 };

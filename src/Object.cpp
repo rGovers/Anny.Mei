@@ -5,7 +5,10 @@
 
 #include "Components/ImageRenderer.h"
 #include "imgui.h"
+#include "PropertyFile.h"
 #include "Transform.h"
+
+#define ISCREATECOMPONENT(Comp, Obj, Name, Construct) { if (strcmp(Name, Construct::COMPONENT_NAME) == 0) { Comp = new Construct(Obj); }}
 
 std::map<std::string, Object::ID>* Object::OBJECT_NAMES = nullptr;
 
@@ -181,16 +184,24 @@ const char* Object::GetName() const
     return m_name;
 }
 
-void Object::RemoveComponent(Component* a_component)
+void Object::LoadComponent(PropertyFileProperty* a_property)
+{
+    Component* comp = nullptr;
+
+    ISCREATECOMPONENT(comp, this, a_property->GetName(), ImageRenderer)
+
+    if (comp != nullptr)
+    {
+        comp->Load(a_property);
+
+        m_components.emplace_back(ComponentControl { true, comp });
+    }
+}
+void Object::SaveComponents(PropertyFile* a_propertyFile, PropertyFileProperty* a_parent) const
 {
     for (auto iter = m_components.begin(); iter != m_components.end(); ++iter)
     {
-        if (iter->Comp = a_component)
-        {
-            m_components.erase(iter);
-
-            return;
-        }
+        iter->Comp->Save(a_propertyFile, a_parent);
     }
 }
 
