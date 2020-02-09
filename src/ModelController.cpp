@@ -1,11 +1,10 @@
 #include "ModelController.h"
 
+#include <fstream>
+#include <glad/glad.h>
 #define GLM_SWIZZLE
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-
-#include <fstream>
-#include <glad/glad.h>
 
 #include "Camera.h"
 #include "FileUtils.h"
@@ -29,7 +28,9 @@ ModelController::ModelController()
 }
 ModelController::~ModelController()
 {
-    
+    delete[] m_backgroundColor;
+
+    delete m_camera;
 }
 
 void DrawObjects(Object* a_object, Camera* a_camera, double a_delta)
