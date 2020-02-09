@@ -2,6 +2,7 @@
 
 #include <glad/glad.h>
 
+#include "Camera.h"
 #include "DataStore.h"
 #include "FileUtils.h"
 #include "imgui.h"
@@ -53,7 +54,7 @@ ImageRenderer::~ImageRenderer()
     }
 }
 
-void ImageRenderer::Draw(bool a_preview)
+void ImageRenderer::Draw(bool a_preview, Camera* a_camera)
 {
     const Object* object = GetObject();
 
@@ -72,23 +73,16 @@ void ImageRenderer::Draw(bool a_preview)
         const glm::mat4 transformMat = transform->GetWorldMatrix();
         const glm::mat4 shift = transformMat * glm::translate(glm::mat4(1), -m_anchor);
 
-        glm::mat4 orth;
+        glm::mat4 view = glm::mat4(1);
+        glm::mat4 proj = glm::orthoRH(0.0f, 1.0f, 0.0f, 1.0f, -1.0f, 1.0f);
 
-        if (a_preview)
+        if (a_camera != nullptr)
         {
-            const ImVec2 size = ImGui::GetWindowSize();
-
-            const glm::vec2 trueSize = { (size.x - 20) / 2048, (size.y - 40) / 2048 };
-            const glm::vec2 halfSize = trueSize * 0.5f;
-
-            orth = glm::orthoRH(0.0f, trueSize.x, 0.0f, trueSize.y, -1.0f, 1.0f);
-        }
-        else
-        {
-            orth = glm::orthoRH(0.0f, 1.0f, 0.0f, 0.5625f, -1.0f, 1.0f);
+            view = glm::inverse(a_camera->GetTransform()->ToMatrix());
+            proj = a_camera->GetProjection();
         }
 
-        const glm::mat4 finalTransform = orth * shift;
+        const glm::mat4 finalTransform = view * proj * shift;
 
         const int location = glGetUniformLocation(handle, "model");
         glUniformMatrix4fv(location, 1, GL_FALSE, (float*)&finalTransform);
@@ -126,13 +120,13 @@ void ImageRenderer::Draw(bool a_preview)
     }
 }
 
-void ImageRenderer::Update(double a_delta)
+void ImageRenderer::Update(double a_delta, Camera* a_camera)
 {
-    Draw(false);
+    Draw(false, a_camera);
 }
-void ImageRenderer::UpdatePreview(double a_delta)
+void ImageRenderer::UpdatePreview(double a_delta, Camera* a_camera)
 {
-    Draw(true);
+    Draw(true, a_camera);
 }
 void ImageRenderer::UpdateGUI()
 {

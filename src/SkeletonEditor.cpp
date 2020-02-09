@@ -4,6 +4,7 @@
 #include <list>
 #include <string>
 
+#include "Camera.h"
 #include "FileUtils.h"
 #include "imgui.h"
 #include "IntermediateRenderer.h"
@@ -15,13 +16,23 @@
 #include "Texture.h"
 #include "Transform.h"
 
+const static float MOUSE_SENSITIVITY = 0.001f;
+const static float MOUSE_WHEEL_SENSITIVITY = 0.1f;
+const static int IMAGE_SIZE = 2048;
+const static float MAX_ZOOM = 2.5f;
+
 SkeletonEditor::SkeletonEditor() :
     m_baseObject(new Object()),
     m_selectedObject(nullptr)
 {
     m_baseObject->SetTrueName("Root Object");
 
-    m_renderTexture = new RenderTexture(2048, 2048, GL_RGB);
+    m_lastMousePos = glm::vec2(-1);
+    m_zoom = 1;
+
+    m_renderTexture = new RenderTexture(IMAGE_SIZE, IMAGE_SIZE, GL_RGB);
+
+    m_camera = new Camera();
 
     m_imRenderer = new IntermediateRenderer();
 }
@@ -31,6 +42,10 @@ SkeletonEditor::~SkeletonEditor()
     delete m_baseObject;
 
     delete m_imRenderer;
+
+    delete m_renderTexture;
+
+    delete m_camera;
 }
 
 Object* SkeletonEditor::GetBaseObject() const
@@ -110,7 +125,7 @@ void SkeletonEditor::ListObjects(Object* a_object, int& a_node)
     }   
 }
 
-void SkeletonEditor::DrawObjectDetail(Object* a_object, const glm::mat4& a_ortho) const
+void SkeletonEditor::DrawObjectDetail(Object* a_object) const
 {
     if (a_object != nullptr)
     {
@@ -126,32 +141,36 @@ void SkeletonEditor::DrawObjectDetail(Object* a_object, const glm::mat4& a_ortho
         // Only this function aswell...
         const glm::vec4 posi = glm::vec4(transform->GetWorldPosition(), 1.0f);
 
+        const glm::mat4 view = glm::inverse(m_camera->GetTransform()->ToMatrix());
+        const glm::mat4 proj = m_camera->GetProjection();
+
         for (auto iter = children.begin(); iter != children.end(); ++iter)
         {
             const Transform* cTransform = (*iter)->GetTransform();
+
             const glm::vec4 cPos = glm::vec4(cTransform->GetWorldPosition(), 1.0f);
 
-            const glm::vec3 fPos = a_ortho * posi;
-            const glm::vec3 fCPos = a_ortho * cPos;
+            const glm::vec3 fPos = view * proj * posi;
+            const glm::vec3 fCPos = view * proj * cPos;
 
             m_imRenderer->DrawLine(fPos, fCPos, 0.01f, { 1, 0, 0, 1 });
 
-            DrawObjectDetail(*iter, a_ortho);
+            DrawObjectDetail(*iter);
         }
     }
 }
 
-void UpdateObject(Object* a_object, double a_delta)
+void UpdateObject(Object* a_object, Camera* a_camera, double a_delta)
 {
     if (a_object != nullptr)
     {
-        a_object->UpdateComponents(true, a_delta);
+        a_object->UpdateComponents(true, a_camera, a_delta);
 
         const std::list<Object*> children = a_object->GetChildren();
 
         for (auto iter = children.begin(); iter != children.end(); ++iter)
         {
-            UpdateObject(*iter, a_delta);
+            UpdateObject(*iter, a_camera, a_delta);
         }
     }
 }
@@ -216,15 +235,48 @@ void SkeletonEditor::Update(double a_delta)
         ImGui::SetNextWindowSize({ 660, 400 }, ImGuiCond_Appearing);
         if (ImGui::Begin("Skeleton Preview"))
         {
+            glm::vec3 translation = m_camera->GetTransform()->Translation();
+
+            if (ImGui::IsMouseDown(2))
+            {
+                const ImVec2 tPos = ImGui::GetMousePos();
+                const glm::vec2 mousePos = { tPos.x, tPos.y };
+
+                if (m_lastMousePos.x > 0 && m_lastMousePos.y > 0)
+                {
+                    glm::vec2 mov = m_lastMousePos - mousePos;
+
+                    translation += glm::vec3(mov.x, mov.y, 0.0f) * MOUSE_SENSITIVITY;
+                }
+
+                m_lastMousePos = mousePos;
+            }
+            else
+            {
+                m_lastMousePos = glm::vec2(-1, -1);
+            }
+
+            const float mouseWheel = ImGui::GetIO().MouseWheel;
+
+            m_camera->GetTransform()->Translation() = translation;
+
+            const float wheelDelta = mouseWheel * MOUSE_WHEEL_SENSITIVITY;
+
+            m_zoom = glm::clamp(m_zoom - wheelDelta, 0.01f, MAX_ZOOM);
+            
+            translation.x = glm::clamp(translation.x, 0.0f, 2.0f);
+            translation.y = glm::clamp(translation.y, 0.0f, 2.0f);
+
             const ImVec2 size = ImGui::GetWindowSize();
+            const glm::vec2 trueSize = { (size.x - 20) / IMAGE_SIZE, (size.y - 40) / IMAGE_SIZE };
 
-            const glm::vec2 trueSize = { (size.x - 20) / 2048, (size.y - 40) / 2048 };
+            const glm::mat4 proj = glm::orthoRH(0.0f, trueSize.x * m_zoom, 0.0f, trueSize.y * m_zoom, -1.0f, 1.0f);
 
-            const glm::mat4 orth = glm::orthoRH(0.0f, trueSize.x, 0.0f, trueSize.y, -1.0f, 1.0f);
+            m_camera->SetProjection(proj);
 
             m_imRenderer->Reset();
 
-            DrawObjectDetail(m_baseObject, orth);
+            DrawObjectDetail(m_baseObject);
 
             m_renderTexture->Bind();
 
@@ -233,7 +285,7 @@ void SkeletonEditor::Update(double a_delta)
 
             m_imRenderer->Draw();
             
-            UpdateObject(m_baseObject, a_delta);
+            UpdateObject(m_baseObject, m_camera, a_delta);
 
             m_renderTexture->Unbind();
 

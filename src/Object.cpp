@@ -289,20 +289,20 @@ void Object::UpdateComponentUI()
     }
 }
 
-void Object::UpdateComponents(bool a_preview, double a_delta)
+void Object::UpdateComponents(bool a_preview, Camera* a_camera, double a_delta)
 {
     if (!a_preview)
     {
         for (auto iter = m_components.begin(); iter != m_components.end(); ++iter)
         {
-            (*iter)->Update(a_delta);
+            (*iter)->Update(a_delta, a_camera);
         }
     }
     else
     {
         for (auto iter = m_components.begin(); iter != m_components.end(); ++iter)
         {
-            (*iter)->UpdatePreview(a_delta);
+            (*iter)->UpdatePreview(a_delta, a_camera);
         }
     }
     

@@ -4,13 +4,16 @@
 
 #include "miniz.h"
 
+class Camera;
 class SkeletonEditor; 
 class WebcamController;
 
 class ModelController
 {
 private:
-    float* m_backgroundColor;
+    float*  m_backgroundColor;
+
+    Camera* m_camera;
 protected:
 
 public:

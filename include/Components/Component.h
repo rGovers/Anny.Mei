@@ -1,5 +1,6 @@
 #pragma once
 
+class Camera;
 class Object;
 class PropertyFile;
 class PropertyFileProperty;
@@ -22,8 +23,8 @@ public:
     Component(Object* a_object);
     virtual ~Component();
 
-    virtual void Update(double a_delta) = 0;
-    virtual void UpdatePreview(double a_delta) = 0;
+    virtual void Update(double a_delta, Camera* a_camera) = 0;
+    virtual void UpdatePreview(double a_delta, Camera* a_camera) = 0;
     virtual void UpdateGUI() = 0;
 
     virtual const char* ComponentName() const = 0;

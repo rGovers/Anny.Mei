@@ -1,8 +1,13 @@
 #include "ModelController.h"
 
+#define GLM_SWIZZLE
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+
 #include <fstream>
 #include <glad/glad.h>
 
+#include "Camera.h"
 #include "FileUtils.h"
 #include "imgui.h"
 #include "MemoryStream.h"
@@ -15,23 +20,29 @@
 ModelController::ModelController()
 {
     m_backgroundColor = new float[3] { 0, 1, 0 };
+
+    m_camera = new Camera();
+
+    const glm::mat4 proj = glm::orthoRH(0.0f, 1.0f, 0.0f, 0.5625f, -1.0f, 1.0f);
+
+    m_camera->SetProjection(proj);
 }
 ModelController::~ModelController()
 {
     
 }
 
-void DrawObjects(Object* a_object, double a_delta)
+void DrawObjects(Object* a_object, Camera* a_camera, double a_delta)
 {
     if (a_object != nullptr)
     {
-        a_object->UpdateComponents(false, a_delta);
+        a_object->UpdateComponents(false, a_camera, a_delta);
 
         std::list<Object*> children = a_object->GetChildren();
 
         for (auto iter = children.begin(); iter != children.end(); ++iter)
         {
-            DrawObjects(*iter, a_delta);
+            DrawObjects(*iter, a_camera, a_delta);
         }
     }
 }
@@ -43,7 +54,7 @@ void ModelController::DrawModel(const SkeletonEditor* a_skeletonEditor, double a
 
     Object* baseObject = a_skeletonEditor->GetBaseObject();
 
-    DrawObjects(baseObject, a_delta);
+    DrawObjects(baseObject, m_camera, a_delta);
 }
 void ModelController::Update(const WebcamController& a_webcamController)
 {

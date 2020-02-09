@@ -23,7 +23,7 @@ private:
 
     glm::vec3 m_anchor;
 
-    void Draw(bool a_preview);
+    void Draw(bool a_preview, Camera* a_camera);
 protected:
 
 public:
@@ -32,8 +32,8 @@ public:
     ImageRenderer(Object* a_object);
     virtual ~ImageRenderer();
 
-    virtual void Update(double a_delta);
-    virtual void UpdatePreview(double a_delta);
+    virtual void Update(double a_delta, Camera* a_camera);
+    virtual void UpdatePreview(double a_delta, Camera* a_camera);
     virtual void UpdateGUI();
 
     virtual const char* ComponentName() const;

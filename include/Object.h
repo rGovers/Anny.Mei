@@ -3,6 +3,7 @@
 #include <list>
 #include <map>
 
+class Camera;
 class Component;
 class PropertyFile;
 class PropertyFileProperty;
@@ -59,5 +60,5 @@ public:
     void SaveComponents(PropertyFile* a_propertyFile, PropertyFileProperty* a_parent) const;
 
     void UpdateComponentUI();
-    void UpdateComponents(bool a_preview, double a_delta);
+    void UpdateComponents(bool a_preview, Camera* a_camera, double a_delta);
 };
