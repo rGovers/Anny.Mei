@@ -6,10 +6,12 @@
 #include <map>
 
 #include "miniz.h"
-#include "Models/Model.h"
 
 class Camera;
 class IntermediateRenderer;
+class Model;
+struct ModelVertex;
+class Namer;
 class Object;
 class PropertyFile;
 class PropertyFileProperty;
@@ -27,6 +29,8 @@ struct ModelData
 class SkeletonEditor
 {
 private:
+    Namer*                m_namer;
+
     Object*               m_baseObject;
     Object*               m_selectedObject;
 

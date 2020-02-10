@@ -10,6 +10,7 @@
 #include "IntermediateRenderer.h"
 #include "MemoryStream.h"
 #include "Models/Model.h"
+#include "Namer.h"
 #include "Object.h"
 #include "PropertyFile.h"
 #include "RenderTexture.h"
@@ -21,11 +22,14 @@ const static float MOUSE_WHEEL_SENSITIVITY = 0.1f;
 const static int IMAGE_SIZE = 2048;
 const static float MAX_ZOOM = 2.5f;
 
-SkeletonEditor::SkeletonEditor() :
-    m_baseObject(new Object()),
-    m_selectedObject(nullptr)
+SkeletonEditor::SkeletonEditor()
 {
+    m_namer = new Namer();
+
+    m_baseObject = new Object(m_namer);
     m_baseObject->SetTrueName("Root Object");
+
+    m_selectedObject = nullptr;
 
     m_lastMousePos = glm::vec2(-1);
     m_zoom = 1;
@@ -83,7 +87,7 @@ void SkeletonEditor::ListObjects(Object* a_object, int& a_node)
     {
         if (ImGui::MenuItem("Add Object"))
         {
-            Object* object = new Object();
+            Object* object = new Object(m_namer);
             object->SetParent(a_object);
         }
 
@@ -280,7 +284,7 @@ void SkeletonEditor::Update(double a_delta)
 
             m_renderTexture->Bind();
 
-            glClearColor(0.0, 0.0, 0.0, 1);
+            glClearColor(0.1, 0.1, 0.1, 1);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);    
 
             m_imRenderer->Draw();
@@ -382,7 +386,7 @@ void SkeletonEditor::LoadObject(Object* a_object, PropertyFileProperty* a_proper
     {
         if (strcmp((*iter)->GetName(), "object") == 0)
         {
-            Object* object = new Object();
+            Object* object = new Object(m_namer);
             object->SetParent(a_object);
 
             LoadObject(object, *iter);

@@ -4,6 +4,7 @@
 
 class DataStore;
 class ModelController;
+class ModelEditor;
 class SkeletonEditor;
 class TextureEditor;
 class WebcamController;
@@ -19,8 +20,7 @@ private:
       
     SkeletonEditor*       m_skeletonEditor;
     TextureEditor*        m_textureEditor;
-
-    bool*                 m_menuState;
+    ModelEditor*          m_modelEditor;
     
     const char*           m_filePath;
 

@@ -5,47 +5,24 @@
 
 #include "Components/ImageRenderer.h"
 #include "imgui.h"
+#include "Name.h"
 #include "PropertyFile.h"
 #include "Transform.h"
 
 #define ISCREATECOMPONENT(Comp, Obj, Name, Construct) { if (strcmp(Name, Construct::COMPONENT_NAME) == 0) { Comp = new Construct(Obj); }}
 
-std::map<std::string, Object::ID>* Object::ObjectNames = nullptr;
-std::list<const char*>* Object::NameList = nullptr;
-
-Object::Object() : 
-    m_name(nullptr),
-    m_trueName(nullptr),
+Object::Object(Namer* a_namer) : 
     m_parent(nullptr),
     m_transform(new Transform()),
     m_windowOpen(false)
 {
-    if (ObjectNames == nullptr)
-    {
-        ObjectNames = new std::map<std::string, ID>();
-    }
-    if (NameList == nullptr)
-    {
-        NameList = new std::list<const char*>();
-    }
-
-    SetTrueName("Object");
+    m_name = new Name("Object", a_namer);
 }
 Object::~Object()
 {
     delete m_transform;
 
-    auto iter = ObjectNames->find(m_trueName);
-
-    if (iter != ObjectNames->end())
-    {
-        if (--iter->second.Objects <= 0)
-        {
-            ObjectNames->erase(iter);
-        }
-    }
-
-    NameList->remove(m_name);
+    delete m_name;
 
     if (m_parent != nullptr)
     {
@@ -98,131 +75,21 @@ std::list<Object*> Object::GetChildren() const
     return m_children;
 }
 
-void Object::CreateName(ID& a_id)
-{
-    const std::string str = std::to_string(a_id.ID);
-
-    const size_t len = strlen(m_trueName);
-    const size_t sLen = str.length();
-
-    size_t cLen = len + sLen;
-
-    m_name = new char[cLen];
-    strcpy(m_name, m_trueName);
-    strcpy(m_name + len, str.c_str());
-
-    a_id.ID++;
-    
-    bool found = false;
-
-    for (auto iter = NameList->begin(); iter != NameList->end(); ++iter)
-    {
-        if (strcmp(m_name, *iter) == 0)
-        {
-            found = true;
-
-            break;
-        }
-    }
-
-    if (found)
-    {
-        delete[] m_name;
-
-        CreateName(a_id);
-    }
-}
-
 void Object::SetTrueName(const char* a_trueName)
 {
-    if (m_trueName != nullptr)
-    {
-        if (strcmp(a_trueName, m_trueName) == 0)
-        {
-            return;
-        }
-
-        auto iter = ObjectNames->find(m_trueName);
-
-        if (iter != ObjectNames->end())
-        {
-            if (--iter->second.Objects <= 0)
-            {
-                ObjectNames->erase(iter);
-            }
-        }
-
-        delete[] m_trueName;
-        m_trueName = nullptr;
-    }
-    if (m_name != nullptr)
-    {
-        NameList->remove(m_name);
-        
-        delete[] m_name;
-        m_name = nullptr;
-    }
-
-    if (a_trueName != nullptr)
-    {
-        const size_t len = strlen(a_trueName);
-
-        if (len > 0)
-        {
-            m_trueName = new char[len];
-            strcpy(m_trueName, a_trueName);
-        
-            auto iter = ObjectNames->find(m_trueName);
-
-            if (iter == ObjectNames->end())
-            {
-                m_name = new char[len];
-                strcpy(m_name, m_trueName);
-
-                ObjectNames->emplace(m_trueName, ID{ 1, 1 });
-            }
-            else
-            {
-                CreateName(iter->second);
-
-                ++iter->second.Objects;
-            }
-
-            NameList->emplace_back(m_name);
-        }
-    }
+    m_name->SetTrueName(a_trueName);
 }
 const char* Object::GetTrueName() const
 {
-    return m_trueName;
+    return m_name->GetTrueName();
 }
 void Object::SetName(const char* a_name)
 {
-    if (m_name != nullptr)
-    {
-        if (strcmp(a_name, m_name) == 0)
-        {
-            return;
-        }
-
-        NameList->remove(m_name);
-
-        delete[] m_name;
-        m_name = nullptr;
-    }
-
-    if (a_name != nullptr)
-    {
-        m_name = new char[strlen(a_name)];
-
-        strcpy(m_name, a_name);
-
-        NameList->emplace_back(m_name);
-    }
+    m_name->SetName(a_name);
 }
 const char* Object::GetName() const
 {
-    return m_name;
+    return m_name->GetName();
 }
 
 void Object::LoadComponent(PropertyFileProperty* a_property)

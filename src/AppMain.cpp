@@ -14,6 +14,7 @@
 #include "imgui_impl_opengl3.h"
 #include "miniz.h"
 #include "ModelController.h"
+#include "ModelEditor.h"
 #include "SkeletonEditor.h"
 #include "Texture.h"
 #include "TextureEditor.h"
@@ -34,14 +35,15 @@ MessageCallback( GLenum a_source,
 }
 
 AppMain::AppMain(int a_width, int a_height) : 
-    Application(a_width, a_height, "Anny.Mei"),
-    m_modelController(nullptr),
-    m_textureEditor(nullptr),
-    m_menuState(new bool(true)),
-    m_filePath(nullptr),
-    m_dataStore(nullptr)
+    Application(a_width, a_height, "Anny.Mei")
 {
     m_webcamController = new WebcamController(1280, 720);
+
+    m_modelController = nullptr;
+
+    m_skeletonEditor = nullptr;
+    m_textureEditor = nullptr;
+    m_modelEditor = nullptr;
 
     glEnable(GL_DEBUG_OUTPUT);
     glDebugMessageCallback(MessageCallback, 0);
@@ -76,6 +78,10 @@ AppMain::~AppMain()
     {
         delete m_modelController;
     }
+    if (m_modelEditor != nullptr)
+    {
+        delete m_modelEditor;
+    }
     if (m_textureEditor != nullptr)
     {
         delete m_textureEditor;
@@ -96,6 +102,10 @@ void AppMain::New()
     {
         delete m_skeletonEditor;
     }
+    if (m_modelEditor != nullptr)
+    {
+        delete m_modelEditor;
+    }
 
     if (m_dataStore != nullptr)
     {
@@ -106,7 +116,10 @@ void AppMain::New()
 
     m_skeletonEditor = new SkeletonEditor();
     m_modelController = new ModelController();
-    m_textureEditor = new TextureEditor(m_dataStore);
+    
+    m_textureEditor = new TextureEditor();
+    m_modelEditor = new ModelEditor();
+
     m_filePath = nullptr;
 }
 void AppMain::Open()
@@ -148,7 +161,8 @@ void AppMain::Open()
 
                 m_modelController = ModelController::Load(zip); 
                 m_skeletonEditor = SkeletonEditor::Load(zip);
-                m_textureEditor = TextureEditor::Load(zip, m_dataStore);
+                m_textureEditor = TextureEditor::Load(zip);
+                m_modelEditor = ModelEditor::Load(zip);
             } 
 
             mz_zip_reader_end(&zip);
@@ -163,7 +177,7 @@ void AppMain::Open()
             }
             if (m_textureEditor == nullptr)
             {
-                m_textureEditor = new TextureEditor(m_dataStore);
+                m_textureEditor = new TextureEditor();
             }
         }
         else
@@ -184,6 +198,7 @@ void AppMain::Save() const
         m_modelController->Save(zip);
         m_textureEditor->Save(zip);
         m_skeletonEditor->Save(zip);
+        m_modelEditor->Save(zip);
 
         mz_zip_writer_finalize_archive(&zip);
         mz_zip_writer_end(&zip);
@@ -320,11 +335,15 @@ void AppMain::Update(double a_delta)
     }
     if (m_textureEditor != nullptr)
     {
-        m_textureEditor->Update(a_delta);
+        m_textureEditor->Update(a_delta, m_modelEditor);
     }
     if (m_modelController != nullptr)
     {
         m_modelController->Update(*m_webcamController);
+    }
+    if (m_modelEditor != nullptr)
+    {
+        m_modelEditor->Update(a_delta);
     }
 
     ImGui::Render();

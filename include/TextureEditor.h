@@ -7,6 +7,7 @@
 #include "FileLoaders/ImageLoader.h"
 #include "miniz.h"
 
+class ModelEditor;
 class ModelPreview;
 class PropertyFileProperty;
 class SkeletonController;
@@ -16,18 +17,14 @@ struct ModelVertex;
 
 struct LayerTexture
 {
-    ModelPreview* ModelData;
     unsigned char* Data;
     LayerMeta* Meta;
-    ModelVertex* Vertices;
-    unsigned int* Indices;
 };
 
 class TextureEditor
 {
 private:
     std::vector<LayerTexture>* m_layers;
-    DataStore*                 m_dataStore;
 
     int                        m_selectedIndex;
     
@@ -37,17 +34,15 @@ private:
     Texture* GenerateTexture(LayerTexture& a_layerTexture) const;
     
     void GetImageData(PropertyFileProperty& a_property, mz_zip_archive& a_archive);
-    void GetModelData(PropertyFileProperty& a_property, mz_zip_archive& a_archive);
 
     void SaveImageData(mz_zip_archive& a_archive) const;
-    void SaveModelData(mz_zip_archive& a_archive) const;
 protected:
 
 public:
-    TextureEditor(DataStore* a_dataStore);
+    TextureEditor();
     ~TextureEditor();
 
-    void Update(double a_delta);
+    void Update(double a_delta, ModelEditor* a_modelEditor);
 
     void LoadTexture(const char* a_path);
 
@@ -55,6 +50,6 @@ public:
 
     LayerMeta GetLayerMeta(unsigned int a_index) const;
 
-    static TextureEditor* Load(mz_zip_archive& a_archive, DataStore* a_dataStore);
+    static TextureEditor* Load(mz_zip_archive& a_archive);
     void Save(mz_zip_archive& a_archive) const;
 };

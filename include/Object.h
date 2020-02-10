@@ -1,10 +1,11 @@
 #pragma once
 
 #include <list>
-#include <map>
 
 class Camera;
 class Component;
+class Name;
+class Namer;
 class PropertyFile;
 class PropertyFileProperty;
 class Transform;
@@ -12,17 +13,7 @@ class Transform;
 class Object
 {
 private:
-    struct ID
-    {
-        long ID;
-        long Objects;
-    };
-
-    static std::map<std::string, ID>* ObjectNames;
-    static std::list<const char*>*     NameList;
-
-    char*                             m_name;
-    char*                             m_trueName;
+    Name*                             m_name;
 
     Object*                           m_parent;
     std::list<Object*>                m_children;
@@ -33,11 +24,11 @@ private:
 
     bool                              m_windowOpen;
 
-    void CreateName(ID& a_id);
 protected:
 
 public:
-    Object();
+    Object() = delete;
+    Object(Namer* a_namer);
     ~Object();
 
     Transform* GetTransform() const;

@@ -36,9 +36,8 @@ public:
     unsigned int GetVBO() const;
     unsigned int GetIBO() const;
 
-    void SetVerticiesCount(unsigned int a_verticies);
-    unsigned int GetVerticiesCount() const;
-
     void SetIndiciesCount(unsigned int a_indicies);
     unsigned int GetIndiciesCount() const;
+
+    virtual e_ModelType GetModelType() const;
 };
