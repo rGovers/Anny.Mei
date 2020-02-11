@@ -26,6 +26,7 @@ Application::Application(int a_width, int a_height, const char* a_application) :
         assert(0);
     }
     glfwMakeContextCurrent(m_window);
+    glfwMaximizeWindow(m_window);
 
     assert(gladLoadGLLoader((GLADloadproc)glfwGetProcAddress));
 

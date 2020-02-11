@@ -1,9 +1,11 @@
 #pragma once
 
+#include <glm/glm.hpp>
 #include <list>
 
 #include "miniz.h"
 
+class Camera;
 class Model;
 struct ModelVertex;
 class Name;
@@ -39,6 +41,12 @@ private:
 
     bool                   m_solid;
     bool                   m_wireframe;
+    bool                   m_alpha;
+
+    float                  m_zoom;
+    glm::vec2              m_lastMousePos;
+
+    glm::vec3              m_translation;
 
     void GetModelData(PropertyFileProperty& a_property, mz_zip_archive& a_archive);
 

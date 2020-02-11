@@ -19,7 +19,7 @@
 
 const static float MOUSE_SENSITIVITY = 0.001f;
 const static float MOUSE_WHEEL_SENSITIVITY = 0.1f;
-const static int IMAGE_SIZE = 2048;
+const static int IMAGE_SIZE = 4096;
 const static float MAX_ZOOM = 2.5f;
 
 SkeletonEditor::SkeletonEditor()
@@ -239,45 +239,48 @@ void SkeletonEditor::Update(double a_delta)
         ImGui::SetNextWindowSize({ 660, 400 }, ImGuiCond_Appearing);
         if (ImGui::Begin("Skeleton Preview"))
         {
-            glm::vec3 translation = m_camera->GetTransform()->Translation();
+            const ImVec2 size = ImGui::GetWindowSize();
 
-            if (ImGui::IsMouseDown(2))
+            if (ImGui::IsWindowFocused())
             {
-                const ImVec2 tPos = ImGui::GetMousePos();
-                const glm::vec2 mousePos = { tPos.x, tPos.y };
+                glm::vec3 translation = m_camera->GetTransform()->Translation();
 
-                if (m_lastMousePos.x > 0 && m_lastMousePos.y > 0)
+                if (ImGui::IsMouseDown(2))
                 {
-                    glm::vec2 mov = m_lastMousePos - mousePos;
+                    const ImVec2 tPos = ImGui::GetMousePos();
+                    const glm::vec2 mousePos = { tPos.x, tPos.y };
 
-                    translation += glm::vec3(mov.x, mov.y, 0.0f) * MOUSE_SENSITIVITY;
+                    if (m_lastMousePos.x >= 0 && m_lastMousePos.y >= 0)
+                    {
+                        glm::vec2 mov = m_lastMousePos - mousePos;
+
+                        translation += glm::vec3(mov.x, mov.y, 0.0f) * MOUSE_SENSITIVITY;
+                    }
+
+                    m_lastMousePos = mousePos;
+                }
+                else
+                {
+                    m_lastMousePos = glm::vec2(-1);
                 }
 
-                m_lastMousePos = mousePos;
+                const float mouseWheel = ImGui::GetIO().MouseWheel;
+
+                const float wheelDelta = mouseWheel * MOUSE_WHEEL_SENSITIVITY;
+
+                m_zoom = glm::clamp(m_zoom - wheelDelta, 0.01f, MAX_ZOOM);
+
+                translation.x = glm::clamp(translation.x, -5.0f, 5.0f);
+                translation.y = glm::clamp(translation.y, -5.0f, 5.0f);
+
+                const glm::vec2 trueSize = { (size.x - 20) / IMAGE_SIZE, (size.y - 40) / IMAGE_SIZE };
+
+                const glm::mat4 proj = glm::orthoRH(0.0f, trueSize.x * m_zoom * 5, 0.0f, trueSize.y * m_zoom * 5, -1.0f, 1.0f);
+
+                m_camera->SetProjection(proj);
+                m_camera->GetTransform()->Translation() = translation;
             }
-            else
-            {
-                m_lastMousePos = glm::vec2(-1, -1);
-            }
-
-            const float mouseWheel = ImGui::GetIO().MouseWheel;
-
-            m_camera->GetTransform()->Translation() = translation;
-
-            const float wheelDelta = mouseWheel * MOUSE_WHEEL_SENSITIVITY;
-
-            m_zoom = glm::clamp(m_zoom - wheelDelta, 0.01f, MAX_ZOOM);
             
-            translation.x = glm::clamp(translation.x, 0.0f, 2.0f);
-            translation.y = glm::clamp(translation.y, 0.0f, 2.0f);
-
-            const ImVec2 size = ImGui::GetWindowSize();
-            const glm::vec2 trueSize = { (size.x - 20) / IMAGE_SIZE, (size.y - 40) / IMAGE_SIZE };
-
-            const glm::mat4 proj = glm::orthoRH(0.0f, trueSize.x * m_zoom, 0.0f, trueSize.y * m_zoom, -1.0f, 1.0f);
-
-            m_camera->SetProjection(proj);
-
             m_imRenderer->Reset();
 
             DrawObjectDetail(m_baseObject);

@@ -1,8 +1,10 @@
 #include "ModelEditor.h"
 
 #include <glad/glad.h>
+#include <glm/gtc/matrix_transform.hpp>
 #include <string.h>
 
+#include "Camera.h"
 #include "DataStore.h"
 #include "FileUtils.h"
 #include "imgui/imgui.h"
@@ -17,6 +19,12 @@
 #include "Shaders/SolidPixel.h"
 #include "Shaders/StandardPixel.h"
 #include "Texture.h"
+#include "Transform.h"
+
+const static float MOUSE_SENSITIVITY = 0.001f;
+const static float MOUSE_WHEEL_SENSITIVITY = 0.1f;
+const static int IMAGE_SIZE = 4096;
+const static float MAX_ZOOM = 2.5f;
 
 ModelEditor::ModelEditor()
 {
@@ -24,12 +32,16 @@ ModelEditor::ModelEditor()
 
     m_namer = new Namer();
 
-    m_renderTexture = new RenderTexture(2048, 2048, GL_RGBA);
+    m_renderTexture = new RenderTexture(IMAGE_SIZE, IMAGE_SIZE, GL_RGBA);
 
     m_selectedModelData = nullptr;
 
     m_solid = true;
     m_wireframe = false;
+    m_alpha = false;
+
+    m_zoom = 1.0f;
+    m_translation = glm::vec3(0);
 
     const unsigned int pixelShader = glCreateShader(GL_FRAGMENT_SHADER);
     glShaderSource(pixelShader, 1, &STANDARDPIXEL, 0);
@@ -215,18 +227,57 @@ void ModelEditor::Update(double a_delta)
 
     if (m_selectedModelData != nullptr)
     {
-        glm::mat4 transform = glm::mat4(2);
-        transform[3] = { -1.0f, -1.0f, 0, 1 };
+        glm::mat4 transform = glm::mat4(1);
 
         ImGui::SetNextWindowSize({ 420, 440 }, ImGuiCond_Appearing);
         if (ImGui::Begin("Model Editor", nullptr, ImGuiWindowFlags_MenuBar))
         {
+            if (ImGui::IsWindowFocused())
+            {
+                if (ImGui::IsMouseDown(2))
+                {
+                    const ImVec2 tPos = ImGui::GetMousePos();
+                    const glm::vec2 mousePos = { tPos.x, tPos.y };
+
+                    if (m_lastMousePos.x >= 0 && m_lastMousePos.y >= 0)
+                    {
+                        glm::vec2 mov = m_lastMousePos - mousePos;
+
+                        m_translation += glm::vec3(mov.x, mov.y, 0.0f) * MOUSE_SENSITIVITY;
+                    }
+
+                    m_lastMousePos = mousePos;
+                }
+                else
+                {
+                    m_lastMousePos = glm::vec2(-1);
+                }
+
+                const float mouseWheel = ImGui::GetIO().MouseWheel;
+
+                const float wheelDelta = mouseWheel * MOUSE_WHEEL_SENSITIVITY;
+
+                m_zoom = glm::clamp(m_zoom - wheelDelta, 0.01f, MAX_ZOOM);
+
+                m_translation.x = glm::clamp(m_translation.x, -1.0f, 1.0f);
+                m_translation.y = glm::clamp(m_translation.y, -1.0f, 1.0f);
+            }
+
+            const ImVec2 size = ImGui::GetWindowSize();
+            const glm::vec2 trueSize = { (size.x - 20) / IMAGE_SIZE, (size.y - 60) / IMAGE_SIZE };
+
+            const glm::mat4 proj = glm::orthoRH(0.0f, trueSize.x * m_zoom * 5, 0.0f, trueSize.y * m_zoom * 5, -1.0f, 1.0f);
+            const glm::mat4 view = glm::inverse(glm::translate(glm::mat4(1), m_translation));
+
+            const glm::mat4 finalTransform = proj * view * transform;
+
             if (ImGui::BeginMenuBar())
             {
                 if (ImGui::BeginMenu("View"))
                 {
                     ImGui::MenuItem("Solid", nullptr, &m_solid);
                     ImGui::MenuItem("Wireframe", nullptr, &m_wireframe);
+                    ImGui::MenuItem("Alpha", nullptr, &m_alpha);
         
                     ImGui::EndMenu();
                 }
@@ -243,6 +294,12 @@ void ModelEditor::Update(double a_delta)
 
             const char* texName = m_selectedModelData->TextureName;
 
+            if (m_alpha)
+            {
+                glEnable(GL_BLEND);
+                glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);     
+            }
+
             if (texName != nullptr)
             {
                 tex = store->GetTexture(texName);
@@ -258,7 +315,7 @@ void ModelEditor::Update(double a_delta)
                     glUseProgram(wireHandle);
 
                     const int modelLocation = glGetUniformLocation(wireHandle, "model");
-                    glUniformMatrix4fv(modelLocation, 1, GL_FALSE, (float*)&transform);
+                    glUniformMatrix4fv(modelLocation, 1, GL_FALSE, (float*)&finalTransform);
 
                     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
                     glDrawElements(GL_TRIANGLES, m_selectedModelData->IndexCount, GL_UNSIGNED_INT, 0);
@@ -271,7 +328,7 @@ void ModelEditor::Update(double a_delta)
                     glUseProgram(baseHandle);
 
                     const int modelLocation = glGetUniformLocation(baseHandle, "model");
-                    glUniformMatrix4fv(modelLocation, 1, GL_FALSE, (float*)&transform);
+                    glUniformMatrix4fv(modelLocation, 1, GL_FALSE, (float*)&finalTransform);
 
                     const int location = glGetUniformLocation(baseHandle, "MainTex");
                     glActiveTexture(GL_TEXTURE0);
@@ -282,9 +339,11 @@ void ModelEditor::Update(double a_delta)
                 }
             }
 
+            glDisable(GL_BLEND);
+
             m_renderTexture->Unbind();
 
-            ImGui::Image((ImTextureID)m_renderTexture->GetTexture()->GetHandle(), { 400, 400 });
+            ImGui::Image((ImTextureID)m_renderTexture->GetTexture()->GetHandle(), { size.x - 20, size.y - 60 });
         }
         ImGui::End();
     }
