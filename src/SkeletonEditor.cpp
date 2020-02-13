@@ -148,13 +148,23 @@ void SkeletonEditor::DrawObjectDetail(Object* a_object) const
         const glm::mat4 view = glm::inverse(m_camera->GetTransform()->ToMatrix());
         const glm::mat4 proj = m_camera->GetProjection();
 
+        const glm::vec3 fPos = view * proj * posi;
+
+        if (a_object == m_selectedObject)
+        {
+            m_imRenderer->DrawCircle(fPos, 20, 0.05f, 0.01f, { 0, 1, 0, 1});
+        }
+        else
+        {
+            m_imRenderer->DrawCircle(fPos, 20, 0.02f, 0.01f);
+        }
+
         for (auto iter = children.begin(); iter != children.end(); ++iter)
         {
             const Transform* cTransform = (*iter)->GetTransform();
 
             const glm::vec4 cPos = glm::vec4(cTransform->GetWorldPosition(), 1.0f);
 
-            const glm::vec3 fPos = view * proj * posi;
             const glm::vec3 fCPos = view * proj * cPos;
 
             m_imRenderer->DrawLine(fPos, fCPos, 0.01f, { 1, 0, 0, 1 });

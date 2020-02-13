@@ -19,6 +19,8 @@ TextureEditor::TextureEditor() :
     m_vSize({ 512, 512 })
 {
     m_layers = new std::vector<LayerTexture>();
+
+    m_alphaThreshold = 0.9f;
 }
 TextureEditor::~TextureEditor()
 {
@@ -118,21 +120,22 @@ void TextureEditor::Update(double a_delta, ModelEditor* a_modelEditor)
         {
             ImGui::InputInt2("Step XY", (int*)m_stepXY);
             ImGui::InputInt2("Voronoi Size", (int*)m_vSize);
+            ImGui::DragFloat("Alpha Threshold", &m_alphaThreshold, 0.01f, 0.0001f, 1.0f);
 
             if (ImGui::Button("Triangulate", { 200, 20 }))
             {
                 const LayerTexture layerTexture = m_layers->at(m_selectedIndex);
 
-                const TriImage* triImage = new TriImage(layerTexture.Data, m_stepXY[0], m_stepXY[1], layerTexture.Meta->Width, layerTexture.Meta->Height, m_vSize[0], m_vSize[1], 0.1f);
-                
+                const TriImage* triImage = new TriImage(layerTexture.Data, m_stepXY[0], m_stepXY[1], layerTexture.Meta->Width, layerTexture.Meta->Height, m_vSize[0], m_vSize[1], m_alphaThreshold);
+
                 const unsigned int indexCount = triImage->GetIndexCount();
 
                 const unsigned int indexSize = indexCount * sizeof(unsigned int);
                 unsigned int* indicies = new unsigned int[indexSize];
-                memcpy(indicies, triImage->GetIndicies(), indexSize);
+                memcpy(indicies, triImage->GetIndices(), indexSize);
 
                 const unsigned int vertexCount = triImage->GetVertexCount();
-                ModelVertex* modelVerticies = triImage->ToModelVerticies();
+                ModelVertex* modelVerticies = triImage->ToModelVertices();
 
                 a_modelEditor->AddModel(layerTexture.Meta->Name, modelVerticies, vertexCount, indicies, indexCount);
 

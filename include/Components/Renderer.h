@@ -2,12 +2,24 @@
 
 #include "Component.h"
 
+#include <glm/glm.hpp>
+
+class PropertyFileProperty;
+
 class Renderer : public Component
 {
 private:
+    char*     m_modelName;
 
+    glm::vec3 m_anchor;
 protected:
+    void UpdateRendererGUI();
 
+    void LoadValues(PropertyFileProperty* a_property);
+    PropertyFileProperty* SaveValues(PropertyFile* a_propertyFile, PropertyFileProperty* a_parent) const;
+
+    const char* GetModelName() const;
+    glm::vec3 GetAnchor() const;
 public:
     Renderer(Object* a_object);
     virtual ~Renderer();

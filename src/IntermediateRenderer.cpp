@@ -93,6 +93,25 @@ void IntermediateRenderer::DrawLine(const glm::vec3& a_start, const glm::vec3& a
     m_indices.emplace_back(startInd + 2);
 }
 
+void IntermediateRenderer::DrawCircle(const glm::vec3& a_pos, int a_iteration, float a_radius, float a_width, const glm::vec4& a_color)
+{
+    const static float PI2 = (M_PI * 2);
+
+    for (int i = 0; i < a_iteration; ++i)
+    {
+        const float angleA = (i / (float)a_iteration) * PI2;
+        const float angleB = ((i + 1) / (float)a_iteration) * PI2;
+
+        const glm::vec2 dirA = { sin(angleA), cos(angleA) };
+        const glm::vec2 dirB = { sin(angleB), cos(angleB) };
+
+        const glm::vec3 posA = a_pos + glm::vec3(dirA, 0) * a_radius;
+        const glm::vec3 posB = a_pos + glm::vec3(dirB, 0) * a_radius;
+
+        DrawLine(posA, posB, a_width, a_color);
+    }
+}
+
 void IntermediateRenderer::Draw()
 {
     const size_t indexCount = m_indices.size();

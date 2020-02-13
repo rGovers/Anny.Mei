@@ -25,6 +25,11 @@ FileToHeader(
     SOURCE_FILE "shaders/ModelVertex.glsl" 
     HEADER_FILE "include/Shaders/ModelVertex.h"
     VARIABLE_NAME "ModelVertex")
+FileToHeader(
+    SOURCE_FILE "shaders/MorphPlaneVertex.glsl"
+    HEADER_FILE "include/Shaders/MorphPlaneVertex.h"
+    VARIABLE_NAME "MorphPlaneVertex"
+)
 
 FileToHeader(
     SOURCE_FILE "shaders/StandardPixel.glsl" 

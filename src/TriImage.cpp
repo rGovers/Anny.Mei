@@ -117,13 +117,15 @@ TriImage::TriImage(const unsigned char* a_textureData, int a_stepX, int a_stepY,
     std::list<glm::vec2> verticies;
     std::list<TriImageTriangle> triangles;
 
+    const unsigned int scaledAlpha = a_alphaThreshold * 255;
+
     for (int x = 0; x < a_width; ++x)
     {
         for (int y = 0; y < a_height; ++y)
         {
             const int index = (x + y * a_width) * 4 + 3;
 
-            if (a_textureData[index] > a_alphaThreshold * 255)
+            if (a_textureData[index] > scaledAlpha)
             {
                 if ((x % a_stepX == 0 && y % a_stepY == 0))
                 {
@@ -150,7 +152,7 @@ TriImage::TriImage(const unsigned char* a_textureData, int a_stepX, int a_stepY,
 
                         const int nIndex = (nX + nY * a_width) * 4 + 3;
 
-                        if (a_textureData[nIndex] <= a_alphaThreshold)
+                        if (a_textureData[nIndex] <= scaledAlpha)
                         {
                             ++blankNum;
                         }
@@ -284,7 +286,7 @@ unsigned int TriImage::GetIndexCount() const
 {
     return m_indexCount;
 }
-unsigned int* TriImage::GetIndicies() const
+unsigned int* TriImage::GetIndices() const
 {
     return m_indicies;
 }
@@ -294,7 +296,7 @@ unsigned int TriImage::GetVertexCount() const
     return m_vertCount;
 }
 
-ModelVertex* TriImage::ToModelVerticies() const
+ModelVertex* TriImage::ToModelVertices() const
 {
     ModelVertex* verts = new ModelVertex[m_vertCount];
 
@@ -308,17 +310,4 @@ ModelVertex* TriImage::ToModelVerticies() const
 
     return verts;
 }
-SkinnedVertex* TriImage::ToSkinnedVerticies() const
-{
-    SkinnedVertex* verts = new SkinnedVertex[m_vertCount];
 
-    for (int i = 0; i < m_vertCount; ++i)
-    {
-        const glm::vec2 pos = m_verts[i];
-
-        verts[i].Position = glm::vec4(pos, 0, 1);
-        verts[i].TexCoord = pos;
-    }
-
-    return verts;
-}

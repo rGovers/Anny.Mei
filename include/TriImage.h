@@ -35,10 +35,9 @@ public:
     ~TriImage();
 
     unsigned int GetIndexCount() const;
-    unsigned int* GetIndicies() const;
+    unsigned int* GetIndices() const;
 
     unsigned int GetVertexCount() const;
 
-    ModelVertex* ToModelVerticies() const;
-    SkinnedVertex* ToSkinnedVerticies() const;
+    ModelVertex* ToModelVertices() const;
 };

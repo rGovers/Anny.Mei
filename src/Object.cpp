@@ -4,6 +4,7 @@
 #include <string.h>
 
 #include "Components/ImageRenderer.h"
+#include "Components/MorphPlaneRenderer.h"
 #include "imgui.h"
 #include "Name.h"
 #include "PropertyFile.h"
@@ -97,6 +98,7 @@ void Object::LoadComponent(PropertyFileProperty* a_property)
     Component* comp = nullptr;
 
     ISCREATECOMPONENT(comp, this, a_property->GetName(), ImageRenderer)
+    ISCREATECOMPONENT(comp, this, a_property->GetName(), MorphPlaneRenderer)
 
     if (comp != nullptr)
     {
@@ -126,9 +128,28 @@ void Object::UpdateComponentUI()
 
         Component* component = nullptr;
 
-        if (ImGui::Selectable("ImageRenderer"))
+        bool createImageRenderer = true;
+        bool createMorphPlaneRenderer = true;
+
+        for (auto iter = m_components.begin(); iter != m_components.end(); ++iter)
+        {
+            if (strcmp((*iter)->ComponentName(), ImageRenderer::COMPONENT_NAME) == 0)
+            {
+                createImageRenderer = false;
+            }
+            else if (strcmp((*iter)->ComponentName(), MorphPlaneRenderer::COMPONENT_NAME) == 0)
+            {
+                createMorphPlaneRenderer = false;
+            }
+        }
+
+        if (createImageRenderer && ImGui::Selectable(ImageRenderer::COMPONENT_NAME))
         {
             component = new ImageRenderer(this);
+        }
+        if (createMorphPlaneRenderer && ImGui::Selectable(MorphPlaneRenderer::COMPONENT_NAME))
+        {
+            component = new MorphPlaneRenderer(this);
         }
 
         if (component != nullptr)

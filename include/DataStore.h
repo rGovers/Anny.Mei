@@ -13,6 +13,7 @@ private:
     struct ModelWrap
     {
         Model* Base;
+        Model* MorphPlane;
         char* TextureName;
     };
 
@@ -29,7 +30,7 @@ public:
 
     static DataStore* GetInstance();
 
-    void AddModel(const char* a_name, e_ModelType a_modelType, Model* a_model);
+    void AddModel(const char* a_name, Model* a_model);
     Model* GetModel(const char* a_name, e_ModelType a_modelType) const;
     void RemoveModelAll(const char* a_name);
     void RemoteModel(const char* a_name, e_ModelType a_modelType);

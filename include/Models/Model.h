@@ -1,12 +1,12 @@
 #pragma once
 
-#define GLM_SWIZZLE
 #include <glm/glm.hpp>
 
 enum class e_ModelType
 {
     Base,
-    Skinned
+    Skinned,
+    MorphPlane
 };
 
 struct ModelVertex
@@ -30,7 +30,7 @@ protected:
 
 public:
     Model();
-    ~Model();
+    virtual ~Model();
 
     unsigned int GetVAO() const;
     unsigned int GetVBO() const;

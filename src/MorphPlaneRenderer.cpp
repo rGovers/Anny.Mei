@@ -1,29 +1,25 @@
-#include "Components/ImageRenderer.h"
+#include "Components/MorphPlaneRenderer.h"
 
 #include <glad/glad.h>
 #include <glm/glm.hpp>
 
 #include "Camera.h"
 #include "DataStore.h"
-#include "FileUtils.h"
-#include "imgui.h"
-#include "Material.h"
 #include "Models/Model.h"
 #include "Object.h"
-#include "PropertyFile.h"
 #include "ShaderProgram.h"
-#include "Shaders/ModelVertex.h"
+#include "Shaders/MorphPlaneVertex.h"
 #include "Shaders/StandardPixel.h"
 #include "Texture.h"
 #include "Transform.h"
 
-const char* ImageRenderer::COMPONENT_NAME = "ImageRenderer";
+const char* MorphPlaneRenderer::COMPONENT_NAME = "MorphPlaneRenderer";
 
-ImageRenderer::ImageRenderer(Object* a_object) :
+MorphPlaneRenderer::MorphPlaneRenderer(Object* a_object) : 
     Renderer(a_object)
 {
     const int vertexS = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertexS, 1, &MODELVERTEX, nullptr);
+    glShaderSource(vertexS, 1, &MORPHPLANEVERTEX, nullptr);
     glCompileShader(vertexS);
 
     const int pixelS = glCreateShader(GL_FRAGMENT_SHADER);
@@ -35,12 +31,12 @@ ImageRenderer::ImageRenderer(Object* a_object) :
     glDeleteShader(vertexS);
     glDeleteShader(pixelS);
 }
-ImageRenderer::~ImageRenderer()
+MorphPlaneRenderer::~MorphPlaneRenderer()
 {
     delete m_shaderProgram;
 }
 
-void ImageRenderer::Draw(bool a_preview, Camera* a_camera)
+void MorphPlaneRenderer::Draw(bool a_preview, double a_delta, Camera* a_camera)
 {
     const DataStore* store = DataStore::GetInstance();
 
@@ -48,7 +44,7 @@ void ImageRenderer::Draw(bool a_preview, Camera* a_camera)
 
     const char* modelName = GetModelName();
 
-    const Model* model = store->GetModel(modelName, e_ModelType::Base);
+    const Model* model = store->GetModel(modelName, e_ModelType::MorphPlane);
 
     const char* textureName = store->GetModelTextureName(modelName);
 
@@ -101,29 +97,29 @@ void ImageRenderer::Draw(bool a_preview, Camera* a_camera)
     }
 }
 
-void ImageRenderer::Update(double a_delta, Camera* a_camera)
+void MorphPlaneRenderer::Update(double a_delta, Camera* a_camera)
 {
-    Draw(false, a_camera);
+    Draw(false, a_delta, a_camera);
 }
-void ImageRenderer::UpdatePreview(double a_delta, Camera* a_camera)
+void MorphPlaneRenderer::UpdatePreview(double a_delta, Camera* a_camera)
 {
-    Draw(true, a_camera);
+    Draw(true, a_delta, a_camera);
 }
-void ImageRenderer::UpdateGUI()
+void MorphPlaneRenderer::UpdateGUI()
 {
     UpdateRendererGUI();
 }
 
-const char* ImageRenderer::ComponentName() const
+const char* MorphPlaneRenderer::ComponentName() const
 {
     return COMPONENT_NAME;
 }
 
-void ImageRenderer::Load(PropertyFileProperty* a_property)
+void MorphPlaneRenderer::Load(PropertyFileProperty* a_property)
 {
     LoadValues(a_property);
 }
-void ImageRenderer::Save(PropertyFile* a_propertyFile, PropertyFileProperty* a_parent) const
+void MorphPlaneRenderer::Save(PropertyFile* a_propertyFile, PropertyFileProperty* a_parent) const
 {
     SaveValues(a_propertyFile, a_parent);
 }

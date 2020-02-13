@@ -28,6 +28,8 @@ private:
 
     int                        m_selectedIndex;
     
+    float                      m_alphaThreshold;
+
     unsigned int               m_stepXY[2];   
     int                        m_vSize[2];
 

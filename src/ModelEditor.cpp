@@ -8,8 +8,9 @@
 #include "DataStore.h"
 #include "FileUtils.h"
 #include "imgui/imgui.h"
-#include "Material.h"
 #include "Models/Model.h"
+#include "Models/MorphPlaneModel.h"
+#include "MorphPlane.h"
 #include "Name.h"
 #include "Namer.h"
 #include "PropertyFile.h"
@@ -21,9 +22,11 @@
 #include "Texture.h"
 #include "Transform.h"
 
+const static int BUFFER_SIZE = 1024;
+
 const static float MOUSE_SENSITIVITY = 0.001f;
 const static float MOUSE_WHEEL_SENSITIVITY = 0.1f;
-const static int IMAGE_SIZE = 4096;
+const static int IMAGE_SIZE = 2048;
 const static float MAX_ZOOM = 2.5f;
 
 ModelEditor::ModelEditor()
@@ -31,6 +34,7 @@ ModelEditor::ModelEditor()
     m_models = new std::list<ModelData*>();
 
     m_namer = new Namer();
+    m_morphPlaneNamer = new Namer();
 
     m_renderTexture = new RenderTexture(IMAGE_SIZE, IMAGE_SIZE, GL_RGBA);
 
@@ -68,7 +72,7 @@ ModelEditor::~ModelEditor()
     {
         delete[] (*iter)->TextureName;
         delete (*iter)->ModelName;
-        delete (*iter)->ModelP;
+        delete (*iter)->BaseModel;
 
         delete *iter;
     }
@@ -92,6 +96,7 @@ void ModelEditor::GetModelData(PropertyFileProperty& a_property, mz_zip_archive&
     char* texName = nullptr;
     int vertexCount = -1;
     int indexCount = -1;
+    int modelType = (int)e_ModelType::Base;
 
     for (auto iter = a_property.Values().begin(); iter != a_property.Values().end(); ++iter)
     {
@@ -100,6 +105,7 @@ void ModelEditor::GetModelData(PropertyFileProperty& a_property, mz_zip_archive&
         else IFSETTOATTVALCPY("texname", iter->Name, texName, iter->Value)
         else IFSETTOATTVALI("vertices", iter->Name, vertexCount, iter->Value)
         else IFSETTOATTVALI("indices", iter->Name, indexCount, iter->Value)
+        else IFSETTOATTVALI("modeltype", iter->Name, modelType, iter->Value)
     }
 
     if (name != nullptr && trueName != nullptr && vertexCount > 0 && indexCount > 0)
@@ -110,7 +116,7 @@ void ModelEditor::GetModelData(PropertyFileProperty& a_property, mz_zip_archive&
         unsigned int* indicies = (unsigned int*)ExtractFileFromArchive(indexFileName.c_str(), a_archive);
         ModelVertex* vertices = (ModelVertex*)ExtractFileFromArchive(vertexFileName.c_str(), a_archive);
 
-        ModelData* modelData = AddModel(texName, name, trueName, vertices, vertexCount, indicies, indexCount);
+        ModelData* modelData = AddModel(texName, name, trueName, vertices, vertexCount, indicies, indexCount, (e_ModelType)modelType);
 
         if (modelData != nullptr)
         {
@@ -126,7 +132,7 @@ void ModelEditor::GetModelData(PropertyFileProperty& a_property, mz_zip_archive&
     }
 }
 
-ModelEditor::ModelData* ModelEditor::AddModel(const char* a_textureName, const char* a_name, const char* a_trueName, ModelVertex* a_vertices, unsigned int a_vertexCount, unsigned int* a_indices, unsigned int a_indexCount) const
+ModelEditor::ModelData* ModelEditor::AddModel(const char* a_textureName, const char* a_name, const char* a_trueName, ModelVertex* a_vertices, unsigned int a_vertexCount, unsigned int* a_indices, unsigned int a_indexCount, e_ModelType a_modelType) const
 {
     if (a_vertexCount <= 0 || a_indexCount <= 0 || a_trueName == nullptr)
     {
@@ -145,8 +151,32 @@ ModelEditor::ModelData* ModelEditor::AddModel(const char* a_textureName, const c
         strcpy(modelData->TextureName, a_textureName);
     }
     
+    size_t vertexSize = 0;
+
+    Model* model;
+
+    switch (a_modelType)
+    {
+    case e_ModelType::MorphPlane:
+    {
+        model = modelData->MorphPlaneModel = new MorphPlaneModel();
+
+        vertexSize = sizeof(MorphPlaneModelVertex);
+
+        break;
+    }
+    default:
+    {
+        model = modelData->BaseModel = new Model();            
+        
+        vertexSize = sizeof(ModelVertex);
+
+        break;
+    }
+
+    }
+    
     modelData->ModelName = new Name(a_trueName, m_namer);
-    modelData->ModelP = new Model();
     modelData->VertexCount = a_vertexCount;
     modelData->Vertices = a_vertices;
     modelData->IndexCount = a_indexCount;
@@ -157,23 +187,71 @@ ModelEditor::ModelData* ModelEditor::AddModel(const char* a_textureName, const c
         modelData->ModelName->SetName(a_name);
     }
 
-    const unsigned int vbo = modelData->ModelP->GetVBO();
-    const unsigned int ibo = modelData->ModelP->GetIBO(); 
+    const unsigned int vbo = model->GetVBO();
+    const unsigned int ibo = model->GetIBO(); 
 
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
-    glBufferData(GL_ARRAY_BUFFER, a_vertexCount * sizeof(ModelVertex), a_vertices, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, a_vertexCount * vertexSize, a_vertices, GL_STATIC_DRAW);
 
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, a_indexCount * sizeof(unsigned int), a_indices, GL_STATIC_DRAW);
 
-    modelData->ModelP->SetIndiciesCount(a_indexCount);
+    model->SetIndiciesCount(a_indexCount);
 
     const char* name = modelData->ModelName->GetName();
 
-    dataStore->AddModel(name, e_ModelType::Base, modelData->ModelP);
+    dataStore->AddModel(name, model);
     dataStore->SetModelTextureName(name, a_textureName);
 
     return modelData;
+}
+
+void ModelEditor::GenerateMorphVertexData() const
+{
+    const int ibo = m_selectedModelData->MorphPlaneModel->GetIBO();
+    const int vbo = m_selectedModelData->MorphPlaneModel->GetVBO();
+    
+    const unsigned int vertexCount = m_selectedModelData->VertexCount;
+
+    MorphPlaneModelVertex* verts = new MorphPlaneModelVertex[vertexCount];
+
+    const ModelVertex* modelVerts = m_selectedModelData->Vertices;
+
+    const float scale = 1.0f / m_selectedModelData->MorphPlaneSize; 
+
+    for (unsigned int i = 0; i < vertexCount; ++i)
+    {
+        const glm::vec4 pos = modelVerts[i].Position;
+
+        verts[i].Position = pos;
+        verts[i].TexCoord = modelVerts[i].TexCoord;
+
+        const glm::vec2 pos2 = { pos.x, pos.y };
+        const glm::vec2 posScale = pos2 * (float)m_selectedModelData->MorphPlaneSize;
+
+        const glm::vec2 min = { glm::floor(posScale.x), glm::floor(posScale.y) };
+        const glm::vec2 max = { glm::ceil(posScale.x), glm::ceil(posScale.y) };
+
+        verts[i].MorphPlaneWeights[0].r = min.x + min.y * m_selectedModelData->MorphPlaneSize;
+        verts[i].MorphPlaneWeights[0].g = glm::max(1 - glm::length(min * scale - pos2) / scale, 0.0f);
+
+        verts[i].MorphPlaneWeights[1].r = min.x + max.y * m_selectedModelData->MorphPlaneSize;
+        verts[i].MorphPlaneWeights[1].g = glm::max(1 - glm::length(glm::vec2(min.x, max.y) * scale - pos2) / scale, 0.0f);
+
+        verts[i].MorphPlaneWeights[2].r = max.x + min.y * m_selectedModelData->MorphPlaneSize;
+        verts[i].MorphPlaneWeights[2].g = glm::max(1 - glm::length(glm::vec2(max.x, min.y) * scale - pos2) / scale, 0.0f);
+
+        verts[i].MorphPlaneWeights[3].r = max.x + max.y * m_selectedModelData->MorphPlaneSize;
+        verts[i].MorphPlaneWeights[3].g = glm::max(1 - glm::length(max * scale - pos2) / scale, 0.0f);
+    }
+
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    glBufferData(GL_ARRAY_BUFFER, vertexCount * sizeof(MorphPlaneModelVertex), verts, GL_STATIC_DRAW);
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, m_selectedModelData->IndexCount * sizeof(unsigned int), m_selectedModelData->Indices, GL_STATIC_DRAW);
+
+    delete[] verts;
 }
 
 void ModelEditor::Update(double a_delta)
@@ -207,6 +285,8 @@ void ModelEditor::Update(double a_delta)
 
         if (removeIter != m_models->end())
         {
+            store->RemoteModel((*removeIter)->ModelName->GetName(), (*removeIter)->BaseModel->GetModelType());
+
             if (m_selectedModelData == *removeIter)
             {
                 m_selectedModelData = nullptr;
@@ -214,7 +294,7 @@ void ModelEditor::Update(double a_delta)
 
             delete[] (*removeIter)->TextureName;
             delete (*removeIter)->ModelName;
-            delete (*removeIter)->ModelP;
+            delete (*removeIter)->BaseModel;
 
             delete *removeIter;
 
@@ -227,7 +307,118 @@ void ModelEditor::Update(double a_delta)
 
     if (m_selectedModelData != nullptr)
     {
-        glm::mat4 transform = glm::mat4(1);
+        ImGui::SetNextWindowSize({ 200, 400 }, ImGuiCond_Appearing);
+        if (ImGui::Begin("Model Properties"))
+        {
+            const char* name = m_selectedModelData->ModelName->GetTrueName();
+
+            size_t len = strlen(name);
+
+            char* buff = new char[len + 1];
+            strcpy(buff, name);
+
+            ImGui::InputText("Model Name", buff, BUFFER_SIZE);
+
+            if (strcmp(name, buff) != 0)
+            {
+                store->RemoveModelAll(m_selectedModelData->ModelName->GetName());
+
+                m_selectedModelData->ModelName->SetTrueName(buff);
+
+                name = m_selectedModelData->ModelName->GetName();
+
+                if (m_selectedModelData->BaseModel != nullptr)
+                {
+                    store->AddModel(name, m_selectedModelData->BaseModel);
+                }
+                if (m_selectedModelData->MorphPlaneModel != nullptr)
+                {
+                    store->AddModel(name, m_selectedModelData->MorphPlaneModel);
+                }
+                store->SetModelTextureName(name, m_selectedModelData->TextureName);
+            }
+
+            delete[] buff;
+
+            name = m_selectedModelData->TextureName;
+
+            len = strlen(name);
+
+            buff = new char[len + 1];
+            strcpy(buff, name);
+
+            ImGui::InputText("Texture Name", buff, BUFFER_SIZE);
+
+            if (strcmp(name, buff) != 0)
+            {
+                store->SetModelTextureName(m_selectedModelData->ModelName->GetName(), buff);
+
+                delete[] m_selectedModelData->TextureName;
+                m_selectedModelData->TextureName = buff;
+            }
+            else
+            {
+                delete[] buff;
+            }
+
+            if (ImGui::TreeNode("Morph Planes"))
+            {
+                const std::list<MorphPlaneData*> morphPlanes = m_selectedModelData->MorphPlanes;
+
+                int newSize = m_selectedModelData->MorphPlaneSize;
+
+                ImGui::InputInt("Morph Plane Size", &newSize);
+
+                newSize = glm::clamp(newSize, 1, 100);
+                if (m_selectedModelData->MorphPlaneSize != newSize)
+                {
+                    for (auto iter = morphPlanes.begin(); iter != morphPlanes.end(); ++iter)
+                    {
+                        (*iter)->Plane->Resize(newSize);
+
+                        GenerateMorphVertexData();
+                    }
+
+                    m_selectedModelData->MorphPlaneSize = newSize;
+                }
+
+                if (ImGui::Button("Add Morph Plane"))
+                {
+                    if (m_selectedModelData->MorphPlaneModel == nullptr)
+                    {
+                        m_selectedModelData->MorphPlaneModel = new MorphPlaneModel();
+
+                        GenerateMorphVertexData();
+
+                        store->AddModel(m_selectedModelData->ModelName->GetName(), m_selectedModelData->MorphPlaneModel);
+                    }
+
+                    MorphPlaneData* morphData = new MorphPlaneData
+                    {
+                        new Name("Morph Plane", m_morphPlaneNamer),
+                        new MorphPlane(m_selectedModelData->MorphPlaneSize)
+                    };
+
+                    m_selectedModelData->MorphPlanes.emplace_back(morphData);
+                }
+
+                if (m_selectedModelData->MorphPlanes.size() > 0)
+                {
+                    ImGui::Separator();
+
+                    for (auto iter = morphPlanes.begin(); iter != morphPlanes.end(); ++iter)
+                    {
+                        if (ImGui::Selectable((*iter)->MorphPlaneName->GetName()))
+                        {
+                            
+                        }
+                    }
+                }
+
+                ImGui::TreePop();
+            }
+        }
+        ImGui::End();
 
         ImGui::SetNextWindowSize({ 420, 440 }, ImGuiCond_Appearing);
         if (ImGui::Begin("Model Editor", nullptr, ImGuiWindowFlags_MenuBar))
@@ -269,7 +460,7 @@ void ModelEditor::Update(double a_delta)
             const glm::mat4 proj = glm::orthoRH(0.0f, trueSize.x * m_zoom * 5, 0.0f, trueSize.y * m_zoom * 5, -1.0f, 1.0f);
             const glm::mat4 view = glm::inverse(glm::translate(glm::mat4(1), m_translation));
 
-            const glm::mat4 finalTransform = proj * view * transform;
+            const glm::mat4 finalTransform = proj * view;
 
             if (ImGui::BeginMenuBar())
             {
@@ -307,7 +498,7 @@ void ModelEditor::Update(double a_delta)
 
             if (tex != nullptr)
             {
-                glBindVertexArray(m_selectedModelData->ModelP->GetVAO());
+                glBindVertexArray(m_selectedModelData->BaseModel->GetVAO());
 
                 if (m_wireframe)
                 {
@@ -389,7 +580,7 @@ void ModelEditor::Save(mz_zip_archive& a_archive) const
 
             const char* name = (*iter)->ModelName->GetName();
 
-            const e_ModelType modelType = (*iter)->ModelP->GetModelType();
+            const e_ModelType modelType = (*iter)->BaseModel->GetModelType();
 
             property->SetName("model");
             property->EmplaceValue("name", name);
@@ -400,9 +591,15 @@ void ModelEditor::Save(mz_zip_archive& a_archive) const
             property->EmplaceValue("modeltype", std::to_string((int)modelType).c_str());
 
             const unsigned int indiciesSize = indexCount * sizeof(unsigned int);
-            unsigned int verticesSize = -1;
+            unsigned int verticesSize = 0;
             switch (modelType)
             {
+            case e_ModelType::MorphPlane:
+            {
+                verticesSize = vertexCount * sizeof(MorphPlaneModelVertex);
+
+                break;
+            }
             default:
             {
                 verticesSize = vertexCount * sizeof(ModelVertex);
@@ -432,7 +629,7 @@ void ModelEditor::Save(mz_zip_archive& a_archive) const
 
 void ModelEditor::AddModel(const char* a_textureName, ModelVertex* a_vertices, unsigned int a_vertexCount, unsigned int* a_indices, unsigned int a_indexCount)
 {
-    ModelData* modelData = AddModel(a_textureName, nullptr, a_textureName, a_vertices, a_vertexCount, a_indices, a_indexCount);    
+    ModelData* modelData = AddModel(a_textureName, nullptr, a_textureName, a_vertices, a_vertexCount, a_indices, a_indexCount, e_ModelType::Base);    
 
     if (modelData != nullptr)
     {

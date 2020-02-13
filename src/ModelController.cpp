@@ -2,7 +2,6 @@
 
 #include <fstream>
 #include <glad/glad.h>
-#define GLM_SWIZZLE
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
