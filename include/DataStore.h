@@ -5,6 +5,7 @@
 
 enum class e_ModelType;
 class Model;
+class MorphPlane;
 class Texture;
 
 class DataStore
@@ -19,9 +20,9 @@ private:
 
     static DataStore* Instance;
 
-    std::map<std::string, Texture*>   m_textures;
-    std::map<std::string, ModelWrap*> m_models;
-
+    std::map<std::string, Texture*>    m_textures;
+    std::map<std::string, ModelWrap*>  m_models;
+    std::map<std::string, MorphPlane*> m_morphPlanes;
 protected:
 
 public:
@@ -37,6 +38,9 @@ public:
 
     void SetModelTextureName(const char* a_modelName, const char* a_textureName);
     const char* GetModelTextureName(const char* a_modelName) const;
+
+    void AddMorphPlane(const char* a_name, MorphPlane* a_morphPlane);
+    MorphPlane* GetMorphPlace(const char* a_name) const;
 
     void AddTexture(const char* a_name, Texture* a_texture);
     Texture* GetTexture(const char* a_name) const;

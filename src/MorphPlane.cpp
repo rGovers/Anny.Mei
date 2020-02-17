@@ -10,7 +10,17 @@ MorphPlane::MorphPlane(unsigned int a_dimensions)
 
     const unsigned int size = m_dimensions * m_dimensions;
 
-    m_morphPos = new glm::vec2[m_dimensions];
+    m_morphPos = new glm::vec2[size];
+
+    for (unsigned int x = 0; x < m_dimensions; ++x)
+    {
+        for (unsigned int y = 0; y < m_dimensions; ++y)
+        {
+            const unsigned int index = x + y * m_dimensions;
+
+            m_morphPos[index] = { x / (float)m_dimensions, y / (float)m_dimensions };
+        }
+    }
 }
 MorphPlane::~MorphPlane()
 {
@@ -27,6 +37,11 @@ void MorphPlane::SetMorphPosition(const glm::vec2 a_value, unsigned int a_x, uns
     m_morphPos[a_x + a_y * m_dimensions] = a_value;
 }
 
+unsigned int MorphPlane::GetSize() const
+{
+    return m_dimensions;
+}
+
 void MorphPlane::Resize(unsigned int a_newSize)
 {
     glm::vec2* newMorphPos = new glm::vec2[a_newSize * a_newSize];
@@ -41,6 +56,16 @@ void MorphPlane::Resize(unsigned int a_newSize)
             const unsigned int oldIndex = x + y * m_dimensions;
             
             newMorphPos[index] = m_morphPos[oldIndex];
+        }
+    }
+
+    for (unsigned int x = min; x < a_newSize; ++x)
+    {
+        for (unsigned int y = min; y < a_newSize; ++y)
+        {
+            const unsigned int index = x + y * a_newSize;
+
+            newMorphPos[index] = { x / (float)m_dimensions, y / (float)m_dimensions };
         }
     }
 

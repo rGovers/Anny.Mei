@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include "Models/Model.h"
+#include "MorphPlane.h"
 #include "Texture.h"
 
 DataStore* DataStore::Instance = nullptr;
@@ -167,6 +168,31 @@ const char* DataStore::GetModelTextureName(const char* a_modelName) const
     if (iter != m_models.end())
     {
         return iter->second->TextureName;
+    }
+
+    return nullptr;
+}
+
+void DataStore::AddMorphPlane(const char* a_name, MorphPlane* a_morphPlane)
+{
+    auto iter = m_morphPlanes.find(a_name);
+
+    if (iter != m_morphPlanes.end())
+    {
+        iter->second = a_morphPlane;
+
+        return;
+    }
+
+    m_morphPlanes.emplace(a_name, a_morphPlane);
+}
+MorphPlane* DataStore::GetMorphPlace(const char* a_name) const
+{
+    auto iter = m_morphPlanes.find(a_name);
+
+    if (iter != m_morphPlanes.end())
+    {
+        return iter->second;
     }
 
     return nullptr;

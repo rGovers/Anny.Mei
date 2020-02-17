@@ -9,6 +9,8 @@ class MorphPlaneRenderer : public Renderer
 private:
     ShaderProgram* m_shaderProgram;
 
+    char*          m_morphPlaneName;
+
     void Draw(bool a_preview, double a_delta, Camera* a_camera);
 protected:
 

@@ -2,10 +2,13 @@
 
 #include <glad/glad.h>
 #include <glm/glm.hpp>
+#include <string.h>
 
 #include "Camera.h"
 #include "DataStore.h"
+#include "imgui.h"
 #include "Models/Model.h"
+#include "MorphPlane.h"
 #include "Object.h"
 #include "ShaderProgram.h"
 #include "Shaders/MorphPlaneVertex.h"
@@ -13,6 +16,7 @@
 #include "Texture.h"
 #include "Transform.h"
 
+const static int BUFFER_SIZE = 1024;
 const char* MorphPlaneRenderer::COMPONENT_NAME = "MorphPlaneRenderer";
 
 MorphPlaneRenderer::MorphPlaneRenderer(Object* a_object) : 
@@ -27,6 +31,8 @@ MorphPlaneRenderer::MorphPlaneRenderer(Object* a_object) :
     glCompileShader(pixelS);
 
     m_shaderProgram = new ShaderProgram(pixelS, vertexS);
+
+    m_morphPlaneName = new char[1] { 0 };
 
     glDeleteShader(vertexS);
     glDeleteShader(pixelS);
@@ -45,6 +51,7 @@ void MorphPlaneRenderer::Draw(bool a_preview, double a_delta, Camera* a_camera)
     const char* modelName = GetModelName();
 
     const Model* model = store->GetModel(modelName, e_ModelType::MorphPlane);
+    const MorphPlane* morphPlane = store->GetMorphPlace(m_morphPlaneName);
 
     const char* textureName = store->GetModelTextureName(modelName);
 
@@ -54,8 +61,10 @@ void MorphPlaneRenderer::Draw(bool a_preview, double a_delta, Camera* a_camera)
         texture = store->GetTexture(textureName);
     }
 
-    if (model != nullptr && texture != nullptr)
+    if (model != nullptr && texture != nullptr && morphPlane != nullptr)
     {
+        const Texture* morphTex = morphPlane->ToTexture();
+
         glBindVertexArray(model->GetVAO());
             
         const int handle = m_shaderProgram->GetHandle();
@@ -66,6 +75,17 @@ void MorphPlaneRenderer::Draw(bool a_preview, double a_delta, Camera* a_camera)
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, texture->GetHandle());
         glUniform1i(texLocation, 0);
+
+        const int morphTexLocation = glGetUniformLocation(handle, "MorphTex");
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, morphTex->GetHandle());
+        glUniform1i(morphTexLocation, 1);
+
+        const unsigned int dim = morphPlane->GetSize();
+        const unsigned int sSize = dim * dim;
+
+        const int morphTexSizeLocation = glGetUniformLocation(handle, "MorphSize");
+        glUniform1ui(morphTexSizeLocation, sSize);
 
         Transform* transform = object->GetTransform();
 
@@ -85,7 +105,7 @@ void MorphPlaneRenderer::Draw(bool a_preview, double a_delta, Camera* a_camera)
 
         const glm::mat4 finalTransform = view * proj * shift;
 
-        const int location = glGetUniformLocation(handle, "model");
+        const int location = glGetUniformLocation(handle, "Model");
         glUniformMatrix4fv(location, 1, GL_FALSE, (float*)&finalTransform);
 
         glEnable(GL_BLEND);
@@ -94,6 +114,8 @@ void MorphPlaneRenderer::Draw(bool a_preview, double a_delta, Camera* a_camera)
         glDrawElements(GL_TRIANGLES, model->GetIndiciesCount(), GL_UNSIGNED_INT, 0);
 
         glDisable(GL_BLEND);
+
+        delete morphTex;
     }
 }
 
@@ -108,6 +130,23 @@ void MorphPlaneRenderer::UpdatePreview(double a_delta, Camera* a_camera)
 void MorphPlaneRenderer::UpdateGUI()
 {
     UpdateRendererGUI();
+
+    const size_t len = strlen(m_morphPlaneName) + 1;
+
+    char* buff = new char[len] { 0 };
+    memcpy(buff, m_morphPlaneName, len);
+
+    ImGui::InputText("Morph Plane Name", buff, BUFFER_SIZE);
+
+    if (strcmp(buff, m_morphPlaneName) != 0)
+    {
+        delete[] m_morphPlaneName;
+        m_morphPlaneName = buff;
+    }
+    else
+    {
+        delete[] buff;
+    }
 }
 
 const char* MorphPlaneRenderer::ComponentName() const

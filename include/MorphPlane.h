@@ -22,6 +22,8 @@ public:
     void SetMorphPosition(const glm::vec2 a_value, unsigned int a_x, unsigned int a_y);
 
     glm::vec2* GetMorphPositions() const;
+    
+    unsigned int GetSize() const;
 
     void Resize(unsigned int a_newSize);
 

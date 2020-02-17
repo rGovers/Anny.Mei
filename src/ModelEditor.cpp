@@ -227,22 +227,22 @@ void ModelEditor::GenerateMorphVertexData() const
         verts[i].TexCoord = modelVerts[i].TexCoord;
 
         const glm::vec2 pos2 = { pos.x, pos.y };
-        const glm::vec2 posScale = pos2 * (float)m_selectedModelData->MorphPlaneSize;
+        const glm::vec2 posScale = pos2 / (float)m_selectedModelData->MorphPlaneSize;
 
         const glm::vec2 min = { glm::floor(posScale.x), glm::floor(posScale.y) };
         const glm::vec2 max = { glm::ceil(posScale.x), glm::ceil(posScale.y) };
 
         verts[i].MorphPlaneWeights[0].r = min.x + min.y * m_selectedModelData->MorphPlaneSize;
-        verts[i].MorphPlaneWeights[0].g = glm::max(1 - glm::length(min * scale - pos2) / scale, 0.0f);
+        verts[i].MorphPlaneWeights[0].g = glm::max(1 - glm::length(min - posScale) * scale, 0.0f);
 
         verts[i].MorphPlaneWeights[1].r = min.x + max.y * m_selectedModelData->MorphPlaneSize;
-        verts[i].MorphPlaneWeights[1].g = glm::max(1 - glm::length(glm::vec2(min.x, max.y) * scale - pos2) / scale, 0.0f);
+        verts[i].MorphPlaneWeights[1].g = glm::max(1 - glm::length(glm::vec2(min.x, max.y) - posScale) * scale, 0.0f);
 
         verts[i].MorphPlaneWeights[2].r = max.x + min.y * m_selectedModelData->MorphPlaneSize;
-        verts[i].MorphPlaneWeights[2].g = glm::max(1 - glm::length(glm::vec2(max.x, min.y) * scale - pos2) / scale, 0.0f);
+        verts[i].MorphPlaneWeights[2].g = glm::max(1 - glm::length(glm::vec2(max.x, min.y) - posScale) * scale, 0.0f);
 
         verts[i].MorphPlaneWeights[3].r = max.x + max.y * m_selectedModelData->MorphPlaneSize;
-        verts[i].MorphPlaneWeights[3].g = glm::max(1 - glm::length(max * scale - pos2) / scale, 0.0f);
+        verts[i].MorphPlaneWeights[3].g = glm::max(1 - glm::length(max - posScale) * scale, 0.0f);
     }
 
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
@@ -250,6 +250,8 @@ void ModelEditor::GenerateMorphVertexData() const
 
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, m_selectedModelData->IndexCount * sizeof(unsigned int), m_selectedModelData->Indices, GL_STATIC_DRAW);
+
+    m_selectedModelData->MorphPlaneModel->SetIndiciesCount(m_selectedModelData->IndexCount);
 
     delete[] verts;
 }
@@ -400,6 +402,7 @@ void ModelEditor::Update(double a_delta)
                     };
 
                     m_selectedModelData->MorphPlanes.emplace_back(morphData);
+                    store->AddMorphPlane(morphData->MorphPlaneName->GetName(), morphData->Plane);
                 }
 
                 if (m_selectedModelData->MorphPlanes.size() > 0)
