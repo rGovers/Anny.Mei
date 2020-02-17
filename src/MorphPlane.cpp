@@ -6,7 +6,7 @@
 
 MorphPlane::MorphPlane(unsigned int a_dimensions)
 {
-    m_dimensions = a_dimensions;
+    m_dimensions = a_dimensions + 1;
 
     const unsigned int size = m_dimensions * m_dimensions;
 
@@ -18,7 +18,7 @@ MorphPlane::MorphPlane(unsigned int a_dimensions)
         {
             const unsigned int index = x + y * m_dimensions;
 
-            m_morphPos[index] = { x / (float)m_dimensions, y / (float)m_dimensions };
+            m_morphPos[index] = { x / (float)a_dimensions, y / (float)a_dimensions };
         }
     }
 }
@@ -44,28 +44,30 @@ unsigned int MorphPlane::GetSize() const
 
 void MorphPlane::Resize(unsigned int a_newSize)
 {
-    glm::vec2* newMorphPos = new glm::vec2[a_newSize * a_newSize];
+    const unsigned int trueSize = a_newSize + 1;
 
-    const unsigned int min = glm::min(a_newSize, m_dimensions);
+    glm::vec2* newMorphPos = new glm::vec2[trueSize * trueSize];
+
+    const unsigned int min = glm::min(trueSize, m_dimensions);
 
     for (unsigned int x = 0; x < min; ++x)
     {
         for (unsigned int y = 0; y < min; ++y)
         {
-            const unsigned int index = x + y * a_newSize;
+            const unsigned int index = x + y * trueSize;
             const unsigned int oldIndex = x + y * m_dimensions;
             
             newMorphPos[index] = m_morphPos[oldIndex];
         }
     }
 
-    for (unsigned int x = min; x < a_newSize; ++x)
+    for (unsigned int x = min; x < trueSize; ++x)
     {
-        for (unsigned int y = min; y < a_newSize; ++y)
+        for (unsigned int y = min; y < trueSize; ++y)
         {
-            const unsigned int index = x + y * a_newSize;
+            const unsigned int index = x + y * trueSize;
 
-            newMorphPos[index] = { x / (float)m_dimensions, y / (float)m_dimensions };
+            newMorphPos[index] = { x / (float)a_newSize, y / (float)a_newSize };
         }
     }
 
@@ -84,7 +86,7 @@ Texture* MorphPlane::ToTexture() const
     const int handle = tex->GetHandle();
     
     glBindTexture(GL_TEXTURE_2D, handle);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, size, 1, 0, GL_RG, GL_FLOAT, m_morphPos);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RG, size, 1, 0, GL_RG, GL_FLOAT, m_morphPos);
 
     return tex;
 }
