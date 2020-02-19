@@ -8,6 +8,7 @@
 #include "DataStore.h"
 #include "FileUtils.h"
 #include "imgui/imgui.h"
+#include "IntermediateRenderer.h"
 #include "Models/Model.h"
 #include "Models/MorphPlaneModel.h"
 #include "MorphPlane.h"
@@ -38,7 +39,10 @@ ModelEditor::ModelEditor()
 
     m_renderTexture = new RenderTexture(IMAGE_SIZE, IMAGE_SIZE, GL_RGBA);
 
+    m_intermediateRenderer = new IntermediateRenderer();
+
     m_selectedModelData = nullptr;
+    m_selectedMorphPlane = nullptr;
 
     m_solid = true;
     m_wireframe = false;
@@ -85,6 +89,8 @@ ModelEditor::~ModelEditor()
     delete m_wireShaderProgram;
 
     delete m_namer;
+
+    delete m_intermediateRenderer;
 }
 
 void ModelEditor::GetModelData(PropertyFileProperty& a_property, mz_zip_archive& a_archive)
@@ -279,6 +285,7 @@ void ModelEditor::Update(double a_delta)
             if (ImGui::Selectable((*iter)->ModelName->GetName()))
             {
                 m_selectedModelData = *iter;
+                m_selectedMorphPlane = nullptr;
             }
 
             if (ImGui::BeginPopupContextItem())
@@ -379,16 +386,31 @@ void ModelEditor::Update(double a_delta)
                 ImGui::InputInt("Morph Plane Size", &newSize);
 
                 newSize = glm::clamp(newSize, 1, 100);
-                if (m_selectedModelData->MorphPlaneSize != newSize)
+                if (m_selectedModelData->MorphPlaneSize != newSize && newSize >= 0)
                 {
+                    m_selectedModelData->MorphPlaneSize = newSize;
+
                     for (auto iter = morphPlanes.begin(); iter != morphPlanes.end(); ++iter)
                     {
-                        (*iter)->Plane->Resize(newSize);
+                        const char* name = (*iter)->MorphPlaneName->GetName();
+
+                        MorphPlane* newMorphPlane = new MorphPlane(newSize);
+
+                        store->RemoveMorphPlane(name);
+
+                        if ((*iter)->Plane == m_selectedMorphPlane)
+                        {
+                            m_selectedMorphPlane = newMorphPlane;
+                        }
+
+                        delete (*iter)->Plane;
+
+                        (*iter)->Plane = newMorphPlane;
+
+                        store->AddMorphPlane(name, newMorphPlane);
 
                         GenerateMorphVertexData();
                     }
-
-                    m_selectedModelData->MorphPlaneSize = newSize;
                 }
 
                 if (ImGui::Button("Add Morph Plane"))
@@ -420,7 +442,7 @@ void ModelEditor::Update(double a_delta)
                     {
                         if (ImGui::Selectable((*iter)->MorphPlaneName->GetName()))
                         {
-                            
+                            m_selectedMorphPlane = (*iter)->Plane;
                         }
                     }
                 }
@@ -491,6 +513,8 @@ void ModelEditor::Update(double a_delta)
             glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
             glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
+            m_intermediateRenderer->Reset();
+
             Texture* tex = nullptr;
 
             const char* texName = m_selectedModelData->TextureName;
@@ -509,6 +533,23 @@ void ModelEditor::Update(double a_delta)
             if (tex != nullptr)
             {
                 glBindVertexArray(m_selectedModelData->BaseModel->GetVAO());
+
+                if (m_selectedMorphPlane)
+                {
+                    const unsigned int size = m_selectedModelData->MorphPlaneSize;
+
+                    for (unsigned int x = 0; x <= size; ++x)
+                    {
+                        for (unsigned int y = 0; y <= size; ++y)
+                        {
+                            const glm::vec2 pos = m_selectedMorphPlane->GetMorphPosition(x, y);
+
+                            const glm::vec4 fPos = finalTransform * glm::vec4(pos.x, pos.y, 0, 1);
+
+                            m_intermediateRenderer->DrawCircle({ fPos.x, fPos.y, -0.25f }, 20, 0.025f, 0.01f);
+                        }
+                    }
+                }
 
                 if (m_wireframe)
                 {
@@ -539,6 +580,8 @@ void ModelEditor::Update(double a_delta)
                     glDrawElements(GL_TRIANGLES, m_selectedModelData->IndexCount, GL_UNSIGNED_INT, 0);
                 }
             }
+
+            m_intermediateRenderer->Draw();
 
             glDisable(GL_BLEND);
 

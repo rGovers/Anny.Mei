@@ -197,6 +197,15 @@ MorphPlane* DataStore::GetMorphPlace(const char* a_name) const
 
     return nullptr;
 }
+void DataStore::RemoveMorphPlane(const char* a_name)
+{
+    auto iter = m_morphPlanes.find(a_name);
+
+    if (iter != m_morphPlanes.end())
+    {
+        m_morphPlanes.erase(iter);
+    }
+}
 
 void DataStore::AddTexture(const char* a_name, Texture* a_texture)
 {

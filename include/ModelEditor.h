@@ -8,6 +8,7 @@
 enum class e_ModelType;
 
 class Camera;
+class IntermediateRenderer;
 class Model;
 struct ModelVertex;
 class MorphPlane;
@@ -41,7 +42,10 @@ private:
         std::list<MorphPlaneData*> MorphPlanes;
     };
 
+    IntermediateRenderer*   m_intermediateRenderer;
+
     ModelData*              m_selectedModelData;
+    MorphPlane*             m_selectedMorphPlane;
 
     std::list<ModelData*>*  m_models;
 

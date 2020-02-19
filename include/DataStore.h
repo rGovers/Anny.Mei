@@ -41,6 +41,7 @@ public:
 
     void AddMorphPlane(const char* a_name, MorphPlane* a_morphPlane);
     MorphPlane* GetMorphPlace(const char* a_name) const;
+    void RemoveMorphPlane(const char* a_name);
 
     void AddTexture(const char* a_name, Texture* a_texture);
     Texture* GetTexture(const char* a_name) const;
