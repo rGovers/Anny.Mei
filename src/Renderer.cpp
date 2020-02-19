@@ -62,6 +62,8 @@ PropertyFileProperty* Renderer::SaveValues(PropertyFile* a_propertyFile, Propert
 
     const std::string anchorStr = "{ " + std::to_string(m_anchor.x) + ", " + std::to_string(m_anchor.y) + ", " + std::to_string(m_anchor.z) + " }";
     property->EmplaceValue("anchor", anchorStr.c_str());
+
+    return property;
 }
 
 const char* Renderer::GetModelName() const

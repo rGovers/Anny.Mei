@@ -127,6 +127,13 @@ void AppMain::Open()
     char* const* const filters = new char*[1] { "*.aMei" };
     m_filePath = FileDialog::OpenFile("Open Project File", filters, 1);
 
+    if (m_dataStore != nullptr)
+    {
+        delete m_dataStore;
+    }
+        
+    m_dataStore = new DataStore();
+
     if (m_filePath != nullptr)
     {
         const std::string str = std::string("Anny.Mei [") + m_filePath + "]";
@@ -152,12 +159,7 @@ void AppMain::Open()
                     delete m_skeletonEditor;
                 }
 
-                if (m_dataStore != nullptr)
-                {
-                    delete m_dataStore;
-                }
-
-                m_dataStore = new DataStore();
+                
 
                 m_modelController = ModelController::Load(zip); 
                 m_skeletonEditor = SkeletonEditor::Load(zip);
@@ -178,6 +180,10 @@ void AppMain::Open()
             if (m_textureEditor == nullptr)
             {
                 m_textureEditor = new TextureEditor();
+            }
+            if (m_modelEditor == nullptr)
+            {
+                m_modelEditor = new ModelEditor();
             }
         }
         else

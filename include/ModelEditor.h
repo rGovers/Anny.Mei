@@ -70,7 +70,7 @@ private:
 
     ModelData* AddModel(const char* a_textureName, const char* a_name, const char* a_trueName, ModelVertex* a_vertices, unsigned int a_vertexCount, unsigned int* a_indices, unsigned int a_indexCount, e_ModelType a_modelType) const;
 
-    void GenerateMorphVertexData() const;
+    void GenerateMorphVertexData(ModelData* a_model) const;
 protected:
 
 public:

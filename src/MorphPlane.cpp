@@ -2,6 +2,7 @@
 
 #include <glad/glad.h>
 
+#include "FileUtils.h"
 #include "Texture.h"
 
 MorphPlane::MorphPlane(unsigned int a_dimensions)
@@ -30,6 +31,10 @@ MorphPlane::~MorphPlane()
 glm::vec2 MorphPlane::GetMorphPosition(unsigned int a_x, unsigned int a_y) const
 {
     return m_morphPos[a_x + a_y * m_dimensions];
+}
+glm::vec2* MorphPlane::GetMorphPositions() const
+{
+    return m_morphPos;
 }
 
 void MorphPlane::SetMorphPosition(const glm::vec2 a_value, unsigned int a_x, unsigned int a_y)
@@ -89,4 +94,15 @@ Texture* MorphPlane::ToTexture() const
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RG, size, 1, 0, GL_RG, GL_FLOAT, m_morphPos);
 
     return tex;
+}
+
+MorphPlane* MorphPlane::Load(const char* a_fileName, mz_zip_archive& a_archive, unsigned int a_size)
+{
+    MorphPlane* morphPlane = new MorphPlane(a_size);
+
+    delete[] morphPlane->m_morphPos;
+
+    morphPlane->m_morphPos = (glm::vec2*)ExtractFileFromArchive(a_fileName, a_archive);
+
+    return morphPlane;
 }

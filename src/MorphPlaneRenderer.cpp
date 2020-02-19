@@ -6,10 +6,12 @@
 
 #include "Camera.h"
 #include "DataStore.h"
+#include "FileUtils.h"
 #include "imgui.h"
 #include "Models/Model.h"
 #include "MorphPlane.h"
 #include "Object.h"
+#include "PropertyFile.h"
 #include "ShaderProgram.h"
 #include "Shaders/MorphPlaneVertex.h"
 #include "Shaders/StandardPixel.h"
@@ -155,8 +157,17 @@ const char* MorphPlaneRenderer::ComponentName() const
 void MorphPlaneRenderer::Load(PropertyFileProperty* a_property)
 {
     LoadValues(a_property);
+
+    const std::list<PropertyFileValue> values = a_property->Values();
+
+    for (auto iter = values.begin(); iter != values.end(); ++iter)
+    {
+        IFSETTOATTVALCPY(iter->Name, "morphPlaneName", m_morphPlaneName, iter->Value)
+    }
 }
 void MorphPlaneRenderer::Save(PropertyFile* a_propertyFile, PropertyFileProperty* a_parent) const
 {
-    SaveValues(a_propertyFile, a_parent);
+    PropertyFileProperty* property = SaveValues(a_propertyFile, a_parent);
+    
+    property->EmplaceValue("morphPlaneName", m_morphPlaneName);
 }

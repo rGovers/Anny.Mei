@@ -69,6 +69,8 @@ Texture* TextureEditor::GenerateTexture(LayerTexture& a_layerTexture) const
 
 void TextureEditor::LoadTexture(const char* a_path)
 {
+    DataStore* store = DataStore::GetInstance();
+
     const std::string path = a_path;
     const size_t index = path.find_last_of('.');
     const size_t len = path.length();
@@ -113,7 +115,7 @@ void TextureEditor::LoadTexture(const char* a_path)
 
     layerTexture.Meta = layerMeta;
 
-    DataStore::GetInstance()->AddTexture(layerMeta->Name, GenerateTexture(layerTexture));
+    store->AddTexture(layerMeta->Name, GenerateTexture(layerTexture));
 
     m_layers->emplace_back(layerTexture);
 }

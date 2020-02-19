@@ -1,7 +1,8 @@
 #pragma once
 
-#define GLM_SWIZZLE
 #include <glm/glm.hpp>
+
+#include "miniz.h"
 
 class Texture;
 
@@ -28,4 +29,6 @@ public:
     void Resize(unsigned int a_newSize);
 
     Texture* ToTexture() const;
+
+    static MorphPlane* Load(const char* a_fileName, mz_zip_archive& a_archive, unsigned int a_size);
 };

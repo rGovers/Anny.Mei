@@ -104,14 +104,14 @@ void ModelEditor::GetModelData(PropertyFileProperty& a_property, mz_zip_archive&
     int indexCount = -1;
     int modelType = (int)e_ModelType::Base;
 
-    for (auto iter = a_property.Values().begin(); iter != a_property.Values().end(); ++iter)
+    const std::list<PropertyFileValue> values = a_property.Values();
+    for (auto iter = values.begin(); iter != values.end(); ++iter)
     {
         IFSETTOATTVALCPY("name", iter->Name, name, iter->Value)
         else IFSETTOATTVALCPY("truename", iter->Name, trueName, iter->Value)
         else IFSETTOATTVALCPY("texname", iter->Name, texName, iter->Value)
         else IFSETTOATTVALI("vertices", iter->Name, vertexCount, iter->Value)
         else IFSETTOATTVALI("indices", iter->Name, indexCount, iter->Value)
-        else IFSETTOATTVALI("modeltype", iter->Name, modelType, iter->Value)
     }
 
     if (name != nullptr && trueName != nullptr && vertexCount > 0 && indexCount > 0)
@@ -123,6 +123,54 @@ void ModelEditor::GetModelData(PropertyFileProperty& a_property, mz_zip_archive&
         ModelVertex* vertices = (ModelVertex*)ExtractFileFromArchive(vertexFileName.c_str(), a_archive);
 
         ModelData* modelData = AddModel(texName, name, trueName, vertices, vertexCount, indicies, indexCount, (e_ModelType)modelType);
+
+        const std::list<PropertyFileProperty*> children = a_property.GetChildren();
+        for (auto iter = children.begin(); iter != children.end(); ++iter)
+        {
+            const char* name = (*iter)->GetName();
+
+            const std::list<PropertyFileValue> mValue = (*iter)->Values();
+            if (strcmp(name, "MorphPlane") == 0)
+            {
+                char* valName = nullptr;
+                char* valTrueName = nullptr;
+                int valSize = -1;
+
+                for (auto valIter = mValue.begin(); valIter != mValue.end(); ++valIter)
+                {
+                    IFSETTOATTVALCPY("name", valIter->Name, valName, valIter->Value)
+                    else IFSETTOATTVALCPY("truename", valIter->Name, valTrueName, valIter->Value)
+                    else IFSETTOATTVALI("size", valIter->Name, valSize, valIter->Value)
+                }
+
+                if (valName != nullptr && valTrueName != nullptr && valSize != -1)
+                {
+                    if (modelData->MorphPlaneModel == nullptr)
+                    {
+                        modelData->MorphPlaneModel = new MorphPlaneModel();
+
+                        modelData->MorphPlaneSize = valSize;
+                        
+                        GenerateMorphVertexData(modelData);
+
+                        dataStore->AddModel(modelData->ModelName->GetName(), modelData->MorphPlaneModel);
+                    }
+
+                    MorphPlane* morphPlane = MorphPlane::Load((std::string("mrpPln/") + valName + ".mrpbin").c_str(), a_archive, valSize);
+                    
+                    MorphPlaneData* morphData = new MorphPlaneData
+                    {
+                        new Name(valTrueName, m_morphPlaneNamer),
+                        morphPlane
+                    };
+                    morphData->MorphPlaneName->SetName(valName);
+
+                    modelData->MorphPlanes.emplace_back(morphData);
+
+                    dataStore->AddMorphPlane(valName, morphPlane);
+                }
+            }
+        }
 
         if (modelData != nullptr)
         {
@@ -213,18 +261,18 @@ ModelEditor::ModelData* ModelEditor::AddModel(const char* a_textureName, const c
     return modelData;
 }
 
-void ModelEditor::GenerateMorphVertexData() const
+void ModelEditor::GenerateMorphVertexData(ModelData* a_model) const
 {
-    const int ibo = m_selectedModelData->MorphPlaneModel->GetIBO();
-    const int vbo = m_selectedModelData->MorphPlaneModel->GetVBO();
+    const int ibo = a_model->MorphPlaneModel->GetIBO();
+    const int vbo = a_model->MorphPlaneModel->GetVBO();
     
-    const unsigned int vertexCount = m_selectedModelData->VertexCount;
+    const unsigned int vertexCount = a_model->VertexCount;
 
     MorphPlaneModelVertex* verts = new MorphPlaneModelVertex[vertexCount];
 
-    const ModelVertex* modelVerts = m_selectedModelData->Vertices;
+    const ModelVertex* modelVerts = a_model->Vertices;
 
-    const unsigned int planeSize = m_selectedModelData->MorphPlaneSize;
+    const unsigned int planeSize = a_model->MorphPlaneSize;
     const unsigned int morphPlaneSize = planeSize + 1;
     const float scale = 1.0f / planeSize; 
 
@@ -243,28 +291,28 @@ void ModelEditor::GenerateMorphVertexData() const
 
         float len = glm::length(glm::vec2(min) - posScale);
         verts[i].MorphPlaneWeights[0].r = min.x + min.y * morphPlaneSize;
-        verts[i].MorphPlaneWeights[0].g = glm::max((1 - len), 0.0f);
+        verts[i].MorphPlaneWeights[0].g = glm::max((1 - len) * scale, 0.0f);
 
         len = glm::length(glm::vec2(min.x, max.y) - posScale);
         verts[i].MorphPlaneWeights[1].r = min.x + max.y * morphPlaneSize;
-        verts[i].MorphPlaneWeights[1].g = glm::max((1 - len), 0.0f);
+        verts[i].MorphPlaneWeights[1].g = glm::max((1 - len) * scale, 0.0f);
         
         len = glm::length(glm::vec2(max.x, min.y) - posScale);
         verts[i].MorphPlaneWeights[2].r = max.x + min.y * morphPlaneSize;
-        verts[i].MorphPlaneWeights[2].g = glm::max((1 - len), 0.0f);
+        verts[i].MorphPlaneWeights[2].g = glm::max((1 - len) * scale, 0.0f);
         
         len = glm::length(glm::vec2(max) - posScale);
         verts[i].MorphPlaneWeights[3].r = max.x + max.y * morphPlaneSize;
-        verts[i].MorphPlaneWeights[3].g = glm::max((1 - len), 0.0f);
+        verts[i].MorphPlaneWeights[3].g = glm::max((1 - len) * scale, 0.0f);
     }
 
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
     glBufferData(GL_ARRAY_BUFFER, vertexCount * sizeof(MorphPlaneModelVertex), verts, GL_STATIC_DRAW);
 
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, m_selectedModelData->IndexCount * sizeof(unsigned int), m_selectedModelData->Indices, GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, a_model->IndexCount * sizeof(unsigned int), a_model->Indices, GL_STATIC_DRAW);
 
-    m_selectedModelData->MorphPlaneModel->SetIndiciesCount(m_selectedModelData->IndexCount);
+    a_model->MorphPlaneModel->SetIndiciesCount(a_model->IndexCount);
 
     delete[] verts;
 }
@@ -409,7 +457,7 @@ void ModelEditor::Update(double a_delta)
 
                         store->AddMorphPlane(name, newMorphPlane);
 
-                        GenerateMorphVertexData();
+                        GenerateMorphVertexData(m_selectedModelData);
                     }
                 }
 
@@ -419,7 +467,7 @@ void ModelEditor::Update(double a_delta)
                     {
                         m_selectedModelData->MorphPlaneModel = new MorphPlaneModel();
 
-                        GenerateMorphVertexData();
+                        GenerateMorphVertexData(m_selectedModelData);
 
                         store->AddModel(m_selectedModelData->ModelName->GetName(), m_selectedModelData->MorphPlaneModel);
                     }
@@ -641,7 +689,27 @@ void ModelEditor::Save(mz_zip_archive& a_archive) const
             property->EmplaceValue("texname", (*iter)->TextureName);
             property->EmplaceValue("indices", std::to_string(indexCount).c_str());
             property->EmplaceValue("vertices", std::to_string(vertexCount).c_str());
-            property->EmplaceValue("modeltype", std::to_string((int)modelType).c_str());
+            
+            const unsigned int morphPlaneSize = (*iter)->MorphPlaneSize;
+            const unsigned int scaledSize = morphPlaneSize + 1;
+            const unsigned int trueMorphSize = scaledSize * scaledSize;
+
+            for (auto iIter = (*iter)->MorphPlanes.begin(); iIter != (*iter)->MorphPlanes.end(); ++iIter)
+            {
+                PropertyFileProperty* morphProperty = propertyFile->InsertProperty();
+
+                const char* morphName = (*iIter)->MorphPlaneName->GetName();
+
+                morphProperty->SetName("MorphPlane");
+                morphProperty->SetParent(property);
+                morphProperty->EmplaceValue("name", morphName);
+                morphProperty->EmplaceValue("truename", (*iIter)->MorphPlaneName->GetTrueName());
+                morphProperty->EmplaceValue("size", std::to_string(morphPlaneSize).c_str());
+
+                std::string morphPlaneFileName = "mrpPln/" + std::string(morphName) + ".mrpbin";
+
+                mz_zip_writer_add_mem(&a_archive, morphPlaneFileName.c_str(), (*iIter)->Plane->GetMorphPositions(), trueMorphSize * sizeof(glm::vec2), MZ_DEFAULT_COMPRESSION);
+            }
 
             const unsigned int indiciesSize = indexCount * sizeof(unsigned int);
             unsigned int verticesSize = 0;
