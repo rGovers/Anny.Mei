@@ -21,17 +21,35 @@ struct LayerTexture
     LayerMeta* Meta;
 };
 
+
+
 class TextureEditor
 {
 private:
+    enum class e_TriangulationMode
+    {
+        Alpha,
+        Quad,
+        Outline
+    };
+
+    const static char* ITEMS[];
+
     std::vector<LayerTexture>* m_layers;
+
+    e_TriangulationMode        m_triangulationMode;
 
     int                        m_selectedIndex;
     
     float                      m_alphaThreshold;
+    int                        m_vSize[2];
+    unsigned int               m_texStep[2];
+
+    const char*                m_selectedMode;
 
     unsigned int               m_stepXY[2];   
-    int                        m_vSize[2];
+
+    float                      m_channelDiff;
 
     Texture* GenerateTexture(LayerTexture& a_layerTexture) const;
     

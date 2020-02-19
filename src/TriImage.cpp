@@ -112,66 +112,11 @@ void TriImage::WindQuad(unsigned int& a_a, unsigned int& a_b, unsigned int& a_c,
     }
 }
 
-TriImage::TriImage(const unsigned char* a_textureData, int a_stepX, int a_stepY, int a_width, int a_height, int a_vWidth, int a_vHeight, float a_alphaThreshold)
+void TriImage::VoronoiTriangulation(int a_vWidth, int a_vHeight)
 {
-    std::list<glm::vec2> verticies;
     std::list<TriImageTriangle> triangles;
 
-    const unsigned int scaledAlpha = a_alphaThreshold * 255;
-
-    for (int x = 0; x < a_width; ++x)
-    {
-        for (int y = 0; y < a_height; ++y)
-        {
-            const int index = (x + y * a_width) * 4 + 3;
-
-            if (a_textureData[index] > scaledAlpha)
-            {
-                if ((x % a_stepX == 0 && y % a_stepY == 0))
-                {
-                    const glm::vec2 pos = { x / (float)a_width, y / (float)a_height };
-
-                    verticies.emplace_back(pos);
-
-                    continue;
-                }
-
-                int blankNum = 0;
-
-                for (int xS = -1; xS <= 1; ++xS)
-                {
-                    for (int yS = -1; yS <= 1; ++yS)
-                    {
-                        if (xS == 0 && yS == 0)
-                        {
-                            continue;
-                        }
-
-                        const int nX = x + xS;
-                        const int nY = y + yS;
-
-                        const int nIndex = (nX + nY * a_width) * 4 + 3;
-
-                        if (a_textureData[nIndex] <= scaledAlpha)
-                        {
-                            ++blankNum;
-                        }
-                    }
-                }
-
-                if (blankNum > 3)
-                {
-                    glm::vec2 pos = { x / (float)a_width, y / (float)a_height };
-
-                    verticies.emplace_back(pos);
-                }
-            }
-        }
-    }
-
-    m_vertCount = verticies.size();
-    m_verts = new glm::vec2[m_vertCount];
-    std::copy(verticies.begin(), verticies.end(), m_verts);
+    std::vector<int> altIndex;
 
     Voronoi* voronoi = new Voronoi(m_verts, m_vertCount, a_vWidth, a_vHeight);
 
@@ -179,7 +124,8 @@ TriImage::TriImage(const unsigned char* a_textureData, int a_stepX, int a_stepY,
     {
         for (int y = 0; y < a_vHeight; ++y)
         {
-            std::vector<int> altIndex;
+            altIndex.clear();
+
             altIndex.emplace_back(voronoi->GetIndex(x, y));
 
             for (int xS = -1; xS <= 1; ++xS)
@@ -197,7 +143,7 @@ TriImage::TriImage(const unsigned char* a_textureData, int a_stepX, int a_stepY,
                     if (nX >= 0 && nX < a_vWidth &&
                         nY >= 0 && nY < a_vHeight)
                     {
-                        int nIndex = voronoi->GetIndex(nX, nY);
+                        const int nIndex = voronoi->GetIndex(nX, nY);
 
                         auto iter = std::find(altIndex.begin(), altIndex.end(), nIndex);
                         if (iter == altIndex.end())
@@ -270,16 +216,279 @@ TriImage::TriImage(const unsigned char* a_textureData, int a_stepX, int a_stepY,
         }
     }
     m_indexCount = triangles.size() * 3;
+    if (m_indicies != nullptr)
+    {
+        delete[] m_indicies;
+    }
     m_indicies = new unsigned int[m_indexCount];
 
     std::copy(triangles.begin(), triangles.end(), (TriImageTriangle*)m_indicies);
 
     delete voronoi;
 }
+
+TriImage::TriImage(const unsigned char* a_textureData, int a_width, int a_height)
+{
+    m_textureData = a_textureData;
+
+    m_verts = nullptr;
+    m_indicies = nullptr;
+
+    m_width = a_width;
+    m_height = a_height;
+}
 TriImage::~TriImage()
 {
     delete[] m_verts;
     delete[] m_indicies;
+}
+
+void TriImage::AlphaTriangulation(int a_texXStep, int a_texYStep, float a_alphaThreshold, int a_vWidth, int a_vHeight)
+{
+    std::list<glm::vec2> verticies;
+
+    const unsigned int scaledAlpha = a_alphaThreshold * 255;
+
+    for (int x = 0; x < m_width; x += a_texXStep)
+    {
+        for (int y = 0; y < m_height; y += a_texYStep)
+        {
+            const int index = (x + y * m_width) * 4 + 3;
+
+            if (m_textureData[index] > scaledAlpha)
+            {
+                int blankNum = 0;
+
+                glm::vec2 dir = glm::vec2(0);
+
+                for (int xS = -a_texXStep; xS <= a_texXStep; xS += a_texXStep)
+                {
+                    for (int yS = -a_texYStep; yS <= a_texYStep; yS += a_texYStep)
+                    {
+                        if (xS == 0 && yS == 0)
+                        {
+                            continue;
+                        }
+
+                        const int nX = x + xS;
+                        const int nY = y + yS;
+
+                        if (nX < 0 || nX >= m_width ||
+                            nY < 0 || nY >= m_height)
+                        {
+                            continue;
+                        }
+
+                        const int nIndex = (nX + nY * m_width) * 4 + 3;
+
+                        if (m_textureData[nIndex] <= scaledAlpha)
+                        {
+                            ++blankNum;
+
+                            dir += glm::vec2(xS, yS);
+                        }
+                    }
+                }
+
+                if (blankNum > 3)
+                {
+                    if (dir.x != 0 || dir.y != 0)
+                    {
+                        dir = glm::normalize(dir);
+                    }
+
+                    const glm::vec2 pos = glm::vec2(x / (float)m_width, y / (float)m_height) + glm::vec2((dir.x * a_texXStep) / m_width, (dir.y * a_texYStep) / m_height);
+
+                    verticies.emplace_back(pos);
+                }
+            }
+        }
+    }
+
+    m_vertCount = verticies.size();
+
+    if (m_verts != nullptr)
+    {
+        delete[] m_verts;
+    }
+    m_verts = new glm::vec2[m_vertCount];
+    std::copy(verticies.begin(), verticies.end(), m_verts);
+
+    VoronoiTriangulation(a_vWidth, a_vHeight);    
+}
+void TriImage::QuadTriangulation(int a_stepX, int a_stepY, int a_texXStep, int a_texYStep, float a_alphaThreshold, int a_vWidth, int a_vHeight)
+{
+    std::list<glm::vec2> verticies;
+
+    const unsigned int scaledAlpha = a_alphaThreshold * 255;
+
+    for (int x = 0; x < m_width; x += a_texXStep)
+    {
+        for (int y = 0; y < m_height; y += a_texYStep)
+        {
+            const int index = (x + y * m_width) * 4 + 3;
+
+            if (m_textureData[index] > scaledAlpha)
+            {
+                if ((x % a_stepX == 0 && y % a_stepY == 0))
+                {
+                    const glm::vec2 pos = { x / (float)m_width, y / (float)m_height };
+
+                    verticies.emplace_back(pos);
+
+                    continue;
+                }
+
+                int blankNum = 0;
+
+                glm::vec2 dir = glm::vec2(0);
+
+                for (int xS = -a_texXStep; xS <= a_texXStep; xS += a_texXStep)
+                {
+                    for (int yS = -a_texYStep; yS <= a_texYStep; yS += a_texYStep)
+                    {
+                        if (xS == 0 && yS == 0)
+                        {
+                            continue;
+                        }
+
+                        const int nX = x + xS;
+                        const int nY = y + yS;
+
+                        if (nX < 0 || nX >= m_width ||
+                            nY < 0 || nY >= m_height)
+                        {
+                            continue;
+                        }
+
+                        const int nIndex = (nX + nY * m_width) * 4 + 3;
+
+                        if (m_textureData[nIndex] <= scaledAlpha)
+                        {
+                            ++blankNum;
+
+                            dir += glm::vec2(xS, yS);
+                        }
+                    }
+                }
+
+                if (blankNum > 3)
+                {
+                    if (dir.x != 0 || dir.y != 0)
+                    {
+                        dir = glm::normalize(dir);
+                    }
+
+                    const glm::vec2 pos = glm::vec2(x / (float)m_width, y / (float)m_height) + glm::vec2((dir.x * a_texXStep) / m_width, (dir.y * a_texYStep) / m_height);
+
+                    verticies.emplace_back(pos);
+                }
+            }
+        }
+    }
+
+    m_vertCount = verticies.size();
+
+    if (m_verts != nullptr)
+    {
+        delete[] m_verts;
+    }
+    m_verts = new glm::vec2[m_vertCount];
+    std::copy(verticies.begin(), verticies.end(), m_verts);
+
+    VoronoiTriangulation(a_vWidth, a_vHeight);    
+}
+void TriImage::OutlineTriangulation(float a_channelDiff, int a_texXStep, int a_texYStep, float a_alphaThreshold, int a_vWidth, int a_vHeight)
+{
+    std::list<glm::vec2> verticies;
+
+    const unsigned int scaledAlpha = a_alphaThreshold * 255;
+
+    for (int x = 0; x < m_width; x += a_texXStep)
+    {
+        for (int y = 0; y < m_height; y += a_texYStep)
+        {
+            const int index = (x + y * m_width) * 4;
+
+            float cVal = 0;
+
+            if (m_textureData[index + 3] > scaledAlpha)
+            {
+                int blankNum = 0;
+                
+                glm::vec2 dir = glm::vec2(0);
+
+                for (int xS = -a_texXStep; xS <= a_texXStep; xS += a_texXStep)
+                {
+                    for (int yS = -a_texYStep; yS <= a_texYStep; yS += a_texYStep)
+                    {
+                        if (xS == 0 && yS == 0)
+                        {
+                            continue;
+                        }
+
+                        const int nX = x + xS;
+                        const int nY = y + yS;
+
+                        if (nX < 0 || nX >= m_width ||
+                            nY < 0 || nY >= m_height)
+                        {
+                            continue;
+                        }
+
+                        const int nIndex = (nX + nY * m_width) * 4;
+
+                        cVal += ((m_textureData[nIndex + 0] / 255.0f) + (m_textureData[nIndex + 1] / 255.0f) + (m_textureData[nIndex + 2] / 255.0f)) / 3;
+
+                        if (m_textureData[nIndex + 3] <= scaledAlpha)
+                        {
+                            ++blankNum;
+
+                            dir += glm::vec2(xS, yS);
+                        }
+                    }
+                }
+
+                if (blankNum > 3)
+                {
+                    if (dir.x != 0 || dir.y != 0)
+                    {
+                        dir = glm::normalize(dir);
+                    }
+
+                    const glm::vec2 pos = glm::vec2(x / (float)m_width, y / (float)m_height) + glm::vec2((dir.x * a_texXStep) / m_width, (dir.y * a_texYStep) / m_height);
+
+                    verticies.emplace_back(pos);
+
+                    continue;
+                }
+
+                cVal *= 0.125f;
+
+                const float val = ((m_textureData[index + 0] / 255.0f) + (m_textureData[index + 1] / 255.0f) + (m_textureData[index + 2] / 255.0f)) / 3;
+
+                const float fVal = val - cVal;
+
+                if (glm::abs(fVal) > a_channelDiff)
+                {
+                    const glm::vec2 pos = { x / (float)m_width, y / (float)m_height };
+
+                    verticies.emplace_back(pos);
+                }
+            }
+        }
+    }
+
+    m_vertCount = verticies.size();
+
+    if (m_verts != nullptr)
+    {
+        delete[] m_verts;
+    }
+    m_verts = new glm::vec2[m_vertCount];
+    std::copy(verticies.begin(), verticies.end(), m_verts);
+
+    VoronoiTriangulation(a_vWidth, a_vHeight);   
 }
 
 unsigned int TriImage::GetIndexCount() const

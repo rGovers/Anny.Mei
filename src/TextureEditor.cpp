@@ -13,12 +13,21 @@
 #include "Texture.h"
 #include "TriImage.h"
 
+const char* TextureEditor::ITEMS[] = { "Alpha", "Quad", "Outline" };
+
 TextureEditor::TextureEditor() : 
-    m_selectedIndex(-1),
     m_stepXY({ 64, 64 }),
-    m_vSize({ 512, 512 })
+    m_vSize({ 512, 512 }),
+    m_texStep({ 4, 4 })
 {
+    m_channelDiff = 0.1f;
+
     m_layers = new std::vector<LayerTexture>();
+
+    m_selectedIndex = -1;
+
+    m_selectedMode = ITEMS[1];
+    m_triangulationMode = e_TriangulationMode::Quad;
 
     m_alphaThreshold = 0.9f;
 }
@@ -88,7 +97,7 @@ void TextureEditor::LoadTexture(const char* a_path)
         }
 
         const size_t size = layerMeta->Width * layerMeta->Height * 4;
-        layerTexture.Data = new unsigned char[size];
+        layerTexture.Data = new unsigned char[size];/* constant-expression */
         memcpy(layerTexture.Data, data, size);
 
         stbi_image_free(data);
@@ -118,15 +127,83 @@ void TextureEditor::Update(double a_delta, ModelEditor* a_modelEditor)
         ImGui::SetNextWindowSize({ 200, 200 }, ImGuiCond_Appearing);
         if (ImGui::Begin("Texture Editor Toolbox"))
         {
-            ImGui::InputInt2("Step XY", (int*)m_stepXY);
             ImGui::InputInt2("Voronoi Size", (int*)m_vSize);
+            ImGui::InputInt2("Texture Step", (int*)m_texStep);
             ImGui::DragFloat("Alpha Threshold", &m_alphaThreshold, 0.01f, 0.0001f, 1.0f);
+
+            if (ImGui::BeginCombo("Triangulation Mode", m_selectedMode))
+            {
+                for (int i = 0; i < IM_ARRAYSIZE(ITEMS); ++i)
+                {
+                    bool is_selected = (m_selectedMode == ITEMS[i]); 
+                    if (ImGui::Selectable(ITEMS[i], is_selected))
+                    {
+                        m_selectedMode = ITEMS[i];
+                    }
+                    if (is_selected)
+                    {
+                        ImGui::SetItemDefaultFocus();
+                    }
+                }
+                ImGui::EndCombo();
+            }
+
+            if (strcmp(m_selectedMode, "Outline") == 0)
+            {
+                m_triangulationMode = e_TriangulationMode::Outline;
+            }
+            else if (strcmp(m_selectedMode, "Alpha") == 0)
+            {
+                m_triangulationMode = e_TriangulationMode::Alpha;
+            }
+            else
+            {
+                m_triangulationMode = e_TriangulationMode::Quad;
+            }
+            
+            switch (m_triangulationMode)
+            {
+            case e_TriangulationMode::Outline:
+            {
+                ImGui::DragFloat("Channel Difference", &m_channelDiff, 0.01f, 0.0001f, 1.0f);
+
+                break;
+            }
+            case e_TriangulationMode::Quad:
+            {
+                ImGui::InputInt2("Step XY", (int*)m_stepXY);
+
+                break;
+            }
+            }
 
             if (ImGui::Button("Triangulate", { 200, 20 }))
             {
                 const LayerTexture layerTexture = m_layers->at(m_selectedIndex);
 
-                const TriImage* triImage = new TriImage(layerTexture.Data, m_stepXY[0], m_stepXY[1], layerTexture.Meta->Width, layerTexture.Meta->Height, m_vSize[0], m_vSize[1], m_alphaThreshold);
+                TriImage* triImage = new TriImage(layerTexture.Data, layerTexture.Meta->Width, layerTexture.Meta->Height);
+
+                switch (m_triangulationMode)
+                {
+                case e_TriangulationMode::Alpha:
+                {
+                    triImage->AlphaTriangulation(m_texStep[0], m_texStep[1], m_alphaThreshold, m_vSize[0], m_vSize[1]);
+
+                    break;
+                }
+                case e_TriangulationMode::Outline:
+                {
+                    triImage->OutlineTriangulation(m_channelDiff, m_texStep[0], m_texStep[1], m_alphaThreshold, m_vSize[0], m_vSize[1]);
+
+                    break;
+                }
+                case e_TriangulationMode::Quad:
+                {
+                    triImage->QuadTriangulation(m_stepXY[0], m_stepXY[1], m_texStep[0], m_texStep[1], m_alphaThreshold, m_vSize[0], m_vSize[1]);
+
+                    break;
+                }
+                }
 
                 const unsigned int indexCount = triImage->GetIndexCount();
 
