@@ -23,6 +23,19 @@ class ShaderProgram;
 class ModelEditor
 {
 private:
+    enum class e_ToolMode
+    {
+        Select,
+        Move
+    };
+
+    enum class e_Axis
+    {
+        Null = -1,
+        X,
+        Y
+    };
+
     struct MorphPlaneData
     {
         Name* MorphPlaneName;
@@ -66,11 +79,26 @@ private:
     float                   m_zoom;
     glm::vec2               m_lastMousePos;
 
+    e_ToolMode              m_toolMode;
+
+    bool                    m_dragging;
+    e_Axis                  m_axis;
+    glm::vec2               m_selectMid;
+    glm::vec2               m_lastPos;
+
+    glm::vec2               m_startDragPos;
+    glm::vec2               m_endDragPos;
+
     glm::vec3               m_translation;
+
+    std::list<unsigned int> m_selectedIndices;
 
     void GetModelData(PropertyFileProperty& a_property, mz_zip_archive& a_archive);
 
     ModelData* AddModel(const char* a_textureName, const char* a_name, const char* a_trueName, ModelVertex* a_vertices, unsigned int a_vertexCount, unsigned int* a_indices, unsigned int a_indexCount, e_ModelType a_modelType) const;
+
+    void SetSelectTool();
+    void SetMoveTool();
 
     void GenerateMorphVertexData(ModelData* a_model) const;
 protected:

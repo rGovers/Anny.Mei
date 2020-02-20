@@ -61,6 +61,8 @@ AppMain::AppMain(int a_width, int a_height) :
     ImGui_ImplOpenGL3_Init("#version 130");
 
     FileDialog::Create();
+
+    m_windowUpdateTimer = 0.0;
 }
 AppMain::~AppMain()
 {
@@ -138,9 +140,6 @@ void AppMain::Open()
 
     if (m_filePath != nullptr)
     {
-        const std::string str = std::string("Anny.Mei [") + m_filePath + "]";
-        glfwSetWindowTitle(GetWindow(), str.c_str());
-
         if (m_filePath[0] != 0)
         {
             mz_zip_archive zip;
@@ -219,9 +218,6 @@ void AppMain::SaveAs()
 
     if (m_filePath != nullptr)
     {
-        const std::string str = std::string("Anny.Mei [") + m_filePath + "]";
-        glfwSetWindowTitle(GetWindow(), str.c_str());
-
         Save();
     }
 
@@ -265,6 +261,26 @@ void AppMain::Update(double a_delta)
 
     Input();
 
+    if (m_windowUpdateTimer >= 0.5f)
+    {
+        std::string windowTitle = "Anny.Mei ";
+
+        if (m_filePath != nullptr)
+        {
+            windowTitle += std::string("[Working Path: ") + m_filePath + "] ";
+        }
+
+        // Cant be stuffed gives me a close enough read on FPS
+        int fps = (int)(1 / a_delta);
+        windowTitle += "[FPS: " + std::to_string(fps) + "]";
+
+        glfwSetWindowTitle(GetWindow(), windowTitle.c_str());
+
+        m_windowUpdateTimer -= 0.5f;
+    }
+
+    m_windowUpdateTimer += a_delta;
+    
     m_webcamController->Bind();
 
     if (m_modelController != nullptr)

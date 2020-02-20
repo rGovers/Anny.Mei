@@ -111,6 +111,36 @@ void IntermediateRenderer::DrawCircle(const glm::vec3& a_pos, int a_iteration, f
         DrawLine(posA, posB, a_width, a_color);
     }
 }
+void IntermediateRenderer::DrawBox(const glm::vec3& a_start, const glm::vec3& a_end, float a_width, const glm::vec4& a_color)
+{
+    const float midZ = (a_start.z + a_end.z) * 0.5f;
+
+    DrawLine({ a_start.x, a_start.y, a_start.z }, { a_start.x, a_end.y, midZ }, a_width, a_color);
+    DrawLine({ a_start.x, a_start.y, a_start.z }, { a_end.x, a_start.y, midZ }, a_width, a_color);
+    DrawLine({ a_start.x, a_end.y, midZ}, { a_end.x, a_end.y, a_end.z }, a_width, a_color);
+    DrawLine({ a_end.x, a_start.y, midZ}, { a_end.x, a_end.y, a_end.z }, a_width, a_color);
+}
+void IntermediateRenderer::DrawArrow(const glm::vec3& a_pos, const glm::vec3& a_dir, float a_size, float a_width, const glm::vec4& a_color)
+{
+    glm::vec3 up = glm::vec3(0, 0, 1);
+
+    if (abs(glm::dot(a_dir, up)) >= 0.9f)
+    {
+        up = glm::vec3(0, 1, 0);
+    }
+
+    const glm::vec3 right = glm::cross(up, a_dir);
+
+    const float halfSize = a_size * 0.5f;
+
+    const glm::vec3 pointA = a_pos + a_dir * a_size;
+    const glm::vec3 pointB = a_pos + right * halfSize;
+    const glm::vec3 pointC = a_pos - right * halfSize;
+
+    DrawLine(pointA, pointB, a_width, a_color);
+    DrawLine(pointA, pointC, a_width, a_color);
+    DrawLine(pointB, pointC, a_width, a_color);
+}
 
 void IntermediateRenderer::Draw()
 {

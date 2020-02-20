@@ -1,7 +1,9 @@
 #include "ModelEditor.h"
 
+#include <algorithm>
 #include <glad/glad.h>
 #include <glm/gtc/matrix_transform.hpp>
+#include <limits>
 #include <string.h>
 
 #include "Camera.h"
@@ -51,6 +53,13 @@ ModelEditor::ModelEditor()
 
     m_zoom = 1.0f;
     m_translation = glm::vec3(0);
+
+    m_toolMode = e_ToolMode::Select;
+
+    m_startDragPos = glm::vec2(-std::numeric_limits<float>().infinity());
+
+    m_dragging = false;
+    m_axis = e_Axis::Null;
 }  
 ModelEditor::~ModelEditor()
 {
@@ -243,6 +252,20 @@ ModelEditor::ModelData* ModelEditor::AddModel(const char* a_textureName, const c
     return modelData;
 }
 
+void ModelEditor::SetSelectTool()
+{
+    m_toolMode = e_ToolMode::Select;
+
+    m_startDragPos = glm::vec2(-std::numeric_limits<float>().infinity());
+}
+void ModelEditor::SetMoveTool()
+{
+    m_toolMode = e_ToolMode::Move;
+
+    m_dragging = false;
+    m_axis = e_Axis::Null;
+}
+
 void ModelEditor::GenerateMorphVertexData(ModelData* a_model) const
 {
     const int ibo = a_model->MorphPlaneModel->GetIBO();
@@ -353,6 +376,20 @@ void ModelEditor::Update(double a_delta)
 
     if (m_selectedModelData != nullptr)
     {
+        ImGui::SetNextWindowSize({ 200, 100 }, ImGuiCond_Appearing);
+        if (ImGui::Begin("Model Tools"))
+        {
+            if (ImGui::Button("Select"))
+            {
+                SetSelectTool();
+            }
+            if (ImGui::Button("Move"))
+            {
+                SetMoveTool();
+            }
+        }
+        ImGui::End();
+
         ImGui::SetNextWindowSize({ 200, 400 }, ImGuiCond_Appearing);
         if (ImGui::Begin("Model Properties"))
         {
@@ -468,6 +505,9 @@ void ModelEditor::Update(double a_delta)
                         if (ImGui::Selectable((*iter)->MorphPlaneName->GetName()))
                         {
                             m_selectedMorphPlane = (*iter);
+
+                            m_startDragPos = glm::vec2(-std::numeric_limits<float>().infinity());
+                            m_selectedIndices.clear();
                         }
                     }
                 }
@@ -480,8 +520,173 @@ void ModelEditor::Update(double a_delta)
         ImGui::SetNextWindowSize({ 420, 440 }, ImGuiCond_Appearing);
         if (ImGui::Begin("Model Editor", nullptr, ImGuiWindowFlags_MenuBar))
         {
+            m_intermediateRenderer->Reset();
+
+            const ImVec2 size = ImGui::GetWindowSize();
+            const glm::vec2 useSize = { size.x - 20, size.y - 60 };
+            const glm::vec2 halfSize = useSize * 0.5f;
+            const glm::vec2 trueSize = { useSize.x / IMAGE_SIZE, useSize.y / IMAGE_SIZE };
+
+            const glm::mat4 proj = glm::orthoRH(0.0f, trueSize.x * m_zoom * 5, 0.0f, trueSize.y * m_zoom * 5, -1.0f, 1.0f);
+            const glm::mat4 projInv = glm::inverse(proj);
+            const glm::mat4 camTran = glm::translate(glm::mat4(1), m_translation);
+            const glm::mat4 view = glm::inverse(camTran);
+
+            const glm::mat4 viewProj = proj * view;
+
             if (ImGui::IsWindowFocused())
             {
+                if (m_selectedMorphPlane != nullptr)
+                {
+                    if (ImGui::IsMouseDown(0))
+                    {
+                        const ImVec2 tPos = ImGui::GetMousePos();
+                        const ImVec2 tWPos = ImGui::GetWindowPos();
+
+                        const glm::vec2 mousePos = { tPos.x, tPos.y };
+                        const glm::vec2 winPos = { tWPos.x + 10, tWPos.y + 40 };
+                        const glm::vec2 relPos = mousePos - winPos;
+
+                        if (relPos.x > 0 && relPos.y > 0 && relPos.x <= useSize.x && relPos.y <= useSize.y)
+                        {
+                            const glm::vec4 scaledMousePos = glm::vec4((relPos.x / halfSize.x) - 1.0f, (relPos.y / halfSize.y) - 1.0f, 0.0f, 1.0f);
+                            glm::vec4 worldPos = camTran * projInv * scaledMousePos;
+
+                            worldPos.w = 1 / worldPos.w;
+
+                            worldPos.x *= worldPos.w;
+                            worldPos.y *= worldPos.w;
+                            worldPos.z *= worldPos.w;
+
+                            switch (m_toolMode)
+                            {
+                            case e_ToolMode::Select:
+                            {
+                                if (m_startDragPos.x == -std::numeric_limits<float>().infinity() && m_startDragPos.y == -std::numeric_limits<float>().infinity())
+                                {
+                                    m_startDragPos = { worldPos.x, worldPos.y };
+                                }
+
+                                m_endDragPos = { worldPos.x, worldPos.y };
+
+                                const glm::vec4 fPosStart = viewProj * glm::vec4(m_startDragPos, 0, 1); 
+                                const glm::vec4 fPosEnd = viewProj * glm::vec4(m_endDragPos, 0, 1);
+
+                                m_intermediateRenderer->DrawBox({ fPosStart.x, fPosStart.y, -0.3f }, { fPosEnd.x, fPosEnd.y, -0.2f }, 0.01f, { 1, 1, 1, 1 });
+
+                                break;
+                            }
+                            case e_ToolMode::Move:
+                            {
+                                const glm::vec2 world2 = { worldPos.x, worldPos.y };
+
+                                if (!m_dragging)
+                                {
+                                    const glm::vec2 diff = m_selectMid - world2;
+                                    const glm::vec2 aDiff = { glm::abs(diff.x), glm::abs(diff.y) };
+
+                                    if (aDiff.x <= 0.01f && aDiff.y <= 0.5f)
+                                    {
+                                        m_axis = e_Axis::Y;
+                                    }
+                                    else if (aDiff.x <= 0.5f && aDiff.y <= 0.01f)
+                                    {
+                                        m_axis = e_Axis::X;
+                                    }
+                                    else
+                                    {
+                                        m_axis = e_Axis::Null;
+                                    }
+
+                                    m_dragging = true;
+                                }
+                                else
+                                {
+                                    const glm::vec2 mov = world2 - m_lastPos;
+
+                                    glm::vec2* morphPositions = m_selectedMorphPlane->Plane->GetMorphPositions();
+                                    
+                                    switch (m_axis)
+                                    {
+                                    case e_Axis::X:
+                                    {
+                                        for (auto iter = m_selectedIndices.begin(); iter != m_selectedIndices.end(); ++iter)
+                                        {
+                                            morphPositions[*iter].x += mov.x;
+                                        }
+
+                                        break;
+                                    }
+                                    case e_Axis::Y:
+                                    {
+                                        for (auto iter = m_selectedIndices.begin(); iter != m_selectedIndices.end(); ++iter)
+                                        {
+                                            morphPositions[*iter].y += mov.y;
+                                        }
+
+                                        break;
+                                    }
+                                    }
+                                    
+                                }
+                                
+                                m_lastPos = world2;
+                            }
+                            }
+                            
+                        }   
+                    }
+                    else if (m_toolMode == e_ToolMode::Select && m_startDragPos.x != -std::numeric_limits<float>().infinity() && m_startDragPos.y != -std::numeric_limits<float>().infinity())
+                    {
+                        const ImGuiIO io = ImGui::GetIO();
+
+                        if (!io.KeyShift && !io.KeyCtrl)
+                        {
+                            m_selectedIndices.clear();
+                        } 
+
+                        const unsigned int size = m_selectedMorphPlane->Plane->GetSize();
+                        const unsigned int scaledSize = size + 1;
+                        const unsigned int trueSize = size * size;
+
+                        const glm::vec2* morpPositions = m_selectedMorphPlane->Plane->GetMorphPositions();
+
+                        const glm::vec2 bMin = glm::vec2(glm::min(m_endDragPos.x, m_startDragPos.x), glm::min(m_endDragPos.y, m_startDragPos.y));
+                        const glm::vec2 bMax = glm::vec2(glm::max(m_endDragPos.x, m_startDragPos.x), glm::max(m_endDragPos.y, m_startDragPos.y)); 
+
+                        for (unsigned int i = 0; i < trueSize; ++i)
+                        {
+                            const glm::vec2 morphPosition = morpPositions[i];
+
+                            const glm::vec2 nearPoint = glm::vec2(glm::clamp(morphPosition.x, bMin.x, bMax.x), glm::clamp(morphPosition.y, bMin.y, bMax.y));
+
+                            const glm::vec2 diff = nearPoint - morphPosition;
+
+                            if ((diff.x == 0 && diff.y == 0) || glm::length(diff) <= 0.025f)
+                            {
+                                auto iter = std::find(m_selectedIndices.begin(), m_selectedIndices.end(), i);
+                                
+                                if (iter == m_selectedIndices.end())
+                                {
+                                    m_selectedIndices.emplace_back(i);
+                                }
+                                else if (io.KeyCtrl)
+                                {
+                                    m_selectedIndices.erase(iter);
+                                }
+                            } 
+                        }
+
+                        m_startDragPos = glm::vec2(-std::numeric_limits<float>().infinity());
+                    }
+                    else
+                    {
+                        m_dragging = false;
+
+                        m_axis = e_Axis::Null;
+                    }   
+                }
+
                 if (ImGui::IsMouseDown(2))
                 {
                     const ImVec2 tPos = ImGui::GetMousePos();
@@ -510,14 +715,13 @@ void ModelEditor::Update(double a_delta)
                 m_translation.x = glm::clamp(m_translation.x, -1.0f, 1.0f);
                 m_translation.y = glm::clamp(m_translation.y, -1.0f, 1.0f);
             }
+            else
+            {
+                m_startDragPos = glm::vec2(-1, -1);
+                m_endDragPos = glm::vec2(-1, -1);
+            }
 
-            const ImVec2 size = ImGui::GetWindowSize();
-            const glm::vec2 trueSize = { (size.x - 20) / IMAGE_SIZE, (size.y - 60) / IMAGE_SIZE };
-
-            const glm::mat4 proj = glm::orthoRH(0.0f, trueSize.x * m_zoom * 5, 0.0f, trueSize.y * m_zoom * 5, -1.0f, 1.0f);
-            const glm::mat4 view = glm::inverse(glm::translate(glm::mat4(1), m_translation));
-
-            const glm::mat4 finalTransform = proj * view;
+            const glm::mat4 finalTransform = viewProj;
 
             if (ImGui::BeginMenuBar())
             {
@@ -536,24 +740,82 @@ void ModelEditor::Update(double a_delta)
             m_renderTexture->Bind();
 
             glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-            glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
-
-            m_intermediateRenderer->Reset();
+            glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);            
 
             if (m_selectedMorphPlane)
             {
                 const unsigned int size = m_selectedModelData->MorphPlaneSize;
+                const unsigned int scaledSize = size + 1;
+
+                m_selectMid = glm::vec2(0);
+                unsigned int indexCount = 0;
 
                 for (unsigned int x = 0; x <= size; ++x)
                 {
                     for (unsigned int y = 0; y <= size; ++y)
                     {
+                        const unsigned int index = x + y * scaledSize;
+
                         const glm::vec2 pos = m_selectedMorphPlane->Plane->GetMorphPosition(x, y);
 
                         const glm::vec4 fPos = finalTransform * glm::vec4(pos.x, pos.y, 0, 1);
 
-                        m_intermediateRenderer->DrawCircle({ fPos.x, fPos.y, -0.25f }, 20, 0.025f, 0.01f);
+                        auto iter = std::find(m_selectedIndices.begin(), m_selectedIndices.end(), index);
+                        if (iter != m_selectedIndices.end())
+                        {
+                            ++indexCount;
+                            m_selectMid += pos;
+
+                            m_intermediateRenderer->DrawCircle({ fPos.x, fPos.y, -0.1f }, 20, 0.025f, 0.01f);
+                        }
+                        else if (m_toolMode == e_ToolMode::Select)
+                        {
+                            m_intermediateRenderer->DrawCircle({ fPos.x, fPos.y, -0.1f }, 20, 0.01f, 0.01f, { 0, 1, 0, 1});
+                        }
                     }
+                }
+
+                m_selectMid /= indexCount;
+
+                if (m_toolMode == e_ToolMode::Move)
+                {
+                    const glm::vec4 pos = finalTransform * glm::vec4(m_selectMid, 0, 1);
+                    const glm::vec3 pos3 = { pos.x, pos.y, -0.2f };
+
+                    const glm::vec3 up = { 0, 1, 0 };
+                    const glm::vec3 right = { 1, 0, 0 };
+
+                    const glm::vec3 upPos = pos3 + (up * 0.1f);
+                    const glm::vec3 rightPos = pos3 + (right * 0.1f);
+
+                    switch (m_axis)
+                    {
+                    case e_Axis::X:
+                    {
+                        m_intermediateRenderer->DrawArrow(upPos, up, 0.05f, 0.01f, { 0, 1, 0, 1 });
+                        m_intermediateRenderer->DrawArrow(rightPos, right, 0.1f, 0.01f, { 0.5f, 0, 0, 1 });
+
+                        break;
+                    }
+                    case e_Axis::Y:
+                    {
+                        m_intermediateRenderer->DrawArrow(upPos, up, 0.1f, 0.01f, { 0, 0.5f, 0, 1 });
+                        m_intermediateRenderer->DrawArrow(rightPos, right, 0.05f, 0.01f, { 1, 0, 0, 1 });
+
+                        break;
+                    }
+                    default:
+                    {
+                        m_intermediateRenderer->DrawArrow(upPos, up, 0.05f, 0.01f, { 0, 1, 0, 1 });
+                        m_intermediateRenderer->DrawArrow(rightPos, right, 0.05f, 0.01f, { 1, 0, 0, 1 });
+
+                        break;
+                    }
+                    }
+                    
+
+                    m_intermediateRenderer->DrawLine(pos3, upPos, 0.01f, { 0, 1, 0, 1 });
+                    m_intermediateRenderer->DrawLine(pos3, rightPos, 0.01f, { 1, 0, 0, 1 });
                 }
 
                 m_morphPlaneDisplay->SetModelName(m_selectedModelData->ModelName->GetName());

@@ -24,6 +24,8 @@ private:
     
     const char*           m_filePath;
 
+    double                m_windowUpdateTimer;
+
     void New();
     void Open();
     void Save() const;
