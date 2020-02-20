@@ -8,10 +8,12 @@
 enum class e_ModelType;
 
 class Camera;
+class ImageDisplay;
 class IntermediateRenderer;
 class Model;
 struct ModelVertex;
 class MorphPlane;
+class MorphPlaneDisplay;
 class Name;
 class Namer;
 class PropertyFileProperty;
@@ -45,17 +47,17 @@ private:
     IntermediateRenderer*   m_intermediateRenderer;
 
     ModelData*              m_selectedModelData;
-    MorphPlane*             m_selectedMorphPlane;
+    MorphPlaneData*         m_selectedMorphPlane;
 
     std::list<ModelData*>*  m_models;
 
     Namer*                  m_namer;
     Namer*                  m_morphPlaneNamer;
 
-    ShaderProgram*          m_baseShaderProgram;
-    ShaderProgram*          m_wireShaderProgram;
-
     RenderTexture*          m_renderTexture;
+
+    ImageDisplay*           m_imageDisplay;
+    MorphPlaneDisplay*      m_morphPlaneDisplay;
 
     bool                    m_solid;
     bool                    m_wireframe;

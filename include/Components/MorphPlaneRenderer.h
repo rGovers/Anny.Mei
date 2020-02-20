@@ -2,14 +2,14 @@
 
 #include "Renderer.h"
 
-class ShaderProgram;
+class MorphPlaneDisplay;
 
 class MorphPlaneRenderer : public Renderer
 {
 private:
-    ShaderProgram* m_shaderProgram;
+    MorphPlaneDisplay* m_morphPlaneDisplay;
 
-    char*          m_morphPlaneName;
+    char*              m_morphPlaneName;
 
     void Draw(bool a_preview, double a_delta, Camera* a_camera);
 protected:

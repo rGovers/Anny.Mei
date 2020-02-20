@@ -2,16 +2,14 @@
 
 #include "Renderer.h"
 
+class ImageDisplay;
 class Model;
-class ShaderProgram;
 class Texture;
 
 class ImageRenderer : public Renderer
 {
 private:
-    char*          m_modelName;
-
-    ShaderProgram* m_shaderProgram;
+    ImageDisplay*  m_imageDisplay;
 
     void Draw(bool a_preview, Camera* a_camera);
 protected:

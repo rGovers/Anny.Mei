@@ -12,9 +12,7 @@
 #include "MorphPlane.h"
 #include "Object.h"
 #include "PropertyFile.h"
-#include "ShaderProgram.h"
-#include "Shaders/MorphPlaneVertex.h"
-#include "Shaders/StandardPixel.h"
+#include "Renderers/MorphPlaneDisplay.h"
 #include "Texture.h"
 #include "Transform.h"
 
@@ -24,99 +22,39 @@ const char* MorphPlaneRenderer::COMPONENT_NAME = "MorphPlaneRenderer";
 MorphPlaneRenderer::MorphPlaneRenderer(Object* a_object) : 
     Renderer(a_object)
 {
-    const int vertexS = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertexS, 1, &MORPHPLANEVERTEX, nullptr);
-    glCompileShader(vertexS);
-
-    const int pixelS = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(pixelS, 1, &STANDARDPIXEL, nullptr);
-    glCompileShader(pixelS);
-
-    m_shaderProgram = new ShaderProgram(pixelS, vertexS);
-
     m_morphPlaneName = new char[1] { 0 };
 
-    glDeleteShader(vertexS);
-    glDeleteShader(pixelS);
+    m_morphPlaneDisplay = new MorphPlaneDisplay();
 }
 MorphPlaneRenderer::~MorphPlaneRenderer()
 {
-    delete m_shaderProgram;
+    delete m_morphPlaneDisplay;
 }
 
 void MorphPlaneRenderer::Draw(bool a_preview, double a_delta, Camera* a_camera)
 {
-    const DataStore* store = DataStore::GetInstance();
-
     const Object* object = GetObject();
 
-    const char* modelName = GetModelName();
+    Transform* transform = object->GetTransform();
 
-    const Model* model = store->GetModel(modelName, e_ModelType::MorphPlane);
-    const MorphPlane* morphPlane = store->GetMorphPlace(m_morphPlaneName);
+    const glm::mat4 transformMat = transform->GetWorldMatrix();
+    const glm::mat4 shift = transformMat * glm::translate(glm::mat4(1), -GetAnchor()) * glm::scale(glm::mat4(1), glm::vec3(0.5f));
 
-    const char* textureName = store->GetModelTextureName(modelName);
+    glm::mat4 view = glm::mat4(1);
+    glm::mat4 proj = glm::orthoRH(0.0f, 1.0f, 0.0f, 1.0f, -1.0f, 1.0f);
 
-    Texture* texture = nullptr;
-    if (textureName != nullptr)
+    if (a_camera != nullptr)
     {
-        texture = store->GetTexture(textureName);
+        view = glm::inverse(a_camera->GetTransform()->ToMatrix());
+        proj = a_camera->GetProjection();
     }
 
-    if (model != nullptr && texture != nullptr && morphPlane != nullptr)
-    {
-        const Texture* morphTex = morphPlane->ToTexture();
+    const glm::mat4 finalTransform = view * proj * shift;
 
-        glBindVertexArray(model->GetVAO());
-            
-        const int handle = m_shaderProgram->GetHandle();
+    m_morphPlaneDisplay->SetModelName(GetModelName());
+    m_morphPlaneDisplay->SetMorphPlaneName(m_morphPlaneName);
 
-        glUseProgram(handle);
-
-        const int texLocation = glGetUniformLocation(handle, "MainTex");
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, texture->GetHandle());
-        glUniform1i(texLocation, 0);
-
-        const int morphTexLocation = glGetUniformLocation(handle, "MorphTex");
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, morphTex->GetHandle());
-        glUniform1i(morphTexLocation, 1);
-
-        const unsigned int dim = morphPlane->GetSize();
-        const unsigned int sSize = dim * dim;
-
-        const int morphTexSizeLocation = glGetUniformLocation(handle, "MorphSize");
-        glUniform1ui(morphTexSizeLocation, sSize);
-
-        Transform* transform = object->GetTransform();
-
-        const glm::mat4 transformMat = transform->GetWorldMatrix();
-        const glm::mat4 shift = transformMat * glm::translate(glm::mat4(1), -GetAnchor()) * glm::scale(glm::mat4(1), glm::vec3(0.5f));
-
-        glm::mat4 view = glm::mat4(1);
-        glm::mat4 proj = glm::orthoRH(0.0f, 1.0f, 0.0f, 1.0f, -1.0f, 1.0f);
-
-        if (a_camera != nullptr)
-        {
-            view = glm::inverse(a_camera->GetTransform()->ToMatrix());
-            proj = a_camera->GetProjection();
-        }
-
-        const glm::mat4 finalTransform = view * proj * shift;
-
-        const int location = glGetUniformLocation(handle, "Model");
-        glUniformMatrix4fv(location, 1, GL_FALSE, (float*)&finalTransform);
-
-        glEnable(GL_BLEND);
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);        
-
-        glDrawElements(GL_TRIANGLES, model->GetIndiciesCount(), GL_UNSIGNED_INT, 0);
-
-        glDisable(GL_BLEND);
-
-        delete morphTex;
-    }
+    m_morphPlaneDisplay->Draw(finalTransform);
 }
 
 void MorphPlaneRenderer::Update(double a_delta, Camera* a_camera)

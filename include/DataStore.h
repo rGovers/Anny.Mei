@@ -40,7 +40,7 @@ public:
     const char* GetModelTextureName(const char* a_modelName) const;
 
     void AddMorphPlane(const char* a_name, MorphPlane* a_morphPlane);
-    MorphPlane* GetMorphPlace(const char* a_name) const;
+    MorphPlane* GetMorphPlane(const char* a_name) const;
     void RemoveMorphPlane(const char* a_name);
 
     void AddTexture(const char* a_name, Texture* a_texture);

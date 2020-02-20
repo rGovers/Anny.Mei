@@ -15,11 +15,9 @@
 #include "Name.h"
 #include "Namer.h"
 #include "PropertyFile.h"
+#include "Renderers/ImageDisplay.h"
+#include "Renderers/MorphPlaneDisplay.h"
 #include "RenderTexture.h"
-#include "ShaderProgram.h"
-#include "Shaders/ModelVertex.h"
-#include "Shaders/SolidPixel.h"
-#include "Shaders/StandardPixel.h"
 #include "Texture.h"
 #include "Transform.h"
 
@@ -41,6 +39,9 @@ ModelEditor::ModelEditor()
 
     m_intermediateRenderer = new IntermediateRenderer();
 
+    m_imageDisplay = new ImageDisplay();
+    m_morphPlaneDisplay = new MorphPlaneDisplay();
+
     m_selectedModelData = nullptr;
     m_selectedMorphPlane = nullptr;
 
@@ -50,25 +51,6 @@ ModelEditor::ModelEditor()
 
     m_zoom = 1.0f;
     m_translation = glm::vec3(0);
-
-    const unsigned int pixelShader = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(pixelShader, 1, &STANDARDPIXEL, 0);
-    glCompileShader(pixelShader);
-        
-    const unsigned int solidPixelShader = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(solidPixelShader, 1, &SOLIDPIXEL, 0);
-    glCompileShader(solidPixelShader);
-
-    const unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertexShader, 1, &MODELVERTEX, 0);
-    glCompileShader(vertexShader);
-
-    m_baseShaderProgram = new ShaderProgram(pixelShader, vertexShader);
-    m_wireShaderProgram = new ShaderProgram(solidPixelShader, vertexShader);
-
-    glDeleteShader(pixelShader);
-    glDeleteShader(solidPixelShader);
-    glDeleteShader(vertexShader);
 }  
 ModelEditor::~ModelEditor()
 {
@@ -85,10 +67,10 @@ ModelEditor::~ModelEditor()
 
     delete m_renderTexture;
 
-    delete m_baseShaderProgram;
-    delete m_wireShaderProgram;
+    delete m_imageDisplay;
 
     delete m_namer;
+    delete m_morphPlaneNamer;
 
     delete m_intermediateRenderer;
 }
@@ -251,7 +233,7 @@ ModelEditor::ModelData* ModelEditor::AddModel(const char* a_textureName, const c
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, a_indexCount * sizeof(unsigned int), a_indices, GL_STATIC_DRAW);
 
-    model->SetIndiciesCount(a_indexCount);
+    model->SetIndicesCount(a_indexCount);
 
     const char* name = modelData->ModelName->GetName();
 
@@ -312,7 +294,7 @@ void ModelEditor::GenerateMorphVertexData(ModelData* a_model) const
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, a_model->IndexCount * sizeof(unsigned int), a_model->Indices, GL_STATIC_DRAW);
 
-    a_model->MorphPlaneModel->SetIndiciesCount(a_model->IndexCount);
+    a_model->MorphPlaneModel->SetIndicesCount(a_model->IndexCount);
 
     delete[] verts;
 }
@@ -446,11 +428,6 @@ void ModelEditor::Update(double a_delta)
 
                         store->RemoveMorphPlane(name);
 
-                        if ((*iter)->Plane == m_selectedMorphPlane)
-                        {
-                            m_selectedMorphPlane = newMorphPlane;
-                        }
-
                         delete (*iter)->Plane;
 
                         (*iter)->Plane = newMorphPlane;
@@ -490,7 +467,7 @@ void ModelEditor::Update(double a_delta)
                     {
                         if (ImGui::Selectable((*iter)->MorphPlaneName->GetName()))
                         {
-                            m_selectedMorphPlane = (*iter)->Plane;
+                            m_selectedMorphPlane = (*iter);
                         }
                     }
                 }
@@ -563,75 +540,35 @@ void ModelEditor::Update(double a_delta)
 
             m_intermediateRenderer->Reset();
 
-            Texture* tex = nullptr;
-
-            const char* texName = m_selectedModelData->TextureName;
-
-            if (m_alpha)
+            if (m_selectedMorphPlane)
             {
-                glEnable(GL_BLEND);
-                glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);     
-            }
+                const unsigned int size = m_selectedModelData->MorphPlaneSize;
 
-            if (texName != nullptr)
-            {
-                tex = store->GetTexture(texName);
-            }
-
-            if (tex != nullptr)
-            {
-                glBindVertexArray(m_selectedModelData->BaseModel->GetVAO());
-
-                if (m_selectedMorphPlane)
+                for (unsigned int x = 0; x <= size; ++x)
                 {
-                    const unsigned int size = m_selectedModelData->MorphPlaneSize;
-
-                    for (unsigned int x = 0; x <= size; ++x)
+                    for (unsigned int y = 0; y <= size; ++y)
                     {
-                        for (unsigned int y = 0; y <= size; ++y)
-                        {
-                            const glm::vec2 pos = m_selectedMorphPlane->GetMorphPosition(x, y);
+                        const glm::vec2 pos = m_selectedMorphPlane->Plane->GetMorphPosition(x, y);
 
-                            const glm::vec4 fPos = finalTransform * glm::vec4(pos.x, pos.y, 0, 1);
+                        const glm::vec4 fPos = finalTransform * glm::vec4(pos.x, pos.y, 0, 1);
 
-                            m_intermediateRenderer->DrawCircle({ fPos.x, fPos.y, -0.25f }, 20, 0.025f, 0.01f);
-                        }
+                        m_intermediateRenderer->DrawCircle({ fPos.x, fPos.y, -0.25f }, 20, 0.025f, 0.01f);
                     }
                 }
 
-                if (m_wireframe)
-                {
-                    const int wireHandle = m_wireShaderProgram->GetHandle();
-                    glUseProgram(wireHandle);
+                m_morphPlaneDisplay->SetModelName(m_selectedModelData->ModelName->GetName());
+                m_morphPlaneDisplay->SetMorphPlaneName(m_selectedMorphPlane->MorphPlaneName->GetName());
 
-                    const int modelLocation = glGetUniformLocation(wireHandle, "model");
-                    glUniformMatrix4fv(modelLocation, 1, GL_FALSE, (float*)&finalTransform);
+                m_morphPlaneDisplay->Draw(finalTransform * glm::scale(glm::mat4(1), glm::vec3(0.5f)), m_alpha, m_solid, m_wireframe);
+            }
+            else
+            {
+                m_imageDisplay->SetModelName(m_selectedModelData->ModelName->GetName());
 
-                    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-                    glDrawElements(GL_TRIANGLES, m_selectedModelData->IndexCount, GL_UNSIGNED_INT, 0);
-                    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-                }
-
-                if (m_solid)
-                {
-                    const int baseHandle = m_baseShaderProgram->GetHandle();
-                    glUseProgram(baseHandle);
-
-                    const int modelLocation = glGetUniformLocation(baseHandle, "model");
-                    glUniformMatrix4fv(modelLocation, 1, GL_FALSE, (float*)&finalTransform);
-
-                    const int location = glGetUniformLocation(baseHandle, "MainTex");
-                    glActiveTexture(GL_TEXTURE0);
-                    glBindTexture(GL_TEXTURE_2D, tex->GetHandle());
-                    glUniform1i(location, 0);
-
-                    glDrawElements(GL_TRIANGLES, m_selectedModelData->IndexCount, GL_UNSIGNED_INT, 0);
-                }
+                m_imageDisplay->Draw(finalTransform, m_alpha, m_solid, m_wireframe);
             }
 
             m_intermediateRenderer->Draw();
-
-            glDisable(GL_BLEND);
 
             m_renderTexture->Unbind();
 

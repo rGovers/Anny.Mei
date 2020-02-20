@@ -40,11 +40,11 @@ unsigned int Model::GetIBO() const
     return m_buffers[IBO];
 }
 
-void Model::SetIndiciesCount(unsigned int a_indicies)
+void Model::SetIndicesCount(unsigned int a_indicies)
 {
     m_indicies = a_indicies;
 }
-unsigned int Model::GetIndiciesCount() const
+unsigned int Model::GetIndicesCount() const
 {
     return m_indicies;
 }

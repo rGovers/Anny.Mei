@@ -186,7 +186,7 @@ void DataStore::AddMorphPlane(const char* a_name, MorphPlane* a_morphPlane)
 
     m_morphPlanes.emplace(a_name, a_morphPlane);
 }
-MorphPlane* DataStore::GetMorphPlace(const char* a_name) const
+MorphPlane* DataStore::GetMorphPlane(const char* a_name) const
 {
     auto iter = m_morphPlanes.find(a_name);
 

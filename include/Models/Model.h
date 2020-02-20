@@ -36,8 +36,8 @@ public:
     unsigned int GetVBO() const;
     unsigned int GetIBO() const;
 
-    void SetIndiciesCount(unsigned int a_indicies);
-    unsigned int GetIndiciesCount() const;
+    void SetIndicesCount(unsigned int a_indicies);
+    unsigned int GetIndicesCount() const;
 
     virtual e_ModelType GetModelType() const;
 };
