@@ -10,7 +10,7 @@
 #include "PropertyFile.h"
 #include "Transform.h"
 
-#define ISCREATECOMPONENT(Comp, Obj, Name, Construct) { if (strcmp(Name, Construct::COMPONENT_NAME) == 0) { Comp = new Construct(Obj); }}
+#define ISCREATECOMPONENT(Comp, Obj, Name, Construct, AControl) { if (strcmp(Name, Construct::COMPONENT_NAME) == 0) { Comp = new Construct(Obj, AControl); }}
 
 Object::Object(Namer* a_namer) : 
     m_parent(nullptr),
@@ -93,16 +93,16 @@ const char* Object::GetName() const
     return m_name->GetName();
 }
 
-void Object::LoadComponent(PropertyFileProperty* a_property)
+void Object::LoadComponent(PropertyFileProperty* a_property, AnimControl* a_animControl)
 {
     Component* comp = nullptr;
 
-    ISCREATECOMPONENT(comp, this, a_property->GetName(), ImageRenderer)
-    ISCREATECOMPONENT(comp, this, a_property->GetName(), MorphPlaneRenderer)
+    ISCREATECOMPONENT(comp, this, a_property->GetName(), ImageRenderer, a_animControl)
+    ISCREATECOMPONENT(comp, this, a_property->GetName(), MorphPlaneRenderer, a_animControl)
 
     if (comp != nullptr)
     {
-        comp->Load(a_property);
+        comp->Load(a_property, a_animControl);
 
         m_components.emplace_back(comp);
     }
@@ -115,7 +115,7 @@ void Object::SaveComponents(PropertyFile* a_propertyFile, PropertyFileProperty* 
     }
 }
 
-void Object::UpdateComponentUI()
+void Object::UpdateComponentUI(AnimControl* a_animControl)
 {
     if (ImGui::Button("Add Component"))
     {
@@ -145,11 +145,11 @@ void Object::UpdateComponentUI()
 
         if (createImageRenderer && ImGui::Selectable(ImageRenderer::COMPONENT_NAME))
         {
-            component = new ImageRenderer(this);
+            component = new ImageRenderer(this, a_animControl);
         }
         if (createMorphPlaneRenderer && ImGui::Selectable(MorphPlaneRenderer::COMPONENT_NAME))
         {
-            component = new MorphPlaneRenderer(this);
+            component = new MorphPlaneRenderer(this, a_animControl);
         }
 
         if (component != nullptr)

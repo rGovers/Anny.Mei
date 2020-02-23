@@ -19,8 +19,8 @@
 const static int BUFFER_SIZE = 1024;
 const char* MorphPlaneRenderer::COMPONENT_NAME = "MorphPlaneRenderer";
 
-MorphPlaneRenderer::MorphPlaneRenderer(Object* a_object) : 
-    Renderer(a_object)
+MorphPlaneRenderer::MorphPlaneRenderer(Object* a_object, AnimControl* a_animControl) : 
+    Renderer(a_object, a_animControl)
 {
     m_morphPlaneName = new char[1] { 0 };
 
@@ -38,7 +38,8 @@ void MorphPlaneRenderer::Draw(bool a_preview, double a_delta, Camera* a_camera)
     Transform* transform = object->GetTransform();
 
     const glm::mat4 transformMat = transform->GetWorldMatrix();
-    const glm::mat4 shift = transformMat * glm::translate(glm::mat4(1), -GetAnchor()) * glm::scale(glm::mat4(1), glm::vec3(0.5f));
+    const glm::vec3 anchor = -GetAnchor();
+    const glm::mat4 shift = transformMat * glm::translate(glm::mat4(1), anchor) * glm::scale(glm::mat4(1), glm::vec3(0.5f));
 
     glm::mat4 view = glm::mat4(1);
     glm::mat4 proj = glm::orthoRH(0.0f, 1.0f, 0.0f, 1.0f, -1.0f, 1.0f);
@@ -92,9 +93,9 @@ const char* MorphPlaneRenderer::ComponentName() const
     return COMPONENT_NAME;
 }
 
-void MorphPlaneRenderer::Load(PropertyFileProperty* a_property)
+void MorphPlaneRenderer::Load(PropertyFileProperty* a_property, AnimControl* a_animControl)
 {
-    LoadValues(a_property);
+    LoadValues(a_property, a_animControl);
 
     const std::list<PropertyFileValue> values = a_property->Values();
 

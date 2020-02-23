@@ -4,6 +4,7 @@
 #include <list>
 #include <string>
 
+#include "AnimControl.h"
 #include "Camera.h"
 #include "FileUtils.h"
 #include "imgui.h"
@@ -24,6 +25,8 @@ const static float MAX_ZOOM = 2.5f;
 
 SkeletonEditor::SkeletonEditor()
 {
+    m_animControl = new AnimControl();
+
     m_namer = new Namer();
 
     m_baseObject = new Object(m_namer);
@@ -50,6 +53,8 @@ SkeletonEditor::~SkeletonEditor()
     delete m_renderTexture;
 
     delete m_camera;
+
+    delete m_animControl;
 }
 
 Object* SkeletonEditor::GetBaseObject() const
@@ -191,6 +196,8 @@ void UpdateObject(Object* a_object, Camera* a_camera, double a_delta)
 
 void SkeletonEditor::Update(double a_delta)
 {
+    m_animControl->Update(a_delta);
+
     if (m_selectedObject != nullptr)
     {
         ImGui::SetNextWindowSize({ 200, 400 }, ImGuiCond_Appearing);
@@ -230,7 +237,7 @@ void SkeletonEditor::Update(double a_delta)
 
             ImGui::Separator();
 
-            m_selectedObject->UpdateComponentUI();
+            m_selectedObject->UpdateComponentUI(m_animControl);
         }
         ImGui::End();
     }
@@ -406,7 +413,7 @@ void SkeletonEditor::LoadObject(Object* a_object, PropertyFileProperty* a_proper
         }
         else
         {
-            a_object->LoadComponent(*iter);
+            a_object->LoadComponent(*iter, m_animControl);
         }
     }
 }

@@ -2,6 +2,7 @@
 
 #include <list>
 
+class AnimControl;
 class Camera;
 class Component;
 class Name;
@@ -47,9 +48,9 @@ public:
 
     void RemoveComponent(Component* a_component);
 
-    void LoadComponent(PropertyFileProperty* a_propertyFile);
+    void LoadComponent(PropertyFileProperty* a_propertyFile, AnimControl* a_animControl);
     void SaveComponents(PropertyFile* a_propertyFile, PropertyFileProperty* a_parent) const;
 
-    void UpdateComponentUI();
+    void UpdateComponentUI(AnimControl* a_animControl);
     void UpdateComponents(bool a_preview, Camera* a_camera, double a_delta);
 };

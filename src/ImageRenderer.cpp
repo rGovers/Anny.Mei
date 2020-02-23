@@ -16,8 +16,8 @@
 
 const char* ImageRenderer::COMPONENT_NAME = "ImageRenderer";
 
-ImageRenderer::ImageRenderer(Object* a_object) :
-    Renderer(a_object)
+ImageRenderer::ImageRenderer(Object* a_object, AnimControl* a_animControl) :
+    Renderer(a_object, a_animControl)
 {
     m_imageDisplay = new ImageDisplay();
 }
@@ -69,9 +69,9 @@ const char* ImageRenderer::ComponentName() const
     return COMPONENT_NAME;
 }
 
-void ImageRenderer::Load(PropertyFileProperty* a_property)
+void ImageRenderer::Load(PropertyFileProperty* a_property, AnimControl* a_animControl)
 {
-    LoadValues(a_property);
+    LoadValues(a_property, a_animControl);
 }
 void ImageRenderer::Save(PropertyFile* a_propertyFile, PropertyFileProperty* a_parent) const
 {

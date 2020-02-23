@@ -7,6 +7,7 @@
 
 #include "miniz.h"
 
+class AnimControl;
 class Camera;
 class IntermediateRenderer;
 class Model;
@@ -40,6 +41,8 @@ private:
     RenderTexture*        m_renderTexture;
 
     glm::vec2             m_lastMousePos;
+
+    AnimControl*          m_animControl;
 
     float                 m_zoom;
 

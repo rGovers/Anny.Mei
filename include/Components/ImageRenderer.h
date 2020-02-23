@@ -17,7 +17,7 @@ protected:
 public:
     const static char* COMPONENT_NAME;
 
-    ImageRenderer(Object* a_object);
+    ImageRenderer(Object* a_object, AnimControl* a_animControl);
     virtual ~ImageRenderer();
 
     virtual void Update(double a_delta, Camera* a_camera);
@@ -26,6 +26,6 @@ public:
 
     virtual const char* ComponentName() const;
 
-    virtual void Load(PropertyFileProperty* a_property);
+    virtual void Load(PropertyFileProperty* a_property, AnimControl* a_animControl);
     virtual void Save(PropertyFile* a_propertyFile, PropertyFileProperty* a_parent) const;
 };
