@@ -1,5 +1,7 @@
 #include "AnimControl.h"
 
+#include <glm/glm.hpp>
+
 #include "AnimValue.h"
 #include "imgui.h"
 #include "Object.h"
@@ -23,8 +25,23 @@ void AnimControl::Update(double a_delta)
 
     m_timer += a_delta;
 
+    ImGui::SetNextWindowSize({ 400, 100 }, ImGuiCond_Appearing);
+    if (ImGui::Begin("Anim Key Frames"))
+    {
+        float maxValue = (float)m_maxValue;
+        float selectedTime = (float)m_selectedTime;
+        
+        ImGui::InputFloat("Max Time", &maxValue);
+        ImGui::DragFloat("Selected Time", &selectedTime, 0.1f, 0.0f, maxValue);
+
+        m_maxValue = maxValue;
+        m_selectedTime = glm::clamp(selectedTime, 0.0f, maxValue);
+    }
+    ImGui::End();
+
     for (auto iter = m_animatedObjects.begin(); iter != m_animatedObjects.end(); ++iter)
     {
+        (*iter)->SelectKeyFrame(m_selectedTime);
         (*iter)->UpdateAnimValue(m_timer);
     }
 }

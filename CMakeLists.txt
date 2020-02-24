@@ -13,6 +13,8 @@ list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/modules")
 
 include("FileToHeader")
 
+add_compile_definitions(IMGUI_IMPL_OPENGL_LOADER_GLAD)
+
 # Allows me to write GLSL shaders as seperate files 
 # and not have to go through the effort of file IO
 

@@ -7,17 +7,17 @@
 
 #include "Camera.h"
 #include "FileUtils.h"
-#include "imgui.h"
 #include "MemoryStream.h"
 #include "Object.h"
 #include "PropertyFile.h"
 #include "SkeletonEditor.h"
 #include "Texture.h"
 #include "WebcamController.h"
+#include "WindowControls/ModelControllerWindow.h"
 
 ModelController::ModelController()
 {
-    m_backgroundColor = new float[3] { 0, 1, 0 };
+    m_window = new ModelControllerWindow(this);
 
     m_camera = new Camera();
 
@@ -27,9 +27,9 @@ ModelController::ModelController()
 }
 ModelController::~ModelController()
 {
-    delete[] m_backgroundColor;
-
     delete m_camera;
+
+    delete m_window;
 }
 
 void DrawObjects(Object* a_object, Camera* a_camera, double a_delta)
@@ -49,7 +49,9 @@ void DrawObjects(Object* a_object, Camera* a_camera, double a_delta)
 
 void ModelController::DrawModel(const SkeletonEditor* a_skeletonEditor, double a_delta)
 {
-    glClearColor(m_backgroundColor[0], m_backgroundColor[1], m_backgroundColor[2], 1);
+    const glm::vec3 backColor = m_window->GetBackgroundColor();
+
+    glClearColor(backColor.x, backColor.y, backColor.z, 1);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     Object* baseObject = a_skeletonEditor->GetBaseObject();
@@ -58,41 +60,9 @@ void ModelController::DrawModel(const SkeletonEditor* a_skeletonEditor, double a
 }
 void ModelController::Update(const WebcamController& a_webcamController)
 {
-    ImGui::SetNextWindowSize({ 660, 400 }, ImGuiCond_Appearing);
-    if (ImGui::Begin("Preview"))
-    {
-        const Texture* tex = a_webcamController.GetTexture();
+    m_texture = a_webcamController.GetTexture();
 
-        const ImVec2 size = ImGui::GetWindowSize();
-
-        const glm::vec2 sScale = { size.x / 16, size.y / 9 };
-
-        glm::vec2 fSize;
-
-        if (sScale.x < sScale.y)
-        {
-            const float xSize = size.x - 20;
-
-            fSize = { xSize, xSize * 0.5625f };
-        }
-        else
-        {
-            const float ySize = size.y - 40;
-
-            fSize = { ySize * 1.77777777778f, ySize };
-        }
-        
-
-        ImGui::Image((ImTextureID)tex->GetHandle(), { fSize.x, fSize.y });
-    }
-    ImGui::End();
-
-    ImGui::SetNextWindowSize({ 200, 300 }, ImGuiCond_Appearing);
-    if (ImGui::Begin("Options"))
-    {
-        ImGui::ColorPicker3("Background Color", m_backgroundColor);
-    }
-    ImGui::End();
+    m_window->Update();
 }
 
 ModelController* ModelController::Load(mz_zip_archive& a_archive)
@@ -115,11 +85,18 @@ ModelController* ModelController::Load(mz_zip_archive& a_archive)
 
             if (strcmp("backcolor", name) == 0)
             {
+                glm::vec3 backgroundColor = glm::vec3(std::numeric_limits<float>::infinity());
+
                 for (auto valIter = prop->Values().begin(); valIter != prop->Values().end(); ++valIter)
                 {
-                    IFSETTOATTVALF("r", valIter->Name, modelController->m_backgroundColor[0], valIter->Value)
-                    else IFSETTOATTVALF("g", valIter->Name, modelController->m_backgroundColor[1], valIter->Value)
-                    else IFSETTOATTVALF("b", valIter->Name, modelController->m_backgroundColor[2], valIter->Value)
+                    IFSETTOATTVALF("r", valIter->Name, backgroundColor.x, valIter->Value)
+                    else IFSETTOATTVALF("g", valIter->Name, backgroundColor.y, valIter->Value)
+                    else IFSETTOATTVALF("b", valIter->Name, backgroundColor.z, valIter->Value)
+                }
+
+                if (backgroundColor.x != std::numeric_limits<float>::infinity() && backgroundColor.y != std::numeric_limits<float>::infinity() && backgroundColor.z != std::numeric_limits<float>::infinity())
+                {
+                    modelController->m_window->SetBackgroundColor(backgroundColor);
                 }
             }
         }
@@ -139,9 +116,11 @@ void ModelController::Save(mz_zip_archive& a_archive) const
     PropertyFileProperty* prop = propertyFile->InsertProperty();
 
     prop->SetName("backcolor");
-    prop->EmplaceValue("r", std::to_string(m_backgroundColor[0]).c_str());
-    prop->EmplaceValue("g", std::to_string(m_backgroundColor[1]).c_str());
-    prop->EmplaceValue("b", std::to_string(m_backgroundColor[2]).c_str());
+    const glm::vec3 backgroundColor = m_window->GetBackgroundColor();
+
+    prop->EmplaceValue("r", std::to_string(backgroundColor.x).c_str());
+    prop->EmplaceValue("g", std::to_string(backgroundColor.y).c_str());
+    prop->EmplaceValue("b", std::to_string(backgroundColor.z).c_str());
 
     char* data = propertyFile->ToString();
 
@@ -149,4 +128,9 @@ void ModelController::Save(mz_zip_archive& a_archive) const
 
     delete[] data;
     delete propertyFile;
+}
+
+Texture* ModelController::GetPreviewTexture() const
+{
+    return m_texture;
 }

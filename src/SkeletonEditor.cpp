@@ -83,7 +83,7 @@ void SkeletonEditor::ListObjects(Object* a_object, int& a_node)
     }
     else
     {
-        ImGui::TreeAdvanceToLabelPos();
+        ImGui::SetCursorPosX(ImGui::GetCursorPosX() + ImGui::GetTreeNodeToLabelSpacing());
     }
     
     ImGui::Selectable(name, &selected);

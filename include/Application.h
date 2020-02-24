@@ -16,6 +16,8 @@ private:
 protected:
     virtual void Update(double a_delta) = 0;
 
+    virtual void Resize(int a_newWidth, int a_newHeight) { };
+
 public:
     Application() = delete;
     Application(int a_width, int a_height, const char* a_title = "Application");

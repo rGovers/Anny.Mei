@@ -12,24 +12,15 @@
 #include "SkeletonEditor.h"
 #include "Texture.h"
 #include "TriImage.h"
+#include "WindowControls/TextureEditorWindow.h"
 
-const char* TextureEditor::ITEMS[] = { "Alpha", "Quad", "Outline" };
-
-TextureEditor::TextureEditor() : 
-    m_stepXY({ 64, 64 }),
-    m_vSize({ 512, 512 }),
-    m_texStep({ 4, 4 })
+TextureEditor::TextureEditor() 
 {
-    m_channelDiff = 0.1f;
+    m_layers = new std::list<LayerTexture>();
 
-    m_layers = new std::vector<LayerTexture>();
+    m_selectedIndex = m_layers->end();
 
-    m_selectedIndex = -1;
-
-    m_selectedMode = ITEMS[1];
-    m_triangulationMode = e_TriangulationMode::Quad;
-
-    m_alphaThreshold = 0.9f;
+    m_window = new TextureEditorWindow(this);
 }
 TextureEditor::~TextureEditor()
 {
@@ -51,7 +42,68 @@ TextureEditor::~TextureEditor()
             delete[] iter->Data;
         }
     }
+
     delete m_layers;
+
+    delete m_window;
+}
+
+bool TextureEditor::LayerSelected() const
+{
+    return m_selectedIndex != m_layers->end();
+}
+
+void TextureEditor::TriangulateClicked() 
+{
+    const LayerTexture layerTexture = *m_selectedIndex;
+
+    TriImage* triImage = new TriImage(layerTexture.Data, layerTexture.Meta->Width, layerTexture.Meta->Height);
+
+    const e_TriangulationMode triMode = m_window->GetTriangulationMode();
+
+    const glm::ivec2 vSize = m_window->GetVoronoiSize();
+    const glm::ivec2 texStep = m_window->GetTextureStep();
+
+    const glm::ivec2 quadStep = m_window->GetQuadStep();
+
+    const float channelDiff = m_window->GetChannelDifference();
+
+    const float alphaThreshold = m_window->GetAlphaThreshold();
+
+    switch (triMode)
+    {
+    case e_TriangulationMode::Alpha:
+    {
+        triImage->AlphaTriangulation(texStep.x, texStep.y, alphaThreshold, vSize.x, vSize.y);
+
+        break;
+    }
+    case e_TriangulationMode::Outline:
+    {
+        triImage->OutlineTriangulation(channelDiff, texStep.x, texStep.y, alphaThreshold, vSize.x, vSize.y);
+
+        break;
+    }
+    case e_TriangulationMode::Quad:
+    {
+        triImage->QuadTriangulation(quadStep.x, quadStep.y, texStep.x, texStep.y, alphaThreshold, vSize.x, vSize.y);
+
+        break;
+    }
+    }
+
+    const unsigned int indexCount = triImage->GetIndexCount();
+
+    const unsigned int indexSize = indexCount * sizeof(unsigned int);
+    unsigned int* indicies = new unsigned int[indexSize];
+    memcpy(indicies, triImage->GetIndices(), indexSize);
+
+    const unsigned int vertexCount = triImage->GetVertexCount();
+    ModelVertex* modelVerticies = triImage->ToModelVertices();
+
+    m_modelEditor->AddModel(layerTexture.Meta->Name, modelVerticies, vertexCount, indicies, indexCount);
+
+    delete triImage;
 }
 
 Texture* TextureEditor::GenerateTexture(LayerTexture& a_layerTexture) const
@@ -122,165 +174,63 @@ void TextureEditor::LoadTexture(const char* a_path)
 
 void TextureEditor::Update(double a_delta, ModelEditor* a_modelEditor)
 {
+    m_modelEditor = a_modelEditor;
+
+    m_window->Update();
+}
+void TextureEditor::DrawLayerGUI() 
+{
     DataStore* dataStore = DataStore::GetInstance();
-        
-    if (m_selectedIndex != -1)
+
+    auto removeIter = m_layers->end();
+
+    for (auto iter = m_layers->begin(); iter != m_layers->end(); ++iter)
     {
-        ImGui::SetNextWindowSize({ 200, 200 }, ImGuiCond_Appearing);
-        if (ImGui::Begin("Texture Editor Toolbox"))
+        const LayerTexture layerTexture = *iter;
+        const LayerMeta* layerMeta = layerTexture.Meta;
+        const Texture* tex = dataStore->GetTexture(layerMeta->Name);
+
+        if (tex != nullptr)
         {
-            ImGui::InputInt2("Voronoi Size", (int*)m_vSize);
-            ImGui::InputInt2("Texture Step", (int*)m_texStep);
-            ImGui::DragFloat("Alpha Threshold", &m_alphaThreshold, 0.01f, 0.0001f, 1.0f);
-
-            if (ImGui::BeginCombo("Triangulation Mode", m_selectedMode))
-            {
-                for (int i = 0; i < IM_ARRAYSIZE(ITEMS); ++i)
-                {
-                    bool is_selected = (m_selectedMode == ITEMS[i]); 
-                    if (ImGui::Selectable(ITEMS[i], is_selected))
-                    {
-                        m_selectedMode = ITEMS[i];
-                    }
-                    if (is_selected)
-                    {
-                        ImGui::SetItemDefaultFocus();
-                    }
-                }
-                ImGui::EndCombo();
-            }
-
-            if (strcmp(m_selectedMode, "Outline") == 0)
-            {
-                m_triangulationMode = e_TriangulationMode::Outline;
-            }
-            else if (strcmp(m_selectedMode, "Alpha") == 0)
-            {
-                m_triangulationMode = e_TriangulationMode::Alpha;
-            }
-            else
-            {
-                m_triangulationMode = e_TriangulationMode::Quad;
-            }
-            
-            switch (m_triangulationMode)
-            {
-            case e_TriangulationMode::Outline:
-            {
-                ImGui::DragFloat("Channel Difference", &m_channelDiff, 0.01f, 0.0001f, 1.0f);
-
-                break;
-            }
-            case e_TriangulationMode::Quad:
-            {
-                ImGui::InputInt2("Step XY", (int*)m_stepXY);
-
-                break;
-            }
-            }
-
-            if (ImGui::Button("Triangulate", { 200, 20 }))
-            {
-                const LayerTexture layerTexture = m_layers->at(m_selectedIndex);
-
-                TriImage* triImage = new TriImage(layerTexture.Data, layerTexture.Meta->Width, layerTexture.Meta->Height);
-
-                switch (m_triangulationMode)
-                {
-                case e_TriangulationMode::Alpha:
-                {
-                    triImage->AlphaTriangulation(m_texStep[0], m_texStep[1], m_alphaThreshold, m_vSize[0], m_vSize[1]);
-
-                    break;
-                }
-                case e_TriangulationMode::Outline:
-                {
-                    triImage->OutlineTriangulation(m_channelDiff, m_texStep[0], m_texStep[1], m_alphaThreshold, m_vSize[0], m_vSize[1]);
-
-                    break;
-                }
-                case e_TriangulationMode::Quad:
-                {
-                    triImage->QuadTriangulation(m_stepXY[0], m_stepXY[1], m_texStep[0], m_texStep[1], m_alphaThreshold, m_vSize[0], m_vSize[1]);
-
-                    break;
-                }
-                }
-
-                const unsigned int indexCount = triImage->GetIndexCount();
-
-                const unsigned int indexSize = indexCount * sizeof(unsigned int);
-                unsigned int* indicies = new unsigned int[indexSize];
-                memcpy(indicies, triImage->GetIndices(), indexSize);
-
-                const unsigned int vertexCount = triImage->GetVertexCount();
-                ModelVertex* modelVerticies = triImage->ToModelVertices();
-
-                a_modelEditor->AddModel(layerTexture.Meta->Name, modelVerticies, vertexCount, indicies, indexCount);
-
-                delete triImage;
-            }
+            ImGui::Image((ImTextureID)tex->GetHandle(), { 20, 20 });
+            ImGui::SameLine();
         }
-        ImGui::End();
+        else
+        {
+            ImGui::Indent(20.0f);
+        }
+
+        if (ImGui::Selectable(layerMeta->Name))
+        {
+            m_selectedIndex = iter;
+        }
+
+        if (ImGui::BeginPopupContextItem())
+        {
+            if (ImGui::MenuItem("Remove Texture"))
+            {
+                removeIter = iter;
+            }
+            ImGui::EndPopup();
+        }
     }
 
-    ImGui::SetNextWindowSize({ 250, 600 }, ImGuiCond_Appearing);
-    if (ImGui::Begin("Texture List"))
-    {
-        ImGui::BeginChild("Layer Scroll");
-        
-        int remove = -1;
+    if (removeIter != m_layers->end())
+    {   
+        delete dataStore->GetTexture(removeIter->Meta->Name);
+        dataStore->RemoveTexture(removeIter->Meta->Name);
 
-        for (int i = 0; i < m_layers->size(); ++i)
+        delete[] removeIter->Data;
+        delete[] removeIter->Meta->Name;
+        delete removeIter->Meta;
+
+        if (removeIter == m_selectedIndex)
         {
-            const LayerTexture layerTexture = m_layers->at(i);
-            const LayerMeta* layerMeta = layerTexture.Meta;
-
-            const Texture* tex = dataStore->GetTexture(layerTexture.Meta->Name);
-
-            if (tex != nullptr)
-            {
-                ImGui::Image((ImTextureID)tex->GetHandle(), { 20, 20 });
-                ImGui::SameLine();
-            }
-            else
-            {
-                ImGui::Indent(20.0f);
-            }
-
-            if (ImGui::Selectable(layerMeta->Name))
-            {
-                m_selectedIndex = i;
-            }
-
-            if (ImGui::BeginPopupContextItem())
-            {
-                if (ImGui::MenuItem("Remove Texture"))
-                {
-                    remove = i;
-                }
-
-                ImGui::EndPopup();
-            }
+            m_selectedIndex = m_layers->end();
         }
 
-        if (remove != -1)
-        {
-            auto iter = m_layers->begin() + remove;
-            
-            delete dataStore->GetTexture(iter->Meta->Name);
-            dataStore->RemoveTexture(iter->Meta->Name);
-            delete[] iter->Data;
-            delete[] iter->Meta->Name;
-            delete iter->Meta;
-
-            m_layers->erase(iter);
-
-            m_selectedIndex = -1;
-        }
-        ImGui::EndChild();
+        m_layers->erase(removeIter);
     }
-    ImGui::End();
 }
 
 void TextureEditor::GetImageData(PropertyFileProperty& a_property, mz_zip_archive& a_archive)
@@ -307,16 +257,6 @@ void TextureEditor::GetImageData(PropertyFileProperty& a_property, mz_zip_archiv
     }
 
     m_layers->emplace_back(layerTexture);
-}
-
-unsigned int TextureEditor::GetLayerCount() const
-{
-    return m_layers->size();
-}
-
-LayerMeta TextureEditor::GetLayerMeta(unsigned int a_index) const
-{
-    return *m_layers->at(a_index).Meta;
 }
 
 TextureEditor* TextureEditor::Load(mz_zip_archive& a_archive)

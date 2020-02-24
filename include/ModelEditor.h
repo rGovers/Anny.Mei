@@ -20,21 +20,23 @@ class PropertyFileProperty;
 class RenderTexture;
 class ShaderProgram;
 
+enum class e_ToolMode
+{
+    Select,
+    Move
+};
+
+enum class e_Axis
+{
+    Null = -1,
+    X,
+    Y
+};
+
 class ModelEditor
 {
 private:
-    enum class e_ToolMode
-    {
-        Select,
-        Move
-    };
-
-    enum class e_Axis
-    {
-        Null = -1,
-        X,
-        Y
-    };
+    
 
     struct MorphPlaneData
     {

@@ -4,14 +4,11 @@
 #include <list>
 #include <stdio.h>
 
-#undef IMGUI_IMPL_OPENGL_LOADER_GL3W
-#undef IMGUI_IMPL_OPENGL_LOADER_GLEW
-#define IMGUI_IMPL_OPENGL_LOADER_GLAD
-
 #include "FileDialog.h"
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
+#include "imgui_internal.h"
 #include "miniz.h"
 #include "ModelController.h"
 #include "ModelEditor.h"
@@ -34,6 +31,37 @@ MessageCallback( GLenum a_source,
             a_type, a_severity, a_message );
 }
 
+void GUIStyle()
+{
+    ImGuiStyle* style = &ImGui::GetStyle();
+    
+    style->WindowRounding = 0.0f;
+
+    ImVec4* colors = style->Colors;
+
+    colors[ImGuiCol_WindowBg]               = ImVec4(0.20f, 0.20f, 0.20f, 1.00f);
+    colors[ImGuiCol_TitleBg]                = ImVec4(0.10f, 0.10f, 0.10f, 1.00f);
+    colors[ImGuiCol_TitleBgActive]          = ImVec4(0.15f, 0.15f, 0.15f, 1.00f);
+
+    colors[ImGuiCol_Header]                 = ImVec4(1.00f, 0.40f, 0.30f, 0.60f);
+    colors[ImGuiCol_HeaderHovered]          = ImVec4(1.00f, 0.40f, 0.30f, 0.80f);
+    colors[ImGuiCol_HeaderActive]           = ImVec4(1.00f, 0.40f, 0.30f, 1.00f);
+
+    colors[ImGuiCol_Tab]                    = ImVec4(1.00f, 0.40f, 0.30f, 0.60f);
+    colors[ImGuiCol_TabHovered]             = ImVec4(1.00f, 0.40f, 0.30f, 0.80f);
+    colors[ImGuiCol_TabActive]              = ImVec4(1.00f, 0.40f, 0.30f, 1.00f);
+    colors[ImGuiCol_TabUnfocused]           = ImVec4(0.80f, 0.40f, 0.30f, 0.80f);
+    colors[ImGuiCol_TabUnfocusedActive]     = ImVec4(0.80f, 0.40f, 0.30f, 1.00f);
+
+    colors[ImGuiCol_FrameBg]                = ImVec4(1.00f, 0.40f, 0.30f, 0.60f);
+    colors[ImGuiCol_FrameBgHovered]         = ImVec4(1.00f, 0.40f, 0.30f, 0.80f);
+    colors[ImGuiCol_FrameBgActive]          = ImVec4(1.00f, 0.40f, 0.30f, 1.00f);
+
+    colors[ImGuiCol_Button]                 = ImVec4(1.00f, 0.40f, 0.30f, 0.60f);
+    colors[ImGuiCol_ButtonHovered]          = ImVec4(1.00f, 0.40f, 0.30f, 0.80f);
+    colors[ImGuiCol_ButtonActive]           = ImVec4(1.00f, 0.40f, 0.30f, 1.00f);
+}
+
 AppMain::AppMain(int a_width, int a_height) : 
     Application(a_width, a_height, "Anny.Mei")
 {
@@ -53,14 +81,18 @@ AppMain::AppMain(int a_width, int a_height) :
 
     ImGuiIO& io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
     io.ConfigWindowsMoveFromTitleBarOnly = true;
 
     ImGui::StyleColorsDark();
+    GUIStyle();
 
     ImGui_ImplGlfw_InitForOpenGL(GetWindow(), true);
     ImGui_ImplOpenGL3_Init("#version 130");
 
     FileDialog::Create();
+
+    m_resetWindows = true;
 
     m_windowUpdateTimer = 0.0;
 }
@@ -160,8 +192,6 @@ void AppMain::Open()
                     delete m_skeletonEditor;
                 }
 
-                
-
                 m_modelController = ModelController::Load(zip); 
                 m_skeletonEditor = SkeletonEditor::Load(zip);
                 m_textureEditor = TextureEditor::Load(zip);
@@ -249,6 +279,42 @@ void AppMain::Input()
             }
         }
     }
+}
+
+void AppMain::ResetDockedWindows()
+{
+    ImGuiID id = ImGui::GetID("Dock Main");
+
+    ImGui::DockBuilderRemoveNode(id);
+    ImGui::DockBuilderAddNode(id, ImGuiDockNodeFlags_CentralNode | ImGuiDockNodeFlags_NoResize);
+
+    ImGui::DockBuilderSetNodePos(id, { 0, 18 });
+    ImGui::DockBuilderSetNodeSize(id, { GetWidth(), GetHeight() - 20});
+
+    ImGuiID dockMainID = id;
+    ImGuiID dockBottom = ImGui::DockBuilderSplitNode(dockMainID, ImGuiDir_Down, 0.2f, nullptr, &dockMainID);
+    ImGuiID dockRight = ImGui::DockBuilderSplitNode(dockMainID, ImGuiDir_Right, 0.1f, nullptr, &dockMainID);
+    ImGuiID dockTop = ImGui::DockBuilderSplitNode(dockMainID, ImGuiDir_Up, 0.05f, nullptr, &dockMainID);
+    ImGuiID dockLeft = ImGui::DockBuilderSplitNode(dockMainID, ImGuiDir_Left, 0.1f, nullptr, &dockMainID);
+
+    ImGui::DockBuilderDockWindow("Preview", dockMainID);
+    ImGui::DockBuilderDockWindow("Model Editor", dockMainID);
+    ImGui::DockBuilderDockWindow("Skeleton Preview", dockMainID);
+
+    ImGui::DockBuilderDockWindow("Options", dockRight);
+    ImGui::DockBuilderDockWindow("Texture Editor Toolbox", dockRight);
+    ImGui::DockBuilderDockWindow("Model Properties", dockRight);
+    ImGui::DockBuilderDockWindow("Object Properties", dockRight);
+
+    ImGui::DockBuilderDockWindow("Texture List", dockLeft);
+    ImGui::DockBuilderDockWindow("Model List", dockLeft);
+    ImGui::DockBuilderDockWindow("Skeleton Hierarchy", dockLeft);
+
+    ImGui::DockBuilderDockWindow("Model Tools", dockTop);
+
+    ImGui::DockBuilderDockWindow("Anim Key Frames", dockBottom);
+
+    ImGui::DockBuilderFinish(id);
 }
 
 void AppMain::Update(double a_delta)
@@ -350,7 +416,24 @@ void AppMain::Update(double a_delta)
             ImGui::EndMenu();
         }
 
+        if (ImGui::BeginMenu("Workspace"))
+        {
+            if (ImGui::MenuItem("Default Layout"))
+            {
+                m_resetWindows = true;
+            }
+
+            ImGui::EndMenu();
+        }
+
         ImGui::EndMainMenuBar();
+    }
+
+    if (m_resetWindows)
+    {
+        m_resetWindows = false;
+
+        ResetDockedWindows();
     }
 
     if (m_skeletonEditor != nullptr)
@@ -373,4 +456,9 @@ void AppMain::Update(double a_delta)
     ImGui::Render();
 
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+}
+
+void AppMain::Resize(int a_newWidth, int a_newHeight)
+{
+    m_resetWindows = true;
 }

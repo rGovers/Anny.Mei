@@ -26,14 +26,20 @@ private:
 
     double                m_windowUpdateTimer;
 
+    bool                  m_resetWindows;
+
     void New();
     void Open();
     void Save() const;
     void SaveAs();
 
     void Input();
+
+    void ResetDockedWindows();
 protected:
     virtual void Update(double a_delta);
+
+    virtual void Resize(int a_newWidth, int a_newHeight);
 
 public:
     AppMain() = delete;

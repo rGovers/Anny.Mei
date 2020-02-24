@@ -1,7 +1,7 @@
 #pragma once
 
 #include <istream>
-#include <vector>
+#include <list>
 
 #include "DataStore.h"
 #include "FileLoaders/ImageLoader.h"
@@ -12,6 +12,7 @@ class ModelPreview;
 class PropertyFileProperty;
 class SkeletonController;
 class Texture;
+class TextureEditorWindow;
 
 struct ModelVertex;
 
@@ -21,35 +22,22 @@ struct LayerTexture
     LayerMeta* Meta;
 };
 
-
+enum class e_TriangulationMode
+{
+    Alpha,
+    Quad,
+    Outline
+};
 
 class TextureEditor
 {
 private:
-    enum class e_TriangulationMode
-    {
-        Alpha,
-        Quad,
-        Outline
-    };
+    TextureEditorWindow*              m_window;
+        
+    std::list<LayerTexture>*          m_layers;
+    std::list<LayerTexture>::iterator m_selectedIndex;
 
-    const static char* ITEMS[];
-
-    std::vector<LayerTexture>* m_layers;
-
-    e_TriangulationMode        m_triangulationMode;
-
-    int                        m_selectedIndex;
-    
-    float                      m_alphaThreshold;
-    int                        m_vSize[2];
-    unsigned int               m_texStep[2];
-
-    const char*                m_selectedMode;
-
-    unsigned int               m_stepXY[2];   
-
-    float                      m_channelDiff;
+    ModelEditor*                      m_modelEditor;
 
     Texture* GenerateTexture(LayerTexture& a_layerTexture) const;
     
@@ -62,13 +50,14 @@ public:
     TextureEditor();
     ~TextureEditor();
 
+    bool LayerSelected() const;
+
+    void TriangulateClicked();
+
     void Update(double a_delta, ModelEditor* a_modelEditor);
+    void DrawLayerGUI();
 
     void LoadTexture(const char* a_path);
-
-    unsigned int GetLayerCount() const;
-
-    LayerMeta GetLayerMeta(unsigned int a_index) const;
 
     static TextureEditor* Load(mz_zip_archive& a_archive);
     void Save(mz_zip_archive& a_archive) const;

@@ -3,6 +3,8 @@
 #include <assert.h>
 #include <stdio.h>
 
+Application* Application::Instance = nullptr;
+
 void ErrorCallback(int a_error, const char* a_description)
 {
     printf("Error: %s \n", a_description);
@@ -31,6 +33,11 @@ Application::Application(int a_width, int a_height, const char* a_application) :
     assert(gladLoadGLLoader((GLADloadproc)glfwGetProcAddress));
 
     glfwSwapInterval(1);
+
+    if (Instance == nullptr)
+    {
+        Instance = this;
+    }
 }
 
 Application::~Application()
@@ -38,6 +45,16 @@ Application::~Application()
     glfwDestroyWindow(m_window);
 
     glfwTerminate();
+
+    if (Instance == this)
+    {
+        Instance = nullptr;
+    }
+}
+
+Application* Application::GetInstance()
+{
+    return Instance;
 }
 
 GLFWwindow* Application::GetWindow() const
@@ -53,7 +70,17 @@ void Application::Run()
     {
         double time = glfwGetTime();
 
-        glfwGetWindowSize(m_window, &m_width, &m_height);
+        int width = 0;
+        int height = 0;
+
+        glfwGetWindowSize(m_window, &width, &height);
+        if (width != m_width || height != m_height)
+        {
+            Resize(width, height);
+
+            m_width = width;
+            m_height = height;    
+        }
         glViewport(0, 0, m_width, m_height);
 
         glfwPollEvents();
@@ -64,4 +91,13 @@ void Application::Run()
 
         prevTime = time;
     }
+}
+
+int Application::GetWidth() const
+{
+    return m_width;
+}
+int Application::GetHeight() const
+{
+    return m_height;
 }

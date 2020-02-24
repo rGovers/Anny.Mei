@@ -5,15 +5,19 @@
 #include "miniz.h"
 
 class Camera;
+class ModelControllerWindow;
 class SkeletonEditor; 
+class Texture;
 class WebcamController;
 
 class ModelController
 {
 private:
-    float*  m_backgroundColor;
+    ModelControllerWindow* m_window;
 
-    Camera* m_camera;
+    Camera*                m_camera;
+
+    Texture*               m_texture;
 protected:
 
 public:
@@ -25,4 +29,6 @@ public:
 
     static ModelController* Load(mz_zip_archive& a_archive);
     void Save(mz_zip_archive& a_archive) const;
+
+    Texture* GetPreviewTexture() const;
 };
