@@ -14,12 +14,12 @@ void main()
 {
     vTexCoord = texCoords;
 
-    mat4 morphMatrix;
+    mat4 morphMatrix = mat4(1);
     mat4 transformMatrix = mat4(1);
 
     vec2 morphPos = texture2D(MorphTex, vec2(morphPlaneWeights[0].x / MorphSize, 0)).xy;
     transformMatrix[3] = vec4(morphPos, 0, 1);
-    morphMatrix = transformMatrix * morphPlaneWeights[0].y;
+    morphMatrix += transformMatrix * morphPlaneWeights[0].y;
 
     morphPos = texture2D(MorphTex, vec2(morphPlaneWeights[1].x / MorphSize, 0)).xy;
     transformMatrix[3] = vec4(morphPos, 0, 1);
