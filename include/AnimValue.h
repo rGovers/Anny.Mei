@@ -1,6 +1,7 @@
 #pragma once
 
 #include <list>
+#include <string.h>
 
 #include "KeyValues/KeyValue.h"
 
@@ -15,20 +16,29 @@ private:
         KeyValue* Value;
     };
 
-    AnimControl*        m_animControl;
+    AnimControl*  m_animControl;
 
 protected:
+    char*               m_name;
+
     std::list<KeyFrame> m_keyFrames;
 
     KeyValue*           m_selectedValue;
     KeyValue*           m_selectedAnimValue;
 
 public:
-    AValue(AnimControl* a_animControl);
+    AValue(const char* a_name, AnimControl* a_animControl);
     virtual ~AValue();
 
     void SelectKeyFrame(double a_time);
     void UpdateAnimValue(double a_time);
+
+    const char* GetName() const;
+
+    virtual void AddKeyFrame(double a_time) { };
+    virtual void RemoveKeyFrame(double a_time) { };
+
+    std::list<double> GetKeyFrames() const;
 };
 
 template<typename T>
@@ -39,8 +49,8 @@ private:
 protected:
 
 public:
-    AnimValue(AnimControl* a_animControl) :
-        AValue(a_animControl)
+    AnimValue(const char* a_name, AnimControl* a_animControl) :
+        AValue(a_name, a_animControl)
     {
         KeyFrame frame;
 
@@ -53,7 +63,7 @@ public:
         m_keyFrames.emplace_back(frame);
     }
 
-    void AddKeyFrame(double a_time)
+    virtual void AddKeyFrame(double a_time)
     {
         KeyFrame frame;
 
@@ -72,7 +82,7 @@ public:
             }
             else
             {
-                frame.Value = new T(*prevIter->Value);
+                frame.Value = new T(*(T*)prevIter->Value);
                 
                 frame.Value->SetNextKeyValue(iter->Value);
                 frame.Value->SetPrevKeyValue(prevIter->Value);
@@ -83,14 +93,14 @@ public:
             }
         }
 
-        frame.Value = new T(*prevIter->Value);
+        frame.Value = new T(*(T*)prevIter->Value);
 
         frame.Value->SetPrevKeyValue(prevIter->Value);
         frame.Value->SetNextKeyValue(nullptr);
 
         m_keyFrames.emplace_back(frame);
     }
-    void RemoveKeyFrame(double a_time)
+    virtual void RemoveKeyFrame(double a_time)
     {
         if (a_time == 0)
         {
@@ -141,16 +151,20 @@ public:
         }
     }
 
-    std::list<double> GetKeyFrames() const
+    void Rename(const char* a_name)
     {
-        std::list<double> keyFrames;
-
-        for (auto iter = ++m_keyFrames.begin(); iter != m_keyFrames.end(); ++iter)
+        if (m_name != nullptr)
         {
-            keyFrames.emplace_back(iter->Time);
+            delete[] m_name;
+            m_name = nullptr;
         }
 
-        return keyFrames;
+        if (a_name != nullptr)
+        {
+            const size_t len = strlen(a_name);
+            m_name = new char[len + 1];
+            strcpy(m_name, a_name);
+        }
     }
 
     T* GetValue() const

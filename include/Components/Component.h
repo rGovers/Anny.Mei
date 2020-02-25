@@ -15,7 +15,7 @@ enum class e_ComponentType
 class Component
 {
 private:
-    Object* m_object;
+    Object*      m_object;
 
     AnimControl* m_animControl;
 
@@ -27,9 +27,13 @@ public:
     Component(Object* a_object, AnimControl* a_animControl);
     virtual ~Component();
 
+    virtual void Init() { };
+
     virtual void Update(double a_delta, Camera* a_camera) = 0;
     virtual void UpdatePreview(double a_delta, Camera* a_camera) = 0;
     virtual void UpdateGUI() = 0;
+
+    virtual void ObjectRenamed() { };
 
     virtual const char* ComponentName() const = 0;
 

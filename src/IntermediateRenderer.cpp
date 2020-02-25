@@ -111,6 +111,36 @@ void IntermediateRenderer::DrawCircle(const glm::vec3& a_pos, int a_iteration, f
         DrawLine(posA, posB, a_width, a_color);
     }
 }
+void IntermediateRenderer::DrawSolidCircle(const glm::vec3& a_pos, int a_iteration, float a_radius, const glm::vec4& a_color, float a_widthScale, float a_heightScale)
+{
+    const static float PI2 = (M_PI * 2);
+
+    const size_t startInd = m_vertices.size();
+
+    int prevIndex = startInd + 1;
+    glm::vec2 dir = { sin(0), cos(0) };
+    const glm::vec3 dirScaled = { dir.x * a_radius * a_widthScale, dir.y * a_radius * a_heightScale, 0 };
+
+    m_vertices.emplace_back(Vertex{ glm::vec4(a_pos, 1), a_color });
+    m_vertices.emplace_back(Vertex{ glm::vec4(a_pos + dirScaled, 1), a_color });
+
+    for (int i = 1; i <= a_iteration; ++i)
+    {
+        const float angle = (i / (float)a_iteration) * PI2;
+
+        const glm::vec2 dir = { sin(angle), cos(angle) };
+
+        const glm::vec3 dirScaled = { dir.x * a_radius * a_widthScale, dir.y * a_radius * a_heightScale, 0 };
+
+        const Vertex vert = { glm::vec4(a_pos + dirScaled, 1), a_color };
+
+        m_vertices.emplace_back(vert);
+
+        m_indices.emplace_back(startInd);
+        m_indices.emplace_back(prevIndex++);
+        m_indices.emplace_back(prevIndex);
+    }
+}
 void IntermediateRenderer::DrawBox(const glm::vec3& a_start, const glm::vec3& a_end, float a_width, const glm::vec4& a_color)
 {
     const float midZ = (a_start.z + a_end.z) * 0.5f;

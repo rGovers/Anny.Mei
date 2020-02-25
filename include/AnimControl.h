@@ -1,19 +1,27 @@
 #pragma once
 
+#include <glm/glm.hpp>
 #include <list>
 
+class AnimControlWindow;
 class AValue;
+class IntermediateRenderer;
 class Object;
+class RenderTexture;
+class Texture;
 
 class AnimControl
 {
 private:
-    std::list<AValue*> m_animatedObjects;
+    AnimControlWindow*    m_window;
 
-    double             m_selectedTime;
+    IntermediateRenderer* m_imRenderer;
+
+    std::list<AValue*>    m_animatedObjects;
  
-    double             m_timer;
-    double             m_maxValue;
+    RenderTexture*        m_renderTexture;
+
+    double                m_timer;
 protected:
 
 public:
@@ -21,6 +29,8 @@ public:
     ~AnimControl();
 
     void Update(double a_delta);
+
+    const Texture* DrawTimeline(int& a_height);
 
     void AddValue(AValue* a_value);
     void RemoveValue(AValue* a_value);

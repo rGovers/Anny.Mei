@@ -32,6 +32,7 @@ public:
 
     void DrawLine(const glm::vec3& a_start, const glm::vec3& a_end, float a_width, const glm::vec4& a_color = glm::vec4(0, 1, 0, 1));
     void DrawCircle(const glm::vec3& a_pos, int a_iteration, float a_radius, float a_width, const glm::vec4& a_color = glm::vec4(1, 0, 0, 1));
+    void DrawSolidCircle(const glm::vec3& a_pos, int a_iteration, float a_radius, const glm::vec4& a_color = glm::vec4(0, 1, 0, 1), float a_widthScale = 1.0f, float a_heightScale = 1.0f);
     void DrawBox(const glm::vec3& a_start, const glm::vec3& a_end, float a_width, const glm::vec4& a_color = glm::vec4(1, 0, 0, 1));
     void DrawArrow(const glm::vec3& a_pos, const glm::vec3& a_dir, float a_size, float a_width, const glm::vec4& a_color = glm::vec4(0, 0, 1, 1));
 

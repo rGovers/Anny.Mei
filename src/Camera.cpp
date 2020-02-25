@@ -1,10 +1,10 @@
 #include "Camera.h"
 
-#include "Transform.h"
+#include "StaticTransform.h"
 
 Camera::Camera()
 {
-    m_transform = new Transform();
+    m_transform = new StaticTransform();
 
     m_projection = glm::mat4(1);
 }
@@ -13,7 +13,7 @@ Camera::~Camera()
     delete m_transform;
 }
 
-Transform* Camera::GetTransform() const
+StaticTransform* Camera::GetTransform() const
 {
     return m_transform;
 }

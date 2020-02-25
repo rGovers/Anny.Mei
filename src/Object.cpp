@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <string.h>
 
+#include "AnimControl.h"
 #include "Components/ImageRenderer.h"
 #include "Components/MorphPlaneRenderer.h"
 #include "imgui.h"
@@ -10,14 +11,17 @@
 #include "PropertyFile.h"
 #include "Transform.h"
 
-#define ISCREATECOMPONENT(Comp, Obj, Name, Construct, AControl) { if (strcmp(Name, Construct::COMPONENT_NAME) == 0) { Comp = new Construct(Obj, AControl); }}
+#define ISCREATECOMPONENT(Comp, Obj, Name, Construct, AControl) { if (strcmp(Name, Construct::COMPONENT_NAME) == 0) { Comp = new Construct(Obj, AControl); Comp->Init(); }}
 
-Object::Object(Namer* a_namer) : 
-    m_parent(nullptr),
-    m_transform(new Transform()),
-    m_windowOpen(false)
+Object::Object(Namer* a_namer, AnimControl* a_animControl) 
 {
+    m_animControl = a_animControl;
+
+    m_parent = nullptr;
+
     m_name = new Name("Object", a_namer);
+    
+    m_transform = new Transform(m_animControl, this);
 }
 Object::~Object()
 {
@@ -79,6 +83,13 @@ std::list<Object*> Object::GetChildren() const
 void Object::SetTrueName(const char* a_trueName)
 {
     m_name->SetTrueName(a_trueName);
+
+    m_transform->ObjectRenamed();
+
+    for (auto iter = m_components.begin(); iter != m_components.end(); ++iter)
+    {
+        (*iter)->ObjectRenamed();
+    }
 }
 const char* Object::GetTrueName() const
 {
@@ -87,22 +98,29 @@ const char* Object::GetTrueName() const
 void Object::SetName(const char* a_name)
 {
     m_name->SetName(a_name);
+
+    m_transform->ObjectRenamed();
+
+    for (auto iter = m_components.begin(); iter != m_components.end(); ++iter)
+    {
+        (*iter)->ObjectRenamed();
+    }
 }
 const char* Object::GetName() const
 {
     return m_name->GetName();
 }
 
-void Object::LoadComponent(PropertyFileProperty* a_property, AnimControl* a_animControl)
+void Object::LoadComponent(PropertyFileProperty* a_property)
 {
     Component* comp = nullptr;
 
-    ISCREATECOMPONENT(comp, this, a_property->GetName(), ImageRenderer, a_animControl)
-    ISCREATECOMPONENT(comp, this, a_property->GetName(), MorphPlaneRenderer, a_animControl)
+    ISCREATECOMPONENT(comp, this, a_property->GetName(), ImageRenderer, m_animControl)
+    ISCREATECOMPONENT(comp, this, a_property->GetName(), MorphPlaneRenderer, m_animControl)
 
     if (comp != nullptr)
     {
-        comp->Load(a_property, a_animControl);
+        comp->Load(a_property, m_animControl);
 
         m_components.emplace_back(comp);
     }
@@ -115,7 +133,7 @@ void Object::SaveComponents(PropertyFile* a_propertyFile, PropertyFileProperty* 
     }
 }
 
-void Object::UpdateComponentUI(AnimControl* a_animControl)
+void Object::UpdateComponentUI()
 {
     if (ImGui::Button("Add Component"))
     {
@@ -145,15 +163,17 @@ void Object::UpdateComponentUI(AnimControl* a_animControl)
 
         if (createImageRenderer && ImGui::Selectable(ImageRenderer::COMPONENT_NAME))
         {
-            component = new ImageRenderer(this, a_animControl);
+            component = new ImageRenderer(this, m_animControl);
         }
         if (createMorphPlaneRenderer && ImGui::Selectable(MorphPlaneRenderer::COMPONENT_NAME))
         {
-            component = new MorphPlaneRenderer(this, a_animControl);
+            component = new MorphPlaneRenderer(this, m_animControl);
         }
 
         if (component != nullptr)
         {
+            component->Init();
+
             m_windowOpen = false;
 
             m_components.emplace_back(component);

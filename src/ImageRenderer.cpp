@@ -11,6 +11,7 @@
 #include "Object.h"
 #include "PropertyFile.h"
 #include "Renderers/ImageDisplay.h"
+#include "StaticTransform.h"
 #include "Texture.h"
 #include "Transform.h"
 
@@ -28,14 +29,32 @@ ImageRenderer::~ImageRenderer()
 
 void ImageRenderer::Draw(bool a_preview, Camera* a_camera)
 {  
-    m_imageDisplay->SetModelName(GetModelName());
-
     const Object* object = GetObject();
 
     Transform* transform = object->GetTransform();
 
-    const glm::mat4 transformMat = transform->GetWorldMatrix();
-    const glm::mat4 shift = transformMat * glm::translate(glm::mat4(1), -GetAnchor());
+    glm::mat4 transformMat;
+    glm::vec3 anchor;
+    const char* modelName;
+
+    if (a_preview)
+    {
+        transformMat = transform->GetBaseWorldMatrix();
+
+        anchor = -GetBaseAnchor();
+        modelName = GetBaseModelName();
+    }
+    else
+    {
+        transformMat = transform->GetWorldMatrix();  
+        
+        anchor = -GetAnchor();  
+        modelName = GetModelName();
+    }
+
+    m_imageDisplay->SetModelName(modelName);
+
+    const glm::mat4 shift = transformMat * glm::translate(glm::mat4(1), anchor);
 
     glm::mat4 view = glm::mat4(1);
     glm::mat4 proj = glm::orthoRH(0.0f, 1.0f, 0.0f, 1.0f, -1.0f, 1.0f);

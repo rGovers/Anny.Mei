@@ -13,12 +13,18 @@ KeyValue::~KeyValue()
 void KeyValue::SetNextKeyValue(KeyValue* a_keyValue)
 {
     m_nextKeyValue = a_keyValue;
-    m_nextKeyValue->m_prevKeyValue = this;
+    if (a_keyValue != nullptr)
+    {
+        a_keyValue->m_prevKeyValue = this;
+    }
 }
 void KeyValue::SetPrevKeyValue(KeyValue* a_keyValue)
 {
     m_prevKeyValue = a_keyValue;
-    m_prevKeyValue->m_nextKeyValue = this;
+    if (a_keyValue != nullptr)
+    {
+        a_keyValue->m_nextKeyValue = this;
+    }
 }
 
 KeyValue* KeyValue::GetNextKeyValue() const

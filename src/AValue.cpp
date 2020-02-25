@@ -3,8 +3,19 @@
 #include "AnimControl.h"
 #include "KeyValues/KeyValue.h"
 
-AValue::AValue(AnimControl* a_animControl)
+AValue::AValue(const char* a_name, AnimControl* a_animControl)
 {
+    m_name = nullptr;
+
+    if (a_name != nullptr)
+    {
+        const size_t len = strlen(a_name);
+
+        m_name = new char[len + 1];
+
+        strcpy(m_name, a_name);
+    }
+
     m_animControl = a_animControl;
 
     m_selectedValue = nullptr;
@@ -24,42 +35,31 @@ AValue::~AValue()
 
 void AValue::SelectKeyFrame(double a_time)
 {
-    auto prevIter = m_keyFrames.begin();
     for (auto iter = m_keyFrames.begin(); iter != m_keyFrames.end(); ++iter)
     {
-        if (iter->Time >= a_time)
+        if (iter->Time <= a_time)
         {
-            m_selectedValue = prevIter->Value;
+            m_selectedValue = iter->Value;
         }
         else
         {
-            prevIter = iter;
+            break;
         }
     }
 }
 void AValue::UpdateAnimValue(double a_time)
 {
-    auto prevIter = m_keyFrames.begin();
+    double endTime;
+    auto prevIter = m_keyFrames.end();
+
     for (auto iter = m_keyFrames.begin(); iter != m_keyFrames.end(); ++iter)
     {
         if (iter->Time >= a_time)
         {
-            m_selectedAnimValue = prevIter->Value;
+            m_selectedAnimValue = iter->Value;
+            endTime = iter->Time;
 
-            if (iter != prevIter)
-            {
-                const double startTime = prevIter->Time;
-                const double relTime = iter->Time - startTime;
-                const double shitedTime = a_time - startTime;
-
-                m_selectedAnimValue->UpdateValue(shitedTime / relTime);
-
-                return;
-            }
-            else
-            {
-                m_selectedAnimValue->UpdateValue(0);
-            }
+            break;
         }
         else
         {
@@ -67,7 +67,36 @@ void AValue::UpdateAnimValue(double a_time)
         }
     }
 
-    m_selectedAnimValue = prevIter->Value;
+    if (m_selectedAnimValue != nullptr)
+    {
+        if (prevIter != m_keyFrames.end())
+        {
+            const double startTime = prevIter->Time;
+            const double relTime = endTime - startTime;
+            const double shitedTime = a_time - startTime;
 
-    m_selectedAnimValue->UpdateValue(0);
+            m_selectedAnimValue->UpdateValue(shitedTime / relTime);
+        }
+        else
+        {
+            m_selectedAnimValue->UpdateValue(0);
+        }
+    }
+}
+
+const char* AValue::GetName() const
+{
+    return m_name;
+}
+
+std::list<double> AValue::GetKeyFrames() const
+{
+    std::list<double> keyFrames;
+
+    for (auto iter = ++m_keyFrames.begin(); iter != m_keyFrames.end(); ++iter)
+    {
+        keyFrames.emplace_back(iter->Time);
+    }
+
+    return keyFrames;
 }

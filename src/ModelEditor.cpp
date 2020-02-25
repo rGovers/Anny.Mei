@@ -405,7 +405,14 @@ void ModelEditor::Update(double a_delta)
             {
                 store->RemoveModelAll(m_selectedModelData->ModelName->GetName());
 
-                m_selectedModelData->ModelName->SetTrueName(buff);
+                if (buff[0] != 0)
+                {
+                    m_selectedModelData->ModelName->SetTrueName(buff);
+                }
+                else 
+                {
+                    m_selectedModelData->ModelName->SetTrueName("NULL");
+                }
 
                 name = m_selectedModelData->ModelName->GetName();
 

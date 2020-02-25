@@ -13,6 +13,7 @@
 #include "Object.h"
 #include "PropertyFile.h"
 #include "Renderers/MorphPlaneDisplay.h"
+#include "StaticTransform.h"
 #include "Texture.h"
 #include "Transform.h"
 
@@ -37,8 +38,25 @@ void MorphPlaneRenderer::Draw(bool a_preview, double a_delta, Camera* a_camera)
 
     Transform* transform = object->GetTransform();
 
-    const glm::mat4 transformMat = transform->GetWorldMatrix();
-    const glm::vec3 anchor = -GetAnchor();
+    glm::mat4 transformMat;
+    glm::vec3 anchor;
+    const char* modelName;
+
+    if (a_preview)
+    {
+        transformMat = transform->GetBaseWorldMatrix();
+
+        anchor = -GetBaseAnchor();
+        modelName = GetBaseModelName();
+    }
+    else
+    {
+        transformMat = transform->GetWorldMatrix();  
+        
+        anchor = -GetAnchor();  
+        modelName = GetModelName();
+    }
+    
     const glm::mat4 shift = transformMat * glm::translate(glm::mat4(1), anchor);
 
     glm::mat4 view = glm::mat4(1);
@@ -52,7 +70,7 @@ void MorphPlaneRenderer::Draw(bool a_preview, double a_delta, Camera* a_camera)
 
     const glm::mat4 finalTransform = view * proj * shift;
 
-    m_morphPlaneDisplay->SetModelName(GetModelName());
+    m_morphPlaneDisplay->SetModelName(modelName);
     m_morphPlaneDisplay->SetMorphPlaneName(m_morphPlaneName);
 
     m_morphPlaneDisplay->Draw(finalTransform);

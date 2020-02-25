@@ -5,6 +5,7 @@
 #include "AnimControl.h"
 #include "FileUtils.h"
 #include "imgui/imgui.h"
+#include "Object.h"
 #include "PropertyFile.h"
 
 const static int BUFFER_SIZE = 1024;
@@ -12,16 +13,24 @@ const static int BUFFER_SIZE = 1024;
 Renderer::Renderer(Object* a_object, AnimControl* a_animControl) :
     Component(a_object, a_animControl)
 {
-    m_modelName = new AnimValue<StringKeyValue>(a_animControl);
-
-    m_anchor = new AnimValue<Vec3KeyValue>(a_animControl);
-    m_anchor->GetValue()->SetBaseValue({ 0.5f, 0.5f, 0.0f });
 }
-
 Renderer::~Renderer()
 {
     delete m_modelName;
     delete m_anchor;
+}
+
+void Renderer::Init()
+{
+    AnimControl* animControl = GetAnimControl();
+    const Object* object = GetObject();
+
+    const std::string baseName = std::string("[") + object->GetName() + "] [" + this->ComponentName() + "] ";
+
+    m_modelName = new AnimValue<StringKeyValue>((baseName + "Model Name").c_str(), animControl);
+    m_anchor = new AnimValue<Vec3KeyValue>((baseName + "Anchor").c_str(), animControl);
+
+    m_anchor->GetValue()->SetBaseValue({ 0.5f, 0.5f, 0.0f });
 }
 
 void Renderer::UpdateRendererGUI()
@@ -131,6 +140,17 @@ PropertyFileProperty* Renderer::SaveValues(PropertyFile* a_propertyFile, Propert
 
 const char* Renderer::GetModelName() const
 {
+    StringKeyValue* value = m_modelName->GetAnimValue();
+
+    if (value != nullptr)
+    {
+        return value->GetString();
+    }
+
+    return nullptr;
+}
+const char* Renderer::GetBaseModelName() const
+{
     StringKeyValue* value = m_modelName->GetValue();
 
     if (value != nullptr)
@@ -162,6 +182,16 @@ glm::vec3 Renderer::GetBaseAnchor() const
     }
 
     return glm::vec3(0.5f, 0.5f, 0.0f);
+}
+
+void Renderer::ObjectRenamed()
+{
+    const Object* object = GetObject();
+
+    const std::string baseName = std::string("[") + object->GetName() + "] [" + this->ComponentName() + "] ";
+
+    m_modelName->Rename((baseName + "Model Name").c_str());
+    m_anchor->Rename((baseName + "Anchor").c_str());
 }
 
 const char* Renderer::ComponentName() const

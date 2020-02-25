@@ -14,6 +14,8 @@ class Transform;
 class Object
 {
 private:
+    AnimControl*                      m_animControl;
+
     Name*                             m_name;
 
     Object*                           m_parent;
@@ -29,7 +31,7 @@ protected:
 
 public:
     Object() = delete;
-    Object(Namer* a_namer);
+    Object(Namer* a_namer, AnimControl* a_animControl);
     ~Object();
 
     Transform* GetTransform() const;
@@ -48,9 +50,9 @@ public:
 
     void RemoveComponent(Component* a_component);
 
-    void LoadComponent(PropertyFileProperty* a_propertyFile, AnimControl* a_animControl);
+    void LoadComponent(PropertyFileProperty* a_propertyFile);
     void SaveComponents(PropertyFile* a_propertyFile, PropertyFileProperty* a_parent) const;
 
-    void UpdateComponentUI(AnimControl* a_animControl);
+    void UpdateComponentUI();
     void UpdateComponents(bool a_preview, Camera* a_camera, double a_delta);
 };

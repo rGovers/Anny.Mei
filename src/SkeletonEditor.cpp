@@ -15,6 +15,7 @@
 #include "Object.h"
 #include "PropertyFile.h"
 #include "RenderTexture.h"
+#include "StaticTransform.h"
 #include "Texture.h"
 #include "Transform.h"
 
@@ -29,7 +30,7 @@ SkeletonEditor::SkeletonEditor()
 
     m_namer = new Namer();
 
-    m_baseObject = new Object(m_namer);
+    m_baseObject = new Object(m_namer, m_animControl);
     m_baseObject->SetTrueName("Root Object");
 
     m_selectedObject = nullptr;
@@ -92,7 +93,7 @@ void SkeletonEditor::ListObjects(Object* a_object, int& a_node)
     {
         if (ImGui::MenuItem("Add Object"))
         {
-            Object* object = new Object(m_namer);
+            Object* object = new Object(m_namer, m_animControl);
             object->SetParent(a_object);
         }
 
@@ -148,7 +149,7 @@ void SkeletonEditor::DrawObjectDetail(Object* a_object) const
         // It also only occurs in Debug
         // This is exclusive to GCC by what I can tell
         // Only this function aswell...
-        const glm::vec4 posi = glm::vec4(transform->GetWorldPosition(), 1.0f);
+        const glm::vec4 posi = glm::vec4(transform->GetBaseWorldPosition(), 1.0f);
 
         const glm::mat4 view = glm::inverse(m_camera->GetTransform()->ToMatrix());
         const glm::mat4 proj = m_camera->GetProjection();
@@ -168,7 +169,7 @@ void SkeletonEditor::DrawObjectDetail(Object* a_object) const
         {
             const Transform* cTransform = (*iter)->GetTransform();
 
-            const glm::vec4 cPos = glm::vec4(cTransform->GetWorldPosition(), 1.0f);
+            const glm::vec4 cPos = glm::vec4(cTransform->GetBaseWorldPosition(), 1.0f);
 
             const glm::vec3 fCPos = view * proj * cPos;
 
@@ -205,14 +206,20 @@ void SkeletonEditor::Update(double a_delta)
         {
             static const int BUFFER_SIZE = 1024;
 
-            char* buffer = new char[BUFFER_SIZE];
-            buffer[0] = 0;
-            
             const char* name = m_selectedObject->GetTrueName();
 
+            char* buffer;
             if (name != nullptr)
             {
+                const size_t strLen = strlen(name);
+
+                buffer = new char[strLen];
+
                 strcpy(buffer, name);
+            }
+            else
+            {
+                buffer = new char[1] { 0 };
             }
 
             if (m_selectedObject != m_baseObject)
@@ -224,20 +231,36 @@ void SkeletonEditor::Update(double a_delta)
 
             Transform* transform = m_selectedObject->GetTransform();
 
-            ImGui::InputFloat3("Translation", (float*)&transform->Translation(), 4);
+            glm::vec3 translation = transform->GetBaseTranslation();
+            ImGui::InputFloat3("Translation", (float*)&translation, 4);
+            transform->SetTranslation(translation);
 
             // Need to a some point implement euler angles for easy user control
-            glm::fquat quat = transform->Rotation();
+            glm::fquat quat = transform->GetBaseRotation();
             ImGui::InputFloat4("Rotation", (float*)&quat, 4);
             transform->SetRotation(glm::normalize(quat));
 
-            ImGui::InputFloat3("Scale", (float*)&transform->Scale(), 4);
+            glm::vec3 scale = transform->GetBaseScale();
+            ImGui::InputFloat3("Scale", (float*)&scale, 4);
+            transform->SetScale(scale);
 
-            m_selectedObject->SetTrueName(buffer);
+            if (strcmp(buffer, name) != 0)
+            {
+                if (buffer[0] != 0)
+                {
+                    m_selectedObject->SetTrueName(buffer);
+                }
+                else
+                {
+                    m_selectedObject->SetTrueName("NULL");
+                }
+            }
+
+            delete[] buffer;
 
             ImGui::Separator();
 
-            m_selectedObject->UpdateComponentUI(m_animControl);
+            m_selectedObject->UpdateComponentUI();
         }
         ImGui::End();
     }
@@ -260,7 +283,7 @@ void SkeletonEditor::Update(double a_delta)
 
             if (ImGui::IsWindowFocused())
             {
-                glm::vec3 translation = m_camera->GetTransform()->Translation();
+                glm::vec3 translation = m_camera->GetTransform()->GetTranslation();
 
                 if (ImGui::IsMouseDown(2))
                 {
@@ -295,7 +318,7 @@ void SkeletonEditor::Update(double a_delta)
                 const glm::mat4 proj = glm::orthoRH(0.0f, trueSize.x * m_zoom * 5, 0.0f, trueSize.y * m_zoom * 5, -1.0f, 1.0f);
 
                 m_camera->SetProjection(proj);
-                m_camera->GetTransform()->Translation() = translation;
+                m_camera->GetTransform()->SetTranslation(translation);
             }
             
             m_imRenderer->Reset();
@@ -406,14 +429,14 @@ void SkeletonEditor::LoadObject(Object* a_object, PropertyFileProperty* a_proper
     {
         if (strcmp((*iter)->GetName(), "object") == 0)
         {
-            Object* object = new Object(m_namer);
+            Object* object = new Object(m_namer, m_animControl);
             object->SetParent(a_object);
 
             LoadObject(object, *iter);
         }
         else
         {
-            a_object->LoadComponent(*iter, m_animControl);
+            a_object->LoadComponent(*iter);
         }
     }
 }

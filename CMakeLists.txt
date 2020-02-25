@@ -21,8 +21,7 @@ add_compile_definitions(IMGUI_IMPL_OPENGL_LOADER_GLAD)
 FileToHeader(
     SOURCE_FILE "shaders/ViewVertex.glsl"
     HEADER_FILE "include/Shaders/ViewVertex.h"
-    VARIABLE_NAME "ViewVertex"
-)
+    VARIABLE_NAME "ViewVertex")
 FileToHeader(
     SOURCE_FILE "shaders/ModelVertex.glsl" 
     HEADER_FILE "include/Shaders/ModelVertex.h"
@@ -30,8 +29,7 @@ FileToHeader(
 FileToHeader(
     SOURCE_FILE "shaders/MorphPlaneVertex.glsl"
     HEADER_FILE "include/Shaders/MorphPlaneVertex.h"
-    VARIABLE_NAME "MorphPlaneVertex"
-)
+    VARIABLE_NAME "MorphPlaneVertex")
 
 FileToHeader(
     SOURCE_FILE "shaders/StandardPixel.glsl" 
@@ -40,8 +38,7 @@ FileToHeader(
 FileToHeader(
     SOURCE_FILE "shaders/SolidPixelColor.glsl"
     HEADER_FILE "include/Shaders/SolidPixelColor.h"
-    VARIABLE_NAME "SolidPixelColor"
-)
+    VARIABLE_NAME "SolidPixelColor")
 FileToHeader(
     SOURCE_FILE "shaders/SolidPixel.glsl" 
     HEADER_FILE "include/Shaders/SolidPixel.h"

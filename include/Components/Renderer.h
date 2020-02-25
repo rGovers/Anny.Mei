@@ -22,6 +22,7 @@ protected:
     PropertyFileProperty* SaveValues(PropertyFile* a_propertyFile, PropertyFileProperty* a_parent) const;
 
     const char* GetModelName() const;
+    const char* GetBaseModelName() const;
 
     glm::vec3 GetAnchor() const;
     glm::vec3 GetBaseAnchor() const;
@@ -29,9 +30,13 @@ public:
     Renderer(Object* a_object, AnimControl* a_animControl);
     virtual ~Renderer();
 
+    virtual void Init();
+
     virtual void Update(double a_delta, Camera* a_camera) = 0;
     virtual void UpdatePreview(double a_delta, Camera* a_camera) = 0;
     virtual void UpdateGUI() = 0;
+
+    virtual void ObjectRenamed();
 
     virtual const char* ComponentName() const;
 
