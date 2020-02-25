@@ -91,7 +91,7 @@ Texture* MorphPlane::ToTexture() const
     const int handle = tex->GetHandle();
     
     glBindTexture(GL_TEXTURE_2D, handle);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RG, size, 1, 0, GL_RG, GL_FLOAT, m_morphPos);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RG32F, size, 1, 0, GL_RG, GL_FLOAT, m_morphPos);
 
     return tex;
 }

@@ -39,7 +39,7 @@ void MorphPlaneRenderer::Draw(bool a_preview, double a_delta, Camera* a_camera)
 
     const glm::mat4 transformMat = transform->GetWorldMatrix();
     const glm::vec3 anchor = -GetAnchor();
-    const glm::mat4 shift = transformMat * glm::translate(glm::mat4(1), anchor) * glm::scale(glm::mat4(1), glm::vec3(0.5f));
+    const glm::mat4 shift = transformMat * glm::translate(glm::mat4(1), anchor);
 
     glm::mat4 view = glm::mat4(1);
     glm::mat4 proj = glm::orthoRH(0.0f, 1.0f, 0.0f, 1.0f, -1.0f, 1.0f);

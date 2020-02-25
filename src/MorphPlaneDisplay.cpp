@@ -1,6 +1,7 @@
 #include "Renderers/MorphPlaneDisplay.h"
 
 #include <glad/glad.h>
+#include <glm/gtc/matrix_transform.hpp>
 
 #include "DataStore.h"
 #include "Models/MorphPlaneModel.h"
@@ -154,6 +155,9 @@ void MorphPlaneDisplay::Draw(const glm::mat4& a_transform, bool a_alpha, bool a_
 
         const unsigned int dim = morphPlane->GetSize();
         const unsigned int sSize = dim * dim;
+        const float scale = 1.0f / (dim + 1);
+
+        const glm::mat4 finalTran = a_transform * glm::scale(glm::mat4(1), glm::vec3(1 - scale));
 
         if (a_wireframe)
         {
@@ -161,7 +165,7 @@ void MorphPlaneDisplay::Draw(const glm::mat4& a_transform, bool a_alpha, bool a_
             glUseProgram(wireHandle);
 
             const int modelLocation = glGetUniformLocation(wireHandle, "Model");
-            glUniformMatrix4fv(modelLocation, 1, GL_FALSE, (float*)&a_transform);
+            glUniformMatrix4fv(modelLocation, 1, GL_FALSE, (float*)&finalTran);
 
             const int morphTexLocation = glGetUniformLocation(wireHandle, "MorphTex");
             glActiveTexture(GL_TEXTURE0);
@@ -182,7 +186,7 @@ void MorphPlaneDisplay::Draw(const glm::mat4& a_transform, bool a_alpha, bool a_
             glUseProgram(baseHandle);
 
             const int modelLocation = glGetUniformLocation(baseHandle, "Model");
-            glUniformMatrix4fv(modelLocation, 1, GL_FALSE, (float*)&a_transform);
+            glUniformMatrix4fv(modelLocation, 1, GL_FALSE, (float*)&finalTran);
 
             const int location = glGetUniformLocation(baseHandle, "MainTex");
             glActiveTexture(GL_TEXTURE0);

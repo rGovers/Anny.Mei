@@ -56,7 +56,7 @@ ModelEditor::ModelEditor()
 
     m_toolMode = e_ToolMode::Select;
 
-    m_startDragPos = glm::vec2(-std::numeric_limits<float>().infinity());
+    m_startDragPos = glm::vec2(-std::numeric_limits<float>::infinity());
 
     m_dragging = false;
     m_axis = e_Axis::Null;
@@ -218,7 +218,6 @@ ModelEditor::ModelData* ModelEditor::AddModel(const char* a_textureName, const c
 
         break;
     }
-
     }
     
     modelData->ModelName = new Name(a_trueName, m_namer);
@@ -256,7 +255,7 @@ void ModelEditor::SetSelectTool()
 {
     m_toolMode = e_ToolMode::Select;
 
-    m_startDragPos = glm::vec2(-std::numeric_limits<float>().infinity());
+    m_startDragPos = glm::vec2(-std::numeric_limits<float>::infinity());
 }
 void ModelEditor::SetMoveTool()
 {
@@ -289,26 +288,26 @@ void ModelEditor::GenerateMorphVertexData(ModelData* a_model) const
         verts[i].TexCoord = modelVerts[i].TexCoord;
 
         const glm::vec2 pos2 = { pos.x, pos.y };
-        const glm::vec2 posScale = pos2 / scale;
+        const glm::vec2 posScale = pos2 * (float)planeSize;
 
         const glm::vec2 min = glm::vec2(glm::floor(posScale.x), glm::floor(posScale.y));
         const glm::vec2 max = glm::vec2(glm::ceil(posScale.x), glm::ceil(posScale.y));
 
         float len = glm::length(glm::vec2(min) - posScale);
         verts[i].MorphPlaneWeights[0].r = min.x + min.y * morphPlaneSize;
-        verts[i].MorphPlaneWeights[0].g = glm::max((1 - len) * scale, 0.0f);
+        verts[i].MorphPlaneWeights[0].g = glm::clamp((1 - len - scale) / planeSize, 0.0f, 1.0f);
 
         len = glm::length(glm::vec2(min.x, max.y) - posScale);
         verts[i].MorphPlaneWeights[1].r = min.x + max.y * morphPlaneSize;
-        verts[i].MorphPlaneWeights[1].g = glm::max((1 - len) * scale, 0.0f);
+        verts[i].MorphPlaneWeights[1].g = glm::clamp((1 - len - scale) / planeSize, 0.0f, 1.0f);
         
         len = glm::length(glm::vec2(max.x, min.y) - posScale);
         verts[i].MorphPlaneWeights[2].r = max.x + min.y * morphPlaneSize;
-        verts[i].MorphPlaneWeights[2].g = glm::max((1 - len) * scale, 0.0f);
+        verts[i].MorphPlaneWeights[2].g = glm::clamp((1 - len - scale) / planeSize, 0.0f, 1.0f);
         
         len = glm::length(glm::vec2(max) - posScale);
         verts[i].MorphPlaneWeights[3].r = max.x + max.y * morphPlaneSize;
-        verts[i].MorphPlaneWeights[3].g = glm::max((1 - len) * scale, 0.0f);
+        verts[i].MorphPlaneWeights[3].g = glm::clamp((1 - len - scale) / planeSize, 0.0f, 1.0f);
     }
 
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
@@ -812,7 +811,6 @@ void ModelEditor::Update(double a_delta)
                         break;
                     }
                     }
-                    
 
                     m_intermediateRenderer->DrawLine(pos3, upPos, 0.01f, { 0, 1, 0, 1 });
                     m_intermediateRenderer->DrawLine(pos3, rightPos, 0.01f, { 1, 0, 0, 1 });
@@ -821,7 +819,7 @@ void ModelEditor::Update(double a_delta)
                 m_morphPlaneDisplay->SetModelName(m_selectedModelData->ModelName->GetName());
                 m_morphPlaneDisplay->SetMorphPlaneName(m_selectedMorphPlane->MorphPlaneName->GetName());
 
-                m_morphPlaneDisplay->Draw(finalTransform * glm::scale(glm::mat4(1), glm::vec3(0.5f)), m_alpha, m_solid, m_wireframe);
+                m_morphPlaneDisplay->Draw(finalTransform, m_alpha, m_solid, m_wireframe);
             }
             else
             {
