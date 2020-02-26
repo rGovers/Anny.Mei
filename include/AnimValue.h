@@ -65,6 +65,11 @@ public:
 
     virtual void AddKeyFrame(double a_time)
     {
+        if (a_time == 0)
+        {
+            return;
+        }
+
         KeyFrame frame;
 
         frame.Time = a_time;
@@ -76,6 +81,7 @@ public:
             {
                 prevIter = iter;
             }
+            // No need to add keyframe it already exists
             else if (iter->Time == a_time)
             {
                 return;
@@ -107,47 +113,51 @@ public:
             return;
         }
 
-        auto prevIter = m_keyFrames.end();
-        for (auto iter = m_keyFrames.begin(); iter != m_keyFrames.end(); ++iter)
+        auto removeIter = m_keyFrames.end();
+        // I want to ensure that there is 1 value and reserve the zero index so I skip the first
+        for (auto iter = ++m_keyFrames.begin(); iter != m_keyFrames.end(); ++iter)
         {
-            if (iter->Time == a_time)
+            if (iter->Time <= a_time)
             {
-                auto nextIter = iter;
-                ++nextIter;
+                removeIter = iter;
+            }
+        }
 
-                if (nextIter != m_keyFrames.end())
+        if (removeIter != m_keyFrames.end())
+        {
+            auto nextIter = removeIter;
+            ++nextIter;
+            auto prevIter = removeIter;
+            --prevIter;
+
+            if (nextIter != m_keyFrames.end())
+            {
+                if (prevIter != m_keyFrames.end())
                 {
-                    if (prevIter != m_keyFrames.end())
-                    {
-                        nextIter->Value->SetPrevKeyValue(prevIter->Value);
-                    }
-                    else
-                    {
-                        nextIter->Value->SetPrevKeyValue(nullptr);
-                    }
+                    nextIter->Value->SetPrevKeyValue(prevIter->Value);
                 }
-                else if (prevIter != m_keyFrames.end())
+                else
                 {
-                    prevIter->Value->SetNextKeyValue(nullptr);
+                    nextIter->Value->SetPrevKeyValue(nullptr);
                 }
+            }
+            else if (prevIter != m_keyFrames.end())
+            {
+                prevIter->Value->SetNextKeyValue(nullptr);
+            }
                 
-                if (m_selectedAnimValue == iter->Value)
-                {
-                    m_selectedAnimValue = nullptr;
-                }
-                if (m_selectedValue == iter->Value)
-                {
-                    m_selectedValue = nullptr;
-                }
-
-                delete iter->Value;
-
-                m_keyFrames.erase(iter);
-
-                return;
+            if (m_selectedAnimValue == removeIter->Value)
+            {
+                m_selectedAnimValue = nullptr;
+            }
+            if (m_selectedValue == removeIter->Value)
+            {
+                m_selectedValue = nullptr;
             }
 
-            prevIter = iter;
+            delete removeIter->Value;
+
+            m_keyFrames.erase(removeIter);
         }
     }
 

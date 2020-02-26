@@ -50,8 +50,8 @@ void AValue::SelectKeyFrame(double a_time)
 void AValue::UpdateAnimValue(double a_time)
 {
     double endTime;
-    auto prevIter = m_keyFrames.end();
 
+    auto prevIter = m_keyFrames.end();
     for (auto iter = m_keyFrames.begin(); iter != m_keyFrames.end(); ++iter)
     {
         if (iter->Time >= a_time)
@@ -81,7 +81,13 @@ void AValue::UpdateAnimValue(double a_time)
         {
             m_selectedAnimValue->UpdateValue(0);
         }
+
+        return;
     }
+
+    m_selectedAnimValue = m_keyFrames.begin()->Value;
+
+    m_selectedAnimValue->UpdateValue(0);
 }
 
 const char* AValue::GetName() const
