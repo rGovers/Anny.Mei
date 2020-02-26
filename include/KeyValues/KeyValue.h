@@ -18,4 +18,7 @@ public:
     KeyValue* GetPrevKeyValue() const;
 
     virtual void UpdateValue(double a_shift) = 0;
+
+    virtual char* ToString() const = 0;
+    virtual void Parse(const char* a_string) = 0;
 };

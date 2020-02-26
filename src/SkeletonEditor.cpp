@@ -382,6 +382,8 @@ SkeletonEditor* SkeletonEditor::Load(mz_zip_archive& a_archive)
     delete propertyFile;
     delete[] data;
 
+    skeletonController->m_animControl->LoadValues(a_archive);
+
     return skeletonController;
 }
 void SkeletonEditor::Save(mz_zip_archive& a_archive) const
@@ -396,6 +398,8 @@ void SkeletonEditor::Save(mz_zip_archive& a_archive) const
 
     delete[] data;
     delete propertyFile;
+
+    m_animControl->SaveValues(a_archive);
 }
 
 void SkeletonEditor::LoadObject(Object* a_object, PropertyFileProperty* a_property)

@@ -24,4 +24,7 @@ public:
     void SetBaseValue(const glm::vec3& a_value);
 
     virtual void UpdateValue(double a_shift);
+
+    virtual char* ToString() const;
+    virtual void Parse(const char* a_data);
 };

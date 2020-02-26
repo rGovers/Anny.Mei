@@ -71,3 +71,20 @@ void StringKeyValue::UpdateValue(double a_shift)
 {
 
 }
+
+char* StringKeyValue::ToString() const
+{
+    const size_t len = strlen(m_value);
+    
+    char* cStr = new char[len + 1];
+    strcpy(cStr, m_value);
+
+    return cStr;
+}
+void StringKeyValue::Parse(const char* a_data)
+{
+    const size_t len = strlen(a_data);
+    m_value = new char[len + 1];
+
+    strcpy(m_value, a_data);
+}

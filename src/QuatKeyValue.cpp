@@ -1,5 +1,10 @@
 #include "KeyValues/QuatKeyValue.h"
 
+#include "FileUtils.h"
+
+#include <string>
+#include <string.h>
+
 QuatKeyValue::QuatKeyValue() : 
     KeyValue()
 {
@@ -45,5 +50,28 @@ void QuatKeyValue::UpdateValue(double a_shift)
         return;
     }
 
+    m_value = m_baseValue;
+}
+
+char* QuatKeyValue::ToString() const
+{
+    std::string str;
+
+    str += "{ ";
+    str += std::to_string(m_baseValue.x) + ", ";
+    str += std::to_string(m_baseValue.y) + ", ";
+    str += std::to_string(m_baseValue.z) + ", ";
+    str += std::to_string(m_baseValue.w) + " }";
+ 
+    const size_t len = str.length();
+    
+    char* cStr = new char[len + 1];
+    strcpy(cStr, str.c_str());
+
+    return cStr;
+}
+void QuatKeyValue::Parse(const char* a_data)
+{
+    STR2V4(a_data, m_baseValue);
     m_value = m_baseValue;
 }

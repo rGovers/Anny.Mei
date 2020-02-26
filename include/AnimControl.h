@@ -3,6 +3,8 @@
 #include <glm/glm.hpp>
 #include <list>
 
+#include "miniz.h"
+
 class AnimControlWindow;
 class AValue;
 class IntermediateRenderer;
@@ -34,4 +36,7 @@ public:
 
     void AddValue(AValue* a_value);
     void RemoveValue(AValue* a_value);
+
+    void LoadValues(mz_zip_archive& a_archive);
+    void SaveValues(mz_zip_archive& a_archive) const;
 };

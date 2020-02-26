@@ -1,9 +1,13 @@
 #pragma once
 
 #include <list>
+#include <string>
 #include <string.h>
 
+#include "FileUtils.h"
 #include "KeyValues/KeyValue.h"
+#include "miniz.h"
+#include "PropertyFile.h"
 
 class AnimControl;
 
@@ -39,6 +43,9 @@ public:
     virtual void RemoveKeyFrame(double a_time) { };
 
     std::list<double> GetKeyFrames() const;
+
+    virtual void LoadValues(mz_zip_archive& a_archive) { };
+    void SaveValues(mz_zip_archive& a_archive) const;
 };
 
 template<typename T>
@@ -184,5 +191,89 @@ public:
     T* GetAnimValue() const
     {
         return (T*)m_selectedAnimValue;
+    }
+
+    virtual void LoadValues(mz_zip_archive& a_archive)
+    {
+        char* data = ExtractFileFromArchive((std::string("anim/") + m_name + ".prop").c_str(), a_archive);
+
+        if (data != nullptr)
+        {
+            PropertyFile* propertyFile = new PropertyFile(data);
+
+            const std::list<PropertyFileProperty*> properties = propertyFile->GetBaseProperties();
+
+            for (auto iter = properties.begin(); iter != properties.end(); ++iter)
+            {
+                KeyFrame frame;
+                frame.Time = -1;
+                frame.Value = nullptr;
+
+                for (auto valIter = (*iter)->Values().begin(); valIter != (*iter)->Values().end(); ++valIter)
+                {
+                    IFSETTOATTVALD(valIter->Name, "time", frame.Time, valIter->Value)
+                    else if (strcmp(valIter->Name, "value") == 0)
+                    {
+                        if (frame.Value == nullptr)
+                        {
+                            frame.Value = new T();
+                            frame.Value->Parse(valIter->Value);
+                        }
+                    }
+                }
+
+                if (frame.Value != nullptr)
+                {
+                    if (frame.Time != -1)
+                    {
+                        bool found = false;
+
+                        auto prevIter = m_keyFrames.begin();
+                        for (auto iIter = m_keyFrames.begin(); iIter != m_keyFrames.end(); ++iIter)
+                        {
+                            if (iIter->Time < frame.Time)
+                            {
+                                prevIter = iIter;
+                            }
+                            else if (iIter->Time == frame.Time)
+                            {
+                                delete frame.Value;
+
+                                found = true;
+
+                                break;
+                            }
+                            else
+                            {
+                                found = true;
+
+                                frame.Value->SetNextKeyValue(iIter->Value);
+                                frame.Value->SetPrevKeyValue(prevIter->Value);
+
+                                m_keyFrames.emplace(iIter, frame);
+
+                                break;
+                            }
+                        }
+
+                        if (!found)
+                        {
+                            frame.Value->SetPrevKeyValue(prevIter->Value);
+                            frame.Value->SetNextKeyValue(nullptr);
+
+                            m_keyFrames.emplace_back(frame);
+                        }
+                    }
+                    else
+                    {
+                        delete frame.Value;
+                    }
+                }
+            }
+
+            delete propertyFile;
+
+            mz_free(data);
+        }
     }
 };

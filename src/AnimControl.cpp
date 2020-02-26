@@ -154,3 +154,18 @@ void AnimControl::RemoveValue(AValue* a_value)
         }
     }
 }
+
+void AnimControl::LoadValues(mz_zip_archive& a_archive)
+{
+    for (auto iter = m_animatedObjects.begin(); iter != m_animatedObjects.end(); ++iter)
+    {
+        (*iter)->LoadValues(a_archive);
+    }
+}
+void AnimControl::SaveValues(mz_zip_archive& a_archive) const
+{
+    for (auto iter = m_animatedObjects.begin(); iter != m_animatedObjects.end(); ++iter)
+    {
+        (*iter)->SaveValues(a_archive);
+    }
+}

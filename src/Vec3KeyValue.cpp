@@ -1,6 +1,9 @@
 #include "KeyValues/Vec3KeyValue.h"
 
-#include "AnimControl.h"
+#include "FileUtils.h"
+
+#include <string>
+#include <string.h>
 
 Vec3KeyValue::Vec3KeyValue() :
     KeyValue()
@@ -47,5 +50,27 @@ void Vec3KeyValue::UpdateValue(double a_shift)
         return;
     }
 
+    m_value = m_baseValue;
+}
+
+char* Vec3KeyValue::ToString() const
+{
+    std::string str;
+
+    str += " { ";
+    str += std::to_string(m_baseValue.x) + ", ";
+    str += std::to_string(m_baseValue.y) + ", ";
+    str += std::to_string(m_baseValue.z) + " }";
+ 
+    const size_t len = str.length();
+    
+    char* cStr = new char[len + 1];
+    strcpy(cStr, str.c_str());
+
+    return cStr;
+}
+void Vec3KeyValue::Parse(const char* a_data)
+{
+    STR2V3(a_data, m_baseValue);
     m_value = m_baseValue;
 }
