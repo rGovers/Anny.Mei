@@ -20,7 +20,7 @@ Renderer::~Renderer()
     delete m_anchor;
 }
 
-void Renderer::Init()
+void Renderer::InitValues()
 {
     AnimControl* animControl = GetAnimControl();
     const Object* object = GetObject();
@@ -32,6 +32,20 @@ void Renderer::Init()
 
     m_anchor->GetValue()->SetBaseValue({ 0.5f, 0.5f, 0.0f });
 }
+void Renderer::RenameValues()
+{
+    const Object* object = GetObject();
+
+    const std::string baseName = std::string("[") + object->GetName() + "] [" + this->ComponentName() + "] ";
+
+    m_modelName->Rename((baseName + "Model Name").c_str());
+    m_anchor->Rename((baseName + "Anchor").c_str());
+}
+
+void Renderer::Init()
+{
+    InitValues();
+}
 
 void Renderer::UpdateRendererGUI()
 {
@@ -39,7 +53,7 @@ void Renderer::UpdateRendererGUI()
 
     if (nameValue != nullptr)
     {
-        const char* str = nameValue->GetString();
+        const char* str = nameValue->GetBaseString();
 
         char* buff;
         if (str != nullptr)
@@ -89,6 +103,9 @@ void Renderer::LoadValues(PropertyFileProperty* a_property, AnimControl* a_animC
         IFSETTOATTVALCPY(iter->Name, "modelName", name, iter->Value)
         else IFSETTOATTVALV3(iter->Name, "anchor", anchor, iter->Value)
     }
+
+    m_anchor->SelectKeyFrame(0);
+    m_modelName->SelectKeyFrame(0);
 
     if (anchor.x != std::numeric_limits<float>::infinity() && anchor.y != std::numeric_limits<float>::infinity() && anchor.z != std::numeric_limits<float>::infinity())
     {
@@ -155,7 +172,7 @@ const char* Renderer::GetBaseModelName() const
 
     if (value != nullptr)
     {
-        return value->GetString();
+        return value->GetBaseString();
     }
 
     return nullptr;
@@ -186,12 +203,7 @@ glm::vec3 Renderer::GetBaseAnchor() const
 
 void Renderer::ObjectRenamed()
 {
-    const Object* object = GetObject();
-
-    const std::string baseName = std::string("[") + object->GetName() + "] [" + this->ComponentName() + "] ";
-
-    m_modelName->Rename((baseName + "Model Name").c_str());
-    m_anchor->Rename((baseName + "Anchor").c_str());
+    RenameValues();
 }
 
 const char* Renderer::ComponentName() const

@@ -16,6 +16,7 @@ public:
 
     StringKeyValue& operator =(const StringKeyValue& a_other);
 
+    const char* GetBaseString() const;
     const char* GetString() const;
 
     void SetString(const char* a_value);

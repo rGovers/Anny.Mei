@@ -47,6 +47,7 @@ ImageDisplay::ImageDisplay()
 
         WireShaderProgram = new ShaderProgram(solidPixelShader, vertexShader);
 
+        glDeleteShader(vertexShader);
         glDeleteShader(solidPixelShader);
     }
     

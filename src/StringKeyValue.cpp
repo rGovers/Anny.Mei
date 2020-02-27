@@ -44,8 +44,19 @@ StringKeyValue& StringKeyValue::operator =(const StringKeyValue& a_other)
     return *this;
 }
 
+const char* StringKeyValue::GetBaseString() const
+{
+    return m_value;
+}
 const char* StringKeyValue::GetString() const
 {
+    StringKeyValue* prevValue = (StringKeyValue*)GetPrevKeyValue();
+
+    if (prevValue != nullptr)
+    {
+        return prevValue->m_value;
+    }
+
     return m_value;
 }
 

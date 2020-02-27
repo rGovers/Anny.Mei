@@ -23,13 +23,23 @@ const char* MorphPlaneRenderer::COMPONENT_NAME = "MorphPlaneRenderer";
 MorphPlaneRenderer::MorphPlaneRenderer(Object* a_object, AnimControl* a_animControl) : 
     Renderer(a_object, a_animControl)
 {
-    m_morphPlaneName = new char[1] { 0 };
-
     m_morphPlaneDisplay = new MorphPlaneDisplay();
 }
 MorphPlaneRenderer::~MorphPlaneRenderer()
 {
     delete m_morphPlaneDisplay;
+}
+
+void MorphPlaneRenderer::Init()
+{
+    InitValues();
+
+    AnimControl* animControl = GetAnimControl();
+    const Object* object = GetObject();
+
+    const std::string baseName = std::string("[") + object->GetName() + "] [" + this->ComponentName() + "] ";
+
+    m_morphPlaneName = new AnimValue<StringKeyValue>((baseName + "Morph Plane Name").c_str(), animControl);
 }
 
 void MorphPlaneRenderer::Draw(bool a_preview, double a_delta, Camera* a_camera)
@@ -41,6 +51,7 @@ void MorphPlaneRenderer::Draw(bool a_preview, double a_delta, Camera* a_camera)
     glm::mat4 transformMat;
     glm::vec3 anchor;
     const char* modelName;
+    const char* morphPlaneName = nullptr;
 
     if (a_preview)
     {
@@ -48,6 +59,13 @@ void MorphPlaneRenderer::Draw(bool a_preview, double a_delta, Camera* a_camera)
 
         anchor = -GetBaseAnchor();
         modelName = GetBaseModelName();
+
+        const StringKeyValue* value = m_morphPlaneName->GetValue();
+
+        if (value != nullptr)
+        {
+            morphPlaneName = value->GetBaseString();
+        }
     }
     else
     {
@@ -55,6 +73,13 @@ void MorphPlaneRenderer::Draw(bool a_preview, double a_delta, Camera* a_camera)
         
         anchor = -GetAnchor();  
         modelName = GetModelName();
+
+        const StringKeyValue* value = m_morphPlaneName->GetAnimValue();
+
+        if (value != nullptr)
+        {
+            morphPlaneName = value->GetString();
+        }
     }
     
     const glm::mat4 shift = transformMat * glm::translate(glm::mat4(1), anchor);
@@ -71,7 +96,7 @@ void MorphPlaneRenderer::Draw(bool a_preview, double a_delta, Camera* a_camera)
     const glm::mat4 finalTransform = view * proj * shift;
 
     m_morphPlaneDisplay->SetModelName(modelName);
-    m_morphPlaneDisplay->SetMorphPlaneName(m_morphPlaneName);
+    m_morphPlaneDisplay->SetMorphPlaneName(morphPlaneName);
 
     m_morphPlaneDisplay->Draw(finalTransform);
 }
@@ -88,22 +113,37 @@ void MorphPlaneRenderer::UpdateGUI()
 {
     UpdateRendererGUI();
 
-    const size_t len = strlen(m_morphPlaneName) + 1;
+    StringKeyValue* value = m_morphPlaneName->GetValue();
 
-    char* buff = new char[len] { 0 };
-    memcpy(buff, m_morphPlaneName, len);
-
-    ImGui::InputText("Morph Plane Name", buff, BUFFER_SIZE);
-
-    if (strcmp(buff, m_morphPlaneName) != 0)
+    if (value != nullptr)
     {
-        delete[] m_morphPlaneName;
-        m_morphPlaneName = buff;
-    }
-    else
-    {
+        const char* nameVal = value->GetBaseString();
+
+        const size_t len = strlen(nameVal);
+
+        char* buff = new char[len + 1];
+        strcpy(buff, nameVal);
+
+        ImGui::InputText("Morph Plane Name", buff, BUFFER_SIZE);
+
+        if (strcmp(buff, nameVal) != 0)
+        {
+            value->SetString(buff);
+        }
+
         delete[] buff;
     }
+}
+
+void MorphPlaneRenderer::ObjectRenamed()
+{
+    RenameValues();
+
+    const Object* object = GetObject();
+
+    const std::string baseName = std::string("[") + object->GetName() + "] [" + this->ComponentName() + "] ";
+
+    m_morphPlaneName->Rename((baseName + "Morph Plane Name").c_str());
 }
 
 const char* MorphPlaneRenderer::ComponentName() const
@@ -117,14 +157,25 @@ void MorphPlaneRenderer::Load(PropertyFileProperty* a_property, AnimControl* a_a
 
     const std::list<PropertyFileValue> values = a_property->Values();
 
+    char* buff = nullptr;
+
     for (auto iter = values.begin(); iter != values.end(); ++iter)
     {
-        IFSETTOATTVALCPY(iter->Name, "morphPlaneName", m_morphPlaneName, iter->Value)
+        IFSETTOATTVALCPY(iter->Name, "morphPlaneName", buff, iter->Value)
+    }
+
+    m_morphPlaneName->SelectKeyFrame(0);
+    if (buff != nullptr)
+    {
+        m_morphPlaneName->GetValue()->SetString(buff);
     }
 }
 void MorphPlaneRenderer::Save(PropertyFile* a_propertyFile, PropertyFileProperty* a_parent) const
 {
     PropertyFileProperty* property = SaveValues(a_propertyFile, a_parent);
     
-    property->EmplaceValue("morphPlaneName", m_morphPlaneName);
+    m_morphPlaneName->SelectKeyFrame(0);
+    const char* buff = m_morphPlaneName->GetValue()->GetString();
+
+    property->EmplaceValue("morphPlaneName", buff);
 }

@@ -26,6 +26,9 @@ protected:
 
     glm::vec3 GetAnchor() const;
     glm::vec3 GetBaseAnchor() const;
+
+    void InitValues();
+    void RenameValues();
 public:
     Renderer(Object* a_object, AnimControl* a_animControl);
     virtual ~Renderer();

@@ -7,9 +7,9 @@ class MorphPlaneDisplay;
 class MorphPlaneRenderer : public Renderer
 {
 private:
-    MorphPlaneDisplay* m_morphPlaneDisplay;
+    MorphPlaneDisplay*         m_morphPlaneDisplay;
 
-    char*              m_morphPlaneName;
+    AnimValue<StringKeyValue>* m_morphPlaneName;
 
     void Draw(bool a_preview, double a_delta, Camera* a_camera);
 protected:
@@ -19,6 +19,9 @@ public:
 
     MorphPlaneRenderer(Object* a_object, AnimControl* a_animControl);
     virtual ~MorphPlaneRenderer();
+
+    virtual void Init();
+    virtual void ObjectRenamed();
 
     virtual void Update(double a_delta, Camera* a_camera);
     virtual void UpdatePreview(double a_delta, Camera* a_camera);

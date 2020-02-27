@@ -49,6 +49,7 @@ MorphPlaneDisplay::MorphPlaneDisplay()
 
         WireShaderProgram = new ShaderProgram(solidPixelShader, vertexShader);
 
+        glDeleteShader(vertexShader);
         glDeleteShader(solidPixelShader);
     }
     
@@ -135,7 +136,10 @@ void MorphPlaneDisplay::Draw(const glm::mat4& a_transform, bool a_alpha, bool a_
         {
             tex = store->GetTexture(texName);
 
-            morphPlane = store->GetMorphPlane(m_morphPlaneName);
+            if (m_morphPlaneName != nullptr)
+            {
+                morphPlane = store->GetMorphPlane(m_morphPlaneName);
+            }
         }
     }
 
