@@ -17,6 +17,8 @@ AValue::AValue(const char* a_name, AnimControl* a_animControl)
 
     m_animControl = a_animControl;
 
+    m_display = false;
+
     m_selectedValue = nullptr;
     m_selectedAnimValue = nullptr;
 
@@ -87,6 +89,15 @@ void AValue::UpdateAnimValue(double a_time)
     m_selectedAnimValue = m_keyFrames.begin()->Value;
 
     m_selectedAnimValue->UpdateValue(0);
+}
+
+void AValue::SetDisplayState(bool a_value)
+{
+    m_display = a_value;
+}
+bool AValue::IsDisplayed() const
+{
+    return m_display;
 }
 
 const char* AValue::GetName() const

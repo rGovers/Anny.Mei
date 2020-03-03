@@ -17,6 +17,8 @@ Object::Object(Namer* a_namer, AnimControl* a_animControl)
 {
     m_animControl = a_animControl;
 
+    m_windowOpen = false;
+
     m_parent = nullptr;
 
     m_name = new Name("Object", a_namer);
@@ -111,6 +113,16 @@ const char* Object::GetName() const
     return m_name->GetName();
 }
 
+void Object::DisplayValues(bool a_state)
+{
+    m_transform->DisplayValues(a_state);
+
+    for (auto iter = m_components.begin(); iter != m_components.end(); ++iter)
+    {
+        (*iter)->DisplayValues(a_state);
+    }
+}
+
 void Object::LoadComponent(PropertyFileProperty* a_property)
 {
     Component* comp = nullptr;
@@ -174,6 +186,8 @@ void Object::UpdateComponentUI()
         {
             component->Init();
 
+            component->DisplayValues(true);
+
             m_windowOpen = false;
 
             m_components.emplace_back(component);
@@ -213,5 +227,4 @@ void Object::UpdateComponents(bool a_preview, Camera* a_camera, double a_delta)
             (*iter)->UpdatePreview(a_delta, a_camera);
         }
     }
-    
 }

@@ -42,6 +42,13 @@ void Renderer::RenameValues()
     m_anchor->Rename((baseName + "Anchor").c_str());
 }
 
+void Renderer::DisplayRendererValues(bool a_value)
+{
+    m_anchor->SetDisplayState(a_value);
+    
+    m_modelName->SetDisplayState(a_value);
+}
+
 void Renderer::Init()
 {
     InitValues();
@@ -209,4 +216,9 @@ void Renderer::ObjectRenamed()
 const char* Renderer::ComponentName() const
 {
     return "Renderer";
+}
+
+void Renderer::DisplayValues(bool a_value)
+{
+    DisplayRendererValues(a_value);
 }

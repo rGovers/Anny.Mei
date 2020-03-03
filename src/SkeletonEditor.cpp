@@ -101,6 +101,11 @@ void SkeletonEditor::ListObjects(Object* a_object, int& a_node)
         {
             if (ImGui::MenuItem("Remove Object"))
             {
+                if (a_object == m_selectedObject)
+                {
+                    m_selectedObject = nullptr;
+                }
+
                 delete a_object;
 
                 ImGui::EndPopup();
@@ -119,7 +124,17 @@ void SkeletonEditor::ListObjects(Object* a_object, int& a_node)
 
     if (selected)
     {
+        if (m_selectedObject != nullptr)
+        {
+            m_selectedObject->DisplayValues(false);
+        }
+
         m_selectedObject = a_object;
+
+        if (m_selectedObject != nullptr)
+        {
+            m_selectedObject->DisplayValues(true);
+        }
     }
 
     ++a_node;

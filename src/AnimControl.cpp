@@ -54,7 +54,15 @@ const Texture* AnimControl::DrawTimeline(int& a_height)
     const float selectedTime = m_window->GetSelectedTime();
     const float maxValue = m_window->GetMaxTimeValue();
 
-    unsigned int size = m_animatedObjects.size();
+    unsigned int size = 0;
+
+    for (auto iter = m_animatedObjects.begin(); iter != m_animatedObjects.end(); ++iter)
+    {
+        if ((*iter)->IsDisplayed())
+        {
+            ++size;
+        }
+    }
 
     a_height = (int)size;
 
@@ -69,53 +77,56 @@ const Texture* AnimControl::DrawTimeline(int& a_height)
     ImGui::BeginGroup();
     for (auto iter = m_animatedObjects.begin(); iter != m_animatedObjects.end(); ++iter)
     {
-        const std::list<double> keyFrames = (*iter)->GetKeyFrames();
-
-        bool removable = false;
-
-        for (auto keyIter = keyFrames.begin(); keyIter != keyFrames.end(); ++keyIter)
+        if ((*iter)->IsDisplayed())
         {
-            const glm::vec4 pos = viewProj * glm::vec4(*keyIter, index + 0.5f, 0, 1);
+            const std::list<double> keyFrames = (*iter)->GetKeyFrames();
 
-            m_imRenderer->DrawSolidCircle(pos, 10, 0.5f, { 0.8f, 0.3f, 0.2f, 1 }, 1.0f / (maxValue * 25.0f), 1.0f / size);
+            bool removable = false;
 
-            if (*keyIter <= selectedTime)
+            for (auto keyIter = keyFrames.begin(); keyIter != keyFrames.end(); ++keyIter)
             {
-                removable = true;
-            }
-        }
+                const glm::vec4 pos = viewProj * glm::vec4(*keyIter, index + 0.5f, 0, 1);
 
-        if (selectedTime != 0)
-        {
-            ImGui::PushID(index);
+                m_imRenderer->DrawSolidCircle(pos, 10, 0.5f, { 0.8f, 0.3f, 0.2f, 1 }, 1.0f / (maxValue * 25.0f), 1.0f / size);
 
-            if (ImGui::Button("+"))
-            {
-                (*iter)->AddKeyFrame(selectedTime);
-            }
-            ImGui::SameLine();
-
-            if (removable)
-            {
-                if (ImGui::Button("-"))
+                if (*keyIter <= selectedTime)
                 {
-                    (*iter)->RemoveKeyFrame(selectedTime);
+                    removable = true;
                 }
-
-                ImGui::SameLine();
             }
-            ImGui::PopID();
-        }
-        else
-        {
-            ImGui::AlignTextToFramePadding();
-        }
 
-        ImGui::SetCursorPosX(50);
-        
-        ImGui::Text((*iter)->GetName());
+            if (selectedTime != 0)
+            {
+                ImGui::PushID(index);
 
-        ++index;
+                if (ImGui::Button("+"))
+                {
+                    (*iter)->AddKeyFrame(selectedTime);
+                }
+                ImGui::SameLine();
+
+                if (removable)
+                {
+                    if (ImGui::Button("-"))
+                    {
+                        (*iter)->RemoveKeyFrame(selectedTime);
+                    }
+
+                    ImGui::SameLine();
+                }
+                ImGui::PopID();
+            }
+            else
+            {
+                ImGui::AlignTextToFramePadding();
+            }
+
+            ImGui::SetCursorPosX(50);
+
+            ImGui::Text((*iter)->GetName());
+
+            ++index;
+        }
     }
     ImGui::EndGroup();
 

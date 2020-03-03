@@ -65,6 +65,8 @@ public:
     glm::mat4 ToBaseMatrix() const;
     glm::mat4 GetBaseWorldMatrix() const;
 
+    void DisplayValues(bool a_state);
+
     void Parse(const char* a_string);
     char* ToString() const;
 

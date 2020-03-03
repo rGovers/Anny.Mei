@@ -300,6 +300,13 @@ glm::mat4 Transform::GetBaseWorldMatrix() const
     return ToBaseMatrix();
 }
 
+void Transform::DisplayValues(bool a_state)
+{
+    m_translation->SetDisplayState(a_state);
+    m_rotation->SetDisplayState(a_state);
+    m_scale->SetDisplayState(a_state);
+}
+
 void Transform::Parse(const char* a_string)
 {
     // Got lazy so I am just going along finding characters and using pointer

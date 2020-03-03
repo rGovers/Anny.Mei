@@ -19,6 +19,7 @@ inline float StringToFloat(const char* a_stringStart, const char* a_stringEnd)
     return val;
 }
 
+#define STR2V2(attVal, val) { char* str = (char*)attVal; str = strchr(str, '{');  char* endStr = strchr(str, ','); val.x = StringToFloat(str, endStr);  str = endStr; endStr = strchr(str + 1, ']'); val.y = StringToFloat(str, endStr);  }
 #define STR2V3(attVal, val) { char* str = (char*)attVal; str = strchr(str, '{');  char* endStr = strchr(str, ','); val.x = StringToFloat(str, endStr);  str = endStr; endStr = strchr(str + 1, ','); val.y = StringToFloat(str, endStr); str = endStr; endStr = strchr(str + 1, '}'); val.z = StringToFloat(str, endStr); }
 #define STR2V4(attVal, val) { char* str = (char*)attVal; str = strchr(str, '{');  char* endStr = strchr(str, ','); val.x = StringToFloat(str, endStr);  str = endStr; endStr = strchr(str + 1, ','); val.y = StringToFloat(str, endStr); str = endStr; endStr = strchr(str + 1, ','); val.z = StringToFloat(str, endStr); str = endStr; endStr = strchr(str + 1, '}'); val.w = StringToFloat(str, endStr); }
 
@@ -28,5 +29,6 @@ char* ExtractFileFromArchive(const char* a_fileName, mz_zip_archive& a_archive);
 #define IFSETTOATTVALI(aCmp, bCmp, val, attVal) if (strcmp(aCmp, bCmp) == 0) { val = std::stoi(attVal); }
 #define IFSETTOATTVALF(aCmp, bCmp, val, attVal) if (strcmp(aCmp, bCmp) == 0) { val = std::stof(attVal); }
 #define IFSETTOATTVALD(aCmp, bCmp, val, attVal) if (strcmp(aCmp, bCmp) == 0) { val = std::stod(attVal); }
+#define IFSETTOATTVALV2(aCmp, bCmp, val, attVal) if (strcmp(aCmp, bCmp) == 0) STR2V2(attVal, val)
 #define IFSETTOATTVALV3(aCmp, bCmp, val, attVal) if (strcmp(aCmp, bCmp) == 0) STR2V3(attVal, val)
 #define IFSETTOATTVALV4(aCmp, bCmp, val, attVal) if (strcmp(aCmp, bCmp) == 0) STR2V4(attVal, val)

@@ -2,14 +2,38 @@
 
 #include "Renderer.h"
 
+#include "KeyValues/Vec2KeyValue.h"
+
 class MorphPlaneDisplay;
+
+enum class e_MorphRenderMode
+{
+    Null,
+    Point3,
+    Point5,
+    Point9
+};
 
 class MorphPlaneRenderer : public Renderer
 {
 private:
+    const static char* ITEMS[];
+
     MorphPlaneDisplay*         m_morphPlaneDisplay;
 
+    bool                       m_animValuesDisplayed;
+
     AnimValue<StringKeyValue>* m_morphPlaneName;
+
+    const char*                m_selectedMode;
+    e_MorphRenderMode          m_renderMode;
+
+    AnimValue<Vec2KeyValue>*   m_lerp;
+
+    AnimValue<StringKeyValue>* m_northPlaneName;
+    AnimValue<StringKeyValue>* m_southPlaneName;
+    AnimValue<StringKeyValue>* m_eastPlaneName;
+    AnimValue<StringKeyValue>* m_westPlaneName;
 
     void Draw(bool a_preview, double a_delta, Camera* a_camera);
 protected:
@@ -28,6 +52,8 @@ public:
     virtual void UpdateGUI();
 
     virtual const char* ComponentName() const;
+
+    virtual void DisplayValues(bool a_value);
 
     virtual void Load(PropertyFileProperty* a_property, AnimControl* a_animControl);
     virtual void Save(PropertyFile* a_propertyFile, PropertyFileProperty* a_parent) const;

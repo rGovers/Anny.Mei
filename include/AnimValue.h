@@ -25,6 +25,8 @@ private:
 protected:
     char*               m_name;
 
+    bool                m_display;
+
     std::list<KeyFrame> m_keyFrames;
 
     KeyValue*           m_selectedValue;
@@ -36,6 +38,9 @@ public:
 
     void SelectKeyFrame(double a_time);
     void UpdateAnimValue(double a_time);
+
+    void SetDisplayState(bool a_value);
+    bool IsDisplayed() const;
 
     const char* GetName() const;
 
