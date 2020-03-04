@@ -147,3 +147,122 @@ MorphPlane* MorphPlane::Lerp(float a_lerp, const MorphPlane& a_left, const Morph
 
     return morphPlane;
 }
+MorphPlane* MorphPlane::Lerp5(const glm::vec2& a_lerp, const MorphPlane& a_left, const MorphPlane& a_right, const MorphPlane& a_up, const MorphPlane& a_down) const
+{
+    MorphPlane* morphPlane = new MorphPlane();
+
+    morphPlane->m_dimensions = m_dimensions;
+
+    const unsigned int size = m_dimensions * m_dimensions;
+
+    morphPlane->m_morphPos = new glm::vec2[size];
+
+    if (a_lerp.x < 0)
+    {
+        if (a_lerp.y < 0)
+        {
+            for (unsigned int x = 0; x < m_dimensions; ++x)
+            {
+                for (unsigned int y = 0; y < m_dimensions; ++y)
+                {
+                    const unsigned int index = x + y * m_dimensions;
+
+                    const glm::vec2 posA = m_morphPos[index];
+                    const glm::vec2 posB = a_left.m_morphPos[index];
+                    const glm::vec2 posC = a_down.m_morphPos[index];
+
+                    glm::vec2 dirA = posC - posA;
+                    glm::vec2 dirB = posB - posA;
+
+                    const float lenA = dirA.length();
+                    const float lenB = dirB.length();
+
+                    dirA /= lenA;
+                    dirB /= lenB;
+
+                    morphPlane->m_morphPos[index] = posA + (dirA * lenA * -a_lerp.y) + (dirB * lenB * -a_lerp.x);
+                }
+            }
+        }
+        else
+        {
+            for (unsigned int x = 0; x < m_dimensions; ++x)
+            {
+                for (unsigned int y = 0; y < m_dimensions; ++y)
+                {
+                    const unsigned int index = x + y * m_dimensions;
+
+                    const glm::vec2 posA = m_morphPos[index];
+                    const glm::vec2 posB = a_left.m_morphPos[index];
+                    const glm::vec2 posC = a_up.m_morphPos[index];
+
+                    glm::vec2 dirA = posC - posA;
+                    glm::vec2 dirB = posB - posA;
+
+                    const float lenA = dirA.length();
+                    const float lenB = dirB.length();
+
+                    dirA /= lenA;
+                    dirB /= lenB;
+
+                    morphPlane->m_morphPos[index] = posA + (dirA * lenA * a_lerp.y) + (dirB * lenB * -a_lerp.x);
+                }
+            }
+        }
+    }
+    else
+    {
+        if (a_lerp.y < 0)
+        {
+            for (unsigned int x = 0; x < m_dimensions; ++x)
+            {
+                for (unsigned int y = 0; y < m_dimensions; ++y)
+                {
+                    const unsigned int index = x + y * m_dimensions;
+
+                    const glm::vec2 posA = m_morphPos[index];
+                    const glm::vec2 posB = a_right.m_morphPos[index];
+                    const glm::vec2 posC = a_down.m_morphPos[index];
+
+                    glm::vec2 dirA = posC - posA;
+                    glm::vec2 dirB = posB - posA;
+
+                    const float lenA = dirA.length();
+                    const float lenB = dirB.length();
+
+                    dirA /= lenA;
+                    dirB /= lenB;
+
+                    morphPlane->m_morphPos[index] = posA + (dirA * lenA * -a_lerp.y) + (dirB * lenB * a_lerp.x);
+                }
+            }
+        }
+        else
+        {
+            for (unsigned int x = 0; x < m_dimensions; ++x)
+            {
+                for (unsigned int y = 0; y < m_dimensions; ++y)
+                {
+                    const unsigned int index = x + y * m_dimensions;
+
+                    const glm::vec2 posA = m_morphPos[index];
+                    const glm::vec2 posB = a_right.m_morphPos[index];
+                    const glm::vec2 posC = a_up.m_morphPos[index];
+
+                    glm::vec2 dirA = posC - posA;
+                    glm::vec2 dirB = posB - posA;
+
+                    const float lenA = dirA.length();
+                    const float lenB = dirB.length();
+
+                    dirA /= lenA;
+                    dirB /= lenB;
+
+                    morphPlane->m_morphPos[index] = posA + (dirA * lenA * a_lerp.y) + (dirB * lenB * a_lerp.x);
+                }
+            }
+        }
+    }
+
+    return morphPlane;
+}

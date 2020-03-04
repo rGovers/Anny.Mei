@@ -114,8 +114,11 @@ void MorphPlaneRenderer::Draw(bool a_preview, double a_delta, Camera* a_camera)
     glm::vec2 lerp;
 
     const char* morphPlaneName = nullptr;
+
     const char* eastPlaneName = nullptr;
     const char* westPlaneName = nullptr;
+    const char* northPlaneName = nullptr;
+    const char* southPlaneName = nullptr;
 
     if (a_preview)
     {
@@ -136,15 +139,25 @@ void MorphPlaneRenderer::Draw(bool a_preview, double a_delta, Camera* a_camera)
             morphPlaneName = morphValue->GetBaseString();
         }
 
-        const StringKeyValue* eastMorphValue = m_eastPlaneName->GetAnimValue();
+        const StringKeyValue* eastMorphValue = m_eastPlaneName->GetValue();
         if (eastMorphValue != nullptr)
         {
             eastPlaneName = eastMorphValue->GetBaseString();
         }
-        const StringKeyValue* westMorphValue = m_westPlaneName->GetAnimValue();
+        const StringKeyValue* westMorphValue = m_westPlaneName->GetValue();
         if (westMorphValue != nullptr)
         {
             westPlaneName = westMorphValue->GetBaseString();
+        }
+        const StringKeyValue* northMorphValue = m_northPlaneName->GetValue();
+        if (northMorphValue != nullptr)
+        {
+            northPlaneName = northMorphValue->GetBaseString();
+        }
+        const StringKeyValue* southMorphValue = m_southPlaneName->GetValue();
+        if (southMorphValue != nullptr)
+        {
+            southPlaneName = southMorphValue->GetBaseString();
         }
     }
     else
@@ -175,6 +188,16 @@ void MorphPlaneRenderer::Draw(bool a_preview, double a_delta, Camera* a_camera)
         if (westMorphValue != nullptr)
         {
             westPlaneName = westMorphValue->GetString();
+        }
+        const StringKeyValue* northMorphValue = m_northPlaneName->GetAnimValue();
+        if (northMorphValue != nullptr)
+        {
+            northPlaneName = northMorphValue->GetString();
+        }
+        const StringKeyValue* southMorphValue = m_southPlaneName->GetAnimValue();
+        if (southMorphValue != nullptr)
+        {
+            southPlaneName = southMorphValue->GetString();
         }
     }
     
@@ -208,6 +231,29 @@ void MorphPlaneRenderer::Draw(bool a_preview, double a_delta, Camera* a_camera)
             if (centreMorphPlane != nullptr && eastMorphPlane != nullptr && westMorphPlane != nullptr)
             {
                 MorphPlane* morphPlane = centreMorphPlane->Lerp(lerp.x, *eastMorphPlane, *westMorphPlane);
+
+                m_morphPlaneDisplay->Draw(morphPlane, finalTransform);
+
+                delete morphPlane;
+            }
+        }
+
+        break;
+    }
+    case e_MorphRenderMode::Point5:
+    {
+        if (morphPlaneName != nullptr && eastPlaneName != nullptr && westPlaneName != nullptr && northPlaneName != nullptr && southPlaneName != nullptr)
+        {
+            MorphPlane* centreMorphPlane = store->GetMorphPlane(morphPlaneName);
+
+            MorphPlane* eastMorphPlane = store->GetMorphPlane(eastPlaneName);
+            MorphPlane* westMorphPlane = store->GetMorphPlane(westPlaneName);
+            MorphPlane* northMorphPlane = store->GetMorphPlane(northPlaneName);
+            MorphPlane* southMorphPlane = store->GetMorphPlane(southPlaneName);
+
+            if (centreMorphPlane != nullptr && eastMorphPlane != nullptr && westMorphPlane != nullptr && northMorphPlane != nullptr && southMorphPlane != nullptr)
+            {
+                MorphPlane* morphPlane = centreMorphPlane->Lerp5(lerp, *eastMorphPlane, *westMorphPlane, *northMorphPlane, *southMorphPlane);
 
                 m_morphPlaneDisplay->Draw(morphPlane, finalTransform);
 
