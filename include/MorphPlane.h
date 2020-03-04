@@ -13,9 +13,9 @@ private:
 
     glm::vec2*   m_morphPos;
 protected:
-
+    MorphPlane();
+    
 public:
-    MorphPlane() = delete;
     MorphPlane(unsigned int a_dimensions);
     ~MorphPlane();
 
@@ -31,4 +31,6 @@ public:
     Texture* ToTexture() const;
 
     static MorphPlane* Load(const char* a_fileName, mz_zip_archive& a_archive, unsigned int a_size);
+
+    MorphPlane* Lerp(float a_lerp, const MorphPlane& a_left, const MorphPlane& a_right) const;
 };

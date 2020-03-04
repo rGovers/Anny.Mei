@@ -2,6 +2,7 @@
 
 #include <glm/glm.hpp>
 
+class MorphPlane;
 class ShaderProgram;
 
 class MorphPlaneDisplay
@@ -26,4 +27,5 @@ public:
     void SetMorphPlaneName(const char* a_name);
 
     void Draw(const glm::mat4& a_transform, bool a_alpha = true, bool a_solid = true, bool a_wireframe = false) const;
+    void Draw(const MorphPlane* a_morphPlane, const glm::mat4& a_transform, bool a_alpha = true, bool a_solid = true, bool a_wireframe = false) const;
 };

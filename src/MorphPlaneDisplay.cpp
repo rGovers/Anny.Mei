@@ -124,9 +124,19 @@ void MorphPlaneDisplay::Draw(const glm::mat4& a_transform, bool a_alpha, bool a_
 {
     DataStore* store = DataStore::GetInstance();
 
+    if (m_morphPlaneName != nullptr)
+    {
+        const MorphPlane* morphPlane = store->GetMorphPlane(m_morphPlaneName);
+
+        Draw(morphPlane, a_transform, a_alpha, a_solid, a_wireframe);
+    }
+}
+void MorphPlaneDisplay::Draw(const MorphPlane* a_morphPlane, const glm::mat4& a_transform, bool a_alpha, bool a_solid, bool a_wireframe) const
+{
+    DataStore* store = DataStore::GetInstance();
+
     Model* model = nullptr;
     Texture* tex = nullptr;
-    MorphPlane* morphPlane = nullptr;
     if (m_modelName != nullptr)
     {
         model = store->GetModel(m_modelName, e_ModelType::MorphPlane);
@@ -135,17 +145,12 @@ void MorphPlaneDisplay::Draw(const glm::mat4& a_transform, bool a_alpha, bool a_
         if (texName != nullptr)
         {
             tex = store->GetTexture(texName);
-
-            if (m_morphPlaneName != nullptr)
-            {
-                morphPlane = store->GetMorphPlane(m_morphPlaneName);
-            }
         }
     }
 
-    if (model != nullptr && tex != nullptr && morphPlane != nullptr)
+    if (model != nullptr && tex != nullptr && a_morphPlane != nullptr)
     {
-        const Texture* morphTex = morphPlane->ToTexture();
+        const Texture* morphTex = a_morphPlane->ToTexture();
 
         if (a_alpha)
         {
@@ -157,7 +162,7 @@ void MorphPlaneDisplay::Draw(const glm::mat4& a_transform, bool a_alpha, bool a_
 
         const unsigned int indexCount = model->GetIndicesCount();
 
-        const unsigned int dim = morphPlane->GetSize();
+        const unsigned int dim = a_morphPlane->GetSize();
         const unsigned int sSize = dim * dim;
         const float scale = 1.0f / (dim + 1);
 

@@ -5,6 +5,11 @@
 #include "FileUtils.h"
 #include "Texture.h"
 
+MorphPlane::MorphPlane()
+{
+    m_dimensions = 0;
+    m_morphPos = nullptr;
+}
 MorphPlane::MorphPlane(unsigned int a_dimensions)
 {
     m_dimensions = a_dimensions + 1;
@@ -98,11 +103,47 @@ Texture* MorphPlane::ToTexture() const
 
 MorphPlane* MorphPlane::Load(const char* a_fileName, mz_zip_archive& a_archive, unsigned int a_size)
 {
-    MorphPlane* morphPlane = new MorphPlane(a_size);
+    MorphPlane* morphPlane = new MorphPlane();
 
-    delete[] morphPlane->m_morphPos;
-
+    morphPlane->m_dimensions = a_size + 1;
     morphPlane->m_morphPos = (glm::vec2*)ExtractFileFromArchive(a_fileName, a_archive);
+
+    return morphPlane;
+}
+
+MorphPlane* MorphPlane::Lerp(float a_lerp, const MorphPlane& a_left, const MorphPlane& a_right) const
+{
+    MorphPlane* morphPlane = new MorphPlane();
+    morphPlane->m_dimensions = m_dimensions;
+
+    const unsigned int size = m_dimensions * m_dimensions;
+
+    morphPlane->m_morphPos = new glm::vec2[size];
+
+    if (a_lerp < 0)
+    {
+        for (unsigned int x = 0; x < m_dimensions; ++x)
+        {
+            for (unsigned int y = 0; y < m_dimensions; ++y)
+            {
+                const unsigned int index = x + y * m_dimensions;
+
+                morphPlane->m_morphPos[index] = glm::mix(m_morphPos[index], a_left.m_morphPos[index], -a_lerp);
+            }
+        }
+    }
+    else
+    {
+        for (unsigned int x = 0; x < m_dimensions; ++x)
+        {
+            for (unsigned int y = 0; y < m_dimensions; ++y)
+            {
+                const unsigned int index = x + y * m_dimensions;
+
+                morphPlane->m_morphPos[index] = glm::mix(m_morphPos[index], a_right.m_morphPos[index], a_lerp);
+            }
+        }
+    }
 
     return morphPlane;
 }

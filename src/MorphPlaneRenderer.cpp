@@ -20,7 +20,7 @@
 const static int BUFFER_SIZE = 1024;
 const char* MorphPlaneRenderer::COMPONENT_NAME = "MorphPlaneRenderer";
 
-const char* MorphPlaneRenderer::ITEMS[] = { "Null", "3 Point", "5 Point", "9 Point" };
+const char* MorphPlaneRenderer::ITEMS[] = { "Null", "Lerp", "5 Point", "9 Point" };
 
 void DisplayStringValue(StringKeyValue* a_value, const char* a_name)
 {
@@ -101,14 +101,21 @@ void MorphPlaneRenderer::Init()
 
 void MorphPlaneRenderer::Draw(bool a_preview, double a_delta, Camera* a_camera)
 {
+    const DataStore* store = DataStore::GetInstance();
+
     const Object* object = GetObject();
 
     Transform* transform = object->GetTransform();
 
     glm::mat4 transformMat;
     glm::vec3 anchor;
-    const char* modelName;
+    const char* modelName = nullptr;
+
+    glm::vec2 lerp;
+
     const char* morphPlaneName = nullptr;
+    const char* eastPlaneName = nullptr;
+    const char* westPlaneName = nullptr;
 
     if (a_preview)
     {
@@ -117,11 +124,27 @@ void MorphPlaneRenderer::Draw(bool a_preview, double a_delta, Camera* a_camera)
         anchor = -GetBaseAnchor();
         modelName = GetBaseModelName();
 
-        const StringKeyValue* value = m_morphPlaneName->GetValue();
-
-        if (value != nullptr)
+        const Vec2KeyValue* lerpValue = m_lerp->GetValue();
+        if (lerpValue != nullptr)
         {
-            morphPlaneName = value->GetBaseString();
+            lerp = lerpValue->GetBaseValue();
+        }
+
+        const StringKeyValue* morphValue = m_morphPlaneName->GetValue();
+        if (morphValue != nullptr)
+        {
+            morphPlaneName = morphValue->GetBaseString();
+        }
+
+        const StringKeyValue* eastMorphValue = m_eastPlaneName->GetAnimValue();
+        if (eastMorphValue != nullptr)
+        {
+            eastPlaneName = eastMorphValue->GetBaseString();
+        }
+        const StringKeyValue* westMorphValue = m_westPlaneName->GetAnimValue();
+        if (westMorphValue != nullptr)
+        {
+            westPlaneName = westMorphValue->GetBaseString();
         }
     }
     else
@@ -131,11 +154,27 @@ void MorphPlaneRenderer::Draw(bool a_preview, double a_delta, Camera* a_camera)
         anchor = -GetAnchor();  
         modelName = GetModelName();
 
-        const StringKeyValue* value = m_morphPlaneName->GetAnimValue();
-
-        if (value != nullptr)
+        const Vec2KeyValue* lerpValue = m_lerp->GetAnimValue();
+        if (lerpValue != nullptr)
         {
-            morphPlaneName = value->GetString();
+            lerp = lerpValue->GetValue();
+        }
+
+        const StringKeyValue* morphValue = m_morphPlaneName->GetAnimValue();
+        if (morphValue != nullptr)
+        {
+            morphPlaneName = morphValue->GetString();
+        }
+        
+        const StringKeyValue* eastMorphValue = m_eastPlaneName->GetAnimValue();
+        if (eastMorphValue != nullptr)
+        {
+            eastPlaneName = eastMorphValue->GetString();
+        }
+        const StringKeyValue* westMorphValue = m_westPlaneName->GetAnimValue();
+        if (westMorphValue != nullptr)
+        {
+            westPlaneName = westMorphValue->GetString();
         }
     }
     
@@ -155,7 +194,36 @@ void MorphPlaneRenderer::Draw(bool a_preview, double a_delta, Camera* a_camera)
     m_morphPlaneDisplay->SetModelName(modelName);
     m_morphPlaneDisplay->SetMorphPlaneName(morphPlaneName);
 
-    m_morphPlaneDisplay->Draw(finalTransform);
+    switch (m_renderMode)
+    {
+    case e_MorphRenderMode::Point3:
+    {
+        if (morphPlaneName != nullptr && eastPlaneName != nullptr && westPlaneName != nullptr)
+        {
+            MorphPlane* centreMorphPlane = store->GetMorphPlane(morphPlaneName);
+
+            MorphPlane* eastMorphPlane = store->GetMorphPlane(eastPlaneName);
+            MorphPlane* westMorphPlane = store->GetMorphPlane(westPlaneName);
+
+            if (centreMorphPlane != nullptr && eastMorphPlane != nullptr && westMorphPlane != nullptr)
+            {
+                MorphPlane* morphPlane = centreMorphPlane->Lerp(lerp.x, *eastMorphPlane, *westMorphPlane);
+
+                m_morphPlaneDisplay->Draw(morphPlane, finalTransform);
+
+                delete morphPlane;
+            }
+        }
+
+        break;
+    }
+    default:
+    {
+        m_morphPlaneDisplay->Draw(finalTransform);
+
+        break;
+    }
+    }
 }
 
 void MorphPlaneRenderer::Update(double a_delta, Camera* a_camera)
@@ -195,7 +263,7 @@ void MorphPlaneRenderer::UpdateGUI()
             ImGui::EndCombo();
         }
 
-        if (strcmp(m_selectedMode, "3 Point") == 0)
+        if (strcmp(m_selectedMode, "Lerp") == 0)
         {
             m_renderMode = e_MorphRenderMode::Point3;
         }
@@ -365,6 +433,7 @@ void MorphPlaneRenderer::Load(PropertyFileProperty* a_property, AnimControl* a_a
     char* southPlaneName = nullptr;
     char* eastPlaneName = nullptr;
     char* westPlaneName = nullptr;
+    int renderMode = -1;
 
     for (auto iter = values.begin(); iter != values.end(); ++iter)
     {
@@ -373,6 +442,14 @@ void MorphPlaneRenderer::Load(PropertyFileProperty* a_property, AnimControl* a_a
         else IFSETTOATTVALCPY(iter->Name, "southPlaneName", southPlaneName, iter->Value)
         else IFSETTOATTVALCPY(iter->Name, "eastPlaneName", eastPlaneName, iter->Value)
         else IFSETTOATTVALCPY(iter->Name, "westPlaneName", westPlaneName, iter->Value)
+        else IFSETTOATTVALI(iter->Name, "renderMode", renderMode, iter->Value)
+    }
+
+    if (renderMode != -1)
+    {
+        m_renderMode = (e_MorphRenderMode)renderMode;
+
+        m_selectedMode = ITEMS[renderMode];
     }
 
     m_morphPlaneName->SelectKeyFrame(0);
@@ -415,6 +492,8 @@ void MorphPlaneRenderer::Save(PropertyFile* a_propertyFile, PropertyFileProperty
     PropertyFileProperty* property = SaveValues(a_propertyFile, a_parent);
     
     const char* buff;
+
+    property->EmplaceValue("renderMode", std::to_string((int)m_renderMode).c_str());
 
     m_morphPlaneName->SelectKeyFrame(0);
     buff = m_morphPlaneName->GetValue()->GetBaseString();
