@@ -34,4 +34,6 @@ public:
 
     MorphPlane* Lerp(float a_lerp, const MorphPlane& a_left, const MorphPlane& a_right) const;
     MorphPlane* Lerp5(const glm::vec2& a_lerp, const MorphPlane& a_left, const MorphPlane& a_right, const MorphPlane& a_up, const MorphPlane& a_down) const;
+    MorphPlane* Lerp9(const glm::vec2& a_lerp, const MorphPlane& a_left, const MorphPlane& a_right, const MorphPlane& a_up, const MorphPlane& a_down,
+        const MorphPlane& a_upLeft, const MorphPlane& a_downLeft, const MorphPlane& a_downRight, const MorphPlane& a_upRight) const;
 };

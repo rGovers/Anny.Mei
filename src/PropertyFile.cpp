@@ -232,6 +232,7 @@ PropertyFileProperty* PropertyFile::InsertProperty()
 {
     PropertyFileProperty* property = new PropertyFileProperty();
 
+    // Need to investigate very rare exception that occurs here for some reason
     m_properties->emplace_back(property);
 
     return property;

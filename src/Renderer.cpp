@@ -30,6 +30,7 @@ void Renderer::InitValues()
     m_modelName = new AnimValue<StringKeyValue>((baseName + "Model Name").c_str(), animControl);
     m_anchor = new AnimValue<Vec3KeyValue>((baseName + "Anchor").c_str(), animControl);
 
+    m_anchor->SelectKeyFrame(0);
     m_anchor->GetValue()->SetBaseValue({ 0.5f, 0.5f, 0.0f });
 }
 void Renderer::RenameValues()
@@ -98,66 +99,11 @@ void Renderer::UpdateRendererGUI()
     }
 }
 
-void Renderer::LoadValues(PropertyFileProperty* a_property, AnimControl* a_animControl)
-{
-    const std::list<PropertyFileValue> values = a_property->Values();
-
-    glm::vec3 anchor = glm::vec3(std::numeric_limits<float>::infinity());
-    char* name = nullptr; 
-
-    for (auto iter = values.begin(); iter != values.end(); ++iter)
-    {
-        IFSETTOATTVALCPY(iter->Name, "modelName", name, iter->Value)
-        else IFSETTOATTVALV3(iter->Name, "anchor", anchor, iter->Value)
-    }
-
-    m_anchor->SelectKeyFrame(0);
-    m_modelName->SelectKeyFrame(0);
-
-    if (anchor.x != std::numeric_limits<float>::infinity() && anchor.y != std::numeric_limits<float>::infinity() && anchor.z != std::numeric_limits<float>::infinity())
-    {
-        Vec3KeyValue* value = m_anchor->GetValue();
-
-        if (value != nullptr)
-        {
-            value->SetBaseValue(anchor);
-        }
-    }
-
-    if (name != nullptr)
-    {
-        StringKeyValue* value = m_modelName->GetValue();
-
-        if (value != nullptr)
-        {
-            value->SetString(name);
-        }
-
-        delete[] name;
-    }
-}
 PropertyFileProperty* Renderer::SaveValues(PropertyFile* a_propertyFile, PropertyFileProperty* a_parent) const
 {
     PropertyFileProperty* property = a_propertyFile->InsertProperty();
     property->SetParent(a_parent);
     property->SetName(ComponentName());
-
-    m_modelName->SelectKeyFrame(0);
-    const StringKeyValue* nameValue = m_modelName->GetValue();
-    if (nameValue != nullptr)
-    {
-        property->EmplaceValue("modelName", nameValue->GetString());
-    }
-
-    m_anchor->SelectKeyFrame(0);
-    const Vec3KeyValue* anchorValue = m_anchor->GetValue();
-    if (anchorValue != nullptr)
-    {
-        const glm::vec3 anchor = anchorValue->GetBaseValue();
-
-        const std::string anchorStr = "{ " + std::to_string(anchor.x) + ", " + std::to_string(anchor.y) + ", " + std::to_string(anchor.z) + " }";
-        property->EmplaceValue("anchor", anchorStr.c_str());
-    }
 
     return property;
 }

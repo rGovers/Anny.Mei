@@ -67,8 +67,5 @@ public:
 
     void DisplayValues(bool a_state);
 
-    void Parse(const char* a_string);
-    char* ToString() const;
-
     void ObjectRenamed();
 };

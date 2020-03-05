@@ -69,8 +69,8 @@ public:
         frame.Time = 0;
         frame.Value = new T();
 
-        m_selectedAnimValue = frame.Value;
-        m_selectedValue = frame.Value;
+        m_selectedAnimValue = nullptr;
+        m_selectedValue = nullptr;
 
         m_keyFrames.emplace_back(frame);
     }
@@ -242,7 +242,8 @@ public:
                             }
                             else if (iIter->Time == frame.Time)
                             {
-                                delete frame.Value;
+                                delete iIter->Value;
+                                iIter->Value = frame.Value;
 
                                 found = true;
 

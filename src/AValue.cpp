@@ -119,31 +119,26 @@ std::list<double> AValue::GetKeyFrames() const
 
 void AValue::SaveValues(mz_zip_archive& a_archive) const
 {
-    const size_t len = m_keyFrames.size();
+    PropertyFile* propertyFile = new PropertyFile();
 
-    if (len > 1)
+    for (auto iter = m_keyFrames.begin(); iter != m_keyFrames.end(); ++iter)
     {
-        PropertyFile* propertyFile = new PropertyFile();
+        PropertyFileProperty* prop = propertyFile->InsertProperty();
 
-        for (auto iter = ++m_keyFrames.begin(); iter != m_keyFrames.end(); ++iter)
-        {
-            PropertyFileProperty* prop = propertyFile->InsertProperty();
+        prop->SetName("value");
 
-            prop->SetName("value");
+        prop->EmplaceValue("time", std::to_string(iter->Time).c_str());
 
-            prop->EmplaceValue("time", std::to_string(iter->Time).c_str());
+        const char* str = iter->Value->ToString();
 
-            const char* str = iter->Value->ToString();
+        prop->EmplaceValue("value", str);
 
-            prop->EmplaceValue("value", str);
-
-            delete[] str;
-        }
-
-        const char* data = propertyFile->ToString();
-
-        mz_zip_writer_add_mem(&a_archive, (std::string("anim/") + m_name + ".prop").c_str(), data, strlen(data), MZ_DEFAULT_COMPRESSION);
-
-        delete[] data;
+        delete[] str;
     }
+
+    const char* data = propertyFile->ToString();
+
+    mz_zip_writer_add_mem(&a_archive, (std::string("anim/") + m_name + ".prop").c_str(), data, strlen(data), MZ_DEFAULT_COMPRESSION);
+
+    delete[] data;
 }

@@ -90,7 +90,7 @@ const char* ImageRenderer::ComponentName() const
 
 void ImageRenderer::Load(PropertyFileProperty* a_property, AnimControl* a_animControl)
 {
-    LoadValues(a_property, a_animControl);
+    
 }
 void ImageRenderer::Save(PropertyFile* a_propertyFile, PropertyFileProperty* a_parent) const
 {

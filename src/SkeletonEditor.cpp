@@ -423,24 +423,17 @@ void SkeletonEditor::LoadObject(Object* a_object, PropertyFileProperty* a_proper
 
     char* name = nullptr;
     char* trueName = nullptr;
-    char* transformString = nullptr;
 
     for (auto iter = values.begin(); iter != values.end(); ++iter)
     {
         IFSETTOATTVALCPY(iter->Name, "name", name, iter->Value)
         else IFSETTOATTVALCPY(iter->Name, "truename", trueName, iter->Value)
-        else IFSETTOATTVALCPY(iter->Name, "transform", transformString, iter->Value)
     }
 
     if (name != nullptr && trueName != nullptr)
     {
         a_object->SetTrueName(trueName);
         a_object->SetName(name);
-
-        if (transformString != nullptr)
-        {
-            a_object->GetTransform()->Parse(transformString);
-        }
     }
 
     const std::list<PropertyFileProperty*> children = a_property->GetChildren();
@@ -468,10 +461,6 @@ void SkeletonEditor::SaveObject(PropertyFile* a_propertyFile, PropertyFileProper
         property->SetParent(a_parent);
         property->EmplaceValue("name", a_object->GetName());
         property->EmplaceValue("truename", a_object->GetTrueName());
-        
-        char* sTransform = a_object->GetTransform()->ToString();
-        property->EmplaceValue("transform", sTransform);
-        delete[] sTransform;
     
         a_object->SaveComponents(a_propertyFile, property);
 

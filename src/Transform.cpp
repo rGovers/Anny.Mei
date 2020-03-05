@@ -21,11 +21,13 @@ Transform::Transform(AnimControl* a_animControl, Object* a_object)
     std::string baseName = std::string("[") + m_object->GetName() + "] ";
 
     m_translation = new AnimValue<Vec3KeyValue>((baseName + "Translation").c_str(), a_animControl);
+    m_translation->SelectKeyFrame(0);
     m_translation->GetValue()->SetBaseValue(glm::vec3(0));
 
     m_rotation = new AnimValue<QuatKeyValue>((baseName + "Rotation").c_str(), a_animControl);
 
     m_scale = new AnimValue<Vec3KeyValue>((baseName + "Scale").c_str(), a_animControl);
+    m_scale->SelectKeyFrame(0);
     m_scale->GetValue()->SetBaseValue(glm::vec3(1));
 }
 Transform::~Transform()
@@ -305,107 +307,6 @@ void Transform::DisplayValues(bool a_state)
     m_translation->SetDisplayState(a_state);
     m_rotation->SetDisplayState(a_state);
     m_scale->SetDisplayState(a_state);
-}
-
-void Transform::Parse(const char* a_string)
-{
-    // Got lazy so I am just going along finding characters and using pointer
-    // offsets
-    char* str = (char*)a_string;
-    str = strchr(str, '{');
-    str = strchr(str + 1, '{');
-
-    char* endStr = strchr(str, ',');
-    
-    m_translation->SelectKeyFrame(0);
-    m_rotation->SelectKeyFrame(0);
-    m_scale->SelectKeyFrame(0);
-
-    glm::vec3 translation;
-
-    translation.x = StringToFloat(str, endStr);
-    
-    str = endStr;
-    endStr = strchr(str + 1, ',');    
-    translation.y = StringToFloat(str, endStr);
-
-    str = endStr;
-    endStr = strchr(str + 1, '}');
-    translation.z = StringToFloat(str, endStr);
-
-    SetTranslation(translation);
-
-    glm::quat rotation;
-
-    str = strchr(endStr + 1, '{');
-    endStr = strchr(str + 1, ',');
-    rotation.x = StringToFloat(str, endStr);
-
-    str = endStr;
-    endStr = strchr(str + 1, ',');
-    rotation.y = StringToFloat(str, endStr);
-
-    str = endStr;
-    endStr = strchr(str + 1, ',');
-    rotation.z = StringToFloat(str, endStr);
-
-    str = endStr;
-    endStr = strchr(str + 1, '}');
-    rotation.w = StringToFloat(str, endStr);
-
-    SetRotation(rotation);
-
-    glm::vec3 scale;
-
-    str = strchr(endStr + 1, '{');
-    endStr = strchr(str + 1, ',');
-    scale.x = StringToFloat(str, endStr);
-
-    str = endStr;
-    endStr = strchr(str + 1, ',');
-    scale.y = StringToFloat(str, endStr);
-
-    str = endStr;
-    endStr = strchr(str + 1, '}');
-    scale.z = StringToFloat(str, endStr);
-
-    SetScale(scale);
-}
-char* Transform::ToString() const
-{
-    std::string str;
-
-    m_translation->SelectKeyFrame(0);
-    m_rotation->SelectKeyFrame(0);
-    m_scale->SelectKeyFrame(0);
-
-    const glm::vec3 translation = GetBaseTranslation();
-    const glm::quat rotation = GetBaseRotation();
-    const glm::vec3 scale = GetBaseScale();
-
-    str += "{ { ";
-    str += std::to_string(translation.x) + ", ";
-    str += std::to_string(translation.y) + ", ";
-    str += std::to_string(translation.z) + " }";
-
-    str += " { ";
-    str += std::to_string(rotation.x) + ", ";
-    str += std::to_string(rotation.y) + ", ";
-    str += std::to_string(rotation.z) + ", ";
-    str += std::to_string(rotation.w) + " }";
- 
-    str += " { ";
-    str += std::to_string(scale.x) + ", ";
-    str += std::to_string(scale.y) + ", ";
-    str += std::to_string(scale.z) + " } }";
-
-    const size_t len = str.length();
-    
-    char* cStr = new char[len];
-    memset(cStr, 0, len);
-    strcpy(cStr, str.c_str());
-
-    return cStr;
 }
 
 void Transform::ObjectRenamed()

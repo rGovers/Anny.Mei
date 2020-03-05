@@ -18,7 +18,6 @@ private:
 protected:
     void UpdateRendererGUI();
 
-    void LoadValues(PropertyFileProperty* a_property, AnimControl* a_animControl);
     PropertyFileProperty* SaveValues(PropertyFile* a_propertyFile, PropertyFileProperty* a_parent) const;
 
     const char* GetModelName() const;

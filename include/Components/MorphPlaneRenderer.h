@@ -35,6 +35,11 @@ private:
     AnimValue<StringKeyValue>* m_eastPlaneName;
     AnimValue<StringKeyValue>* m_westPlaneName;
 
+    AnimValue<StringKeyValue>* m_northEastPlaneName;
+    AnimValue<StringKeyValue>* m_southEastPlaneName;
+    AnimValue<StringKeyValue>* m_southWestPlaneName;
+    AnimValue<StringKeyValue>* m_northWestPlaneName;
+
     void Draw(bool a_preview, double a_delta, Camera* a_camera);
 protected:
 

@@ -191,6 +191,10 @@ void AppMain::Open()
                 {
                     delete m_skeletonEditor;
                 }
+                if (m_modelEditor != nullptr)
+                {
+                    delete m_modelEditor;
+                }
 
                 m_modelController = ModelController::Load(zip); 
                 m_skeletonEditor = SkeletonEditor::Load(zip);
