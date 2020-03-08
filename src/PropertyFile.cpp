@@ -41,6 +41,19 @@ int PropertyFile::LoadProperty(PropertyFileProperty* a_parent, const char* a_dat
             
             m_properties->emplace_back(property);
 
+            if (spc == -1)
+            {
+                const int len = i - open;
+
+                char* name = new char[len];
+                memcpy(name, a_data + open + 1, len - 1);
+                name[len - 1] = 0;
+
+                property->SetName(name);
+
+                delete[] name;
+            }            
+
             break;
         }
         case ' ':

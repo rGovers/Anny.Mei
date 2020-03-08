@@ -4,10 +4,8 @@
 
 class DataStore;
 class ModelController;
-class ModelEditor;
-class SkeletonEditor;
-class TextureEditor;
 class WebcamController;
+class Workspace;
 
 class AppMain : public Application
 {
@@ -17,10 +15,8 @@ private:
     WebcamController*     m_webcamController;
           
     ModelController*      m_modelController;
-      
-    SkeletonEditor*       m_skeletonEditor;
-    TextureEditor*        m_textureEditor;
-    ModelEditor*          m_modelEditor;
+
+    Workspace*            m_workspace;
     
     const char*           m_filePath;
 

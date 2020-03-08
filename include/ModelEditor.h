@@ -3,6 +3,7 @@
 #include <glm/glm.hpp>
 #include <list>
 
+#include "EditorController.h"
 #include "miniz.h"
 
 enum class e_ModelType;
@@ -11,6 +12,7 @@ class Camera;
 class ImageDisplay;
 class IntermediateRenderer;
 class Model;
+class ModelEditorWindow;
 struct ModelVertex;
 class MorphPlane;
 class MorphPlaneDisplay;
@@ -18,7 +20,8 @@ class Name;
 class Namer;
 class PropertyFileProperty;
 class RenderTexture;
-class ShaderProgram;
+class Texture;
+class Workspace;
 
 enum class e_ToolMode
 {
@@ -33,31 +36,33 @@ enum class e_Axis
     Y
 };
 
-class ModelEditor
+struct MorphPlaneData
+{
+    Name* MorphPlaneName;
+    MorphPlane* Plane;
+};
+
+struct ModelData
+{
+    char* TextureName;
+    Name* ModelName; 
+    Model* BaseModel;
+    unsigned int VertexCount;
+    ModelVertex* Vertices;  
+    unsigned int IndexCount;
+    unsigned int* Indices;
+
+    Model* MorphPlaneModel;
+    int MorphPlaneSize;
+    std::list<MorphPlaneData*> MorphPlanes;
+};
+
+class ModelEditor : public EditorController
 {
 private:
-    
+    ModelEditorWindow*      m_window;
 
-    struct MorphPlaneData
-    {
-        Name* MorphPlaneName;
-        MorphPlane* Plane;
-    };
-
-    struct ModelData
-    {
-        char* TextureName;
-        Name* ModelName; 
-        Model* BaseModel;
-        unsigned int VertexCount;
-        ModelVertex* Vertices;  
-        unsigned int IndexCount;
-        unsigned int* Indices;
-
-        Model* MorphPlaneModel;
-        int MorphPlaneSize;
-        std::list<MorphPlaneData*> MorphPlanes;
-    };
+    Workspace*              m_workspace;
 
     IntermediateRenderer*   m_intermediateRenderer;
 
@@ -74,25 +79,6 @@ private:
     ImageDisplay*           m_imageDisplay;
     MorphPlaneDisplay*      m_morphPlaneDisplay;
 
-    bool                    m_solid;
-    bool                    m_wireframe;
-    bool                    m_alpha;
-
-    float                   m_zoom;
-    glm::vec2               m_lastMousePos;
-
-    e_ToolMode              m_toolMode;
-
-    bool                    m_dragging;
-    e_Axis                  m_axis;
-    glm::vec2               m_selectMid;
-    glm::vec2               m_lastPos;
-
-    glm::vec2               m_startDragPos;
-    glm::vec2               m_endDragPos;
-
-    glm::vec3               m_translation;
-
     std::list<unsigned int> m_selectedIndices;
 
     void GetModelData(PropertyFileProperty& a_property, mz_zip_archive& a_archive);
@@ -106,14 +92,37 @@ private:
 protected:
 
 public:
-    ModelEditor();
+    ModelEditor() = delete;
+    ModelEditor(Workspace* a_workspace);
     ~ModelEditor();
+
+    bool IsModelSelected() const;
+    bool IsMorphPlaneSelected() const;
+
+    void DrawModelList();
 
     void Update(double a_delta);
 
-    static ModelEditor* Load(mz_zip_archive& a_archive);
-
+    static ModelEditor* Load(mz_zip_archive& a_archive, Workspace* a_workspace);
     void Save(mz_zip_archive& a_archive) const;
 
     void AddModel(const char* a_textureName, ModelVertex* a_vertices, unsigned int a_vertexCount, unsigned int* a_indices, unsigned int a_indexCount);
+
+    virtual void DrawPropertiesWindow();
+    virtual void DrawEditorWindow();
+
+    const Texture* DrawEditor();
+
+    void RenameModel(const char* a_newName);
+    void SetTextureName(const char* a_name);
+
+    void ResizeMorphPlane(int a_newSize);
+    void AddMorphPlaneClicked();
+    bool IsMorphPlaneSelected(MorphPlaneData* a_morphPlane) const;
+    void MorphPlaneSelected(MorphPlaneData* a_morphPlane);
+
+    void DrawSelectionBox(const glm::vec2& a_startPos, const glm::vec2& a_endPos);
+
+    void DragValue(const glm::vec2& a_dragMov);
+    void SelectMouseUp(const glm::vec2& a_startPos, const glm::vec2& a_endPos);
 };

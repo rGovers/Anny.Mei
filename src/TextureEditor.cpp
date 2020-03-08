@@ -3,6 +3,7 @@
 #include <glad/glad.h>
 #include <stb/stb_image.h>
 
+#include "DataStore.h"
 #include "FileUtils.h"
 #include "imgui.h"
 #include "MemoryStream.h"
@@ -13,9 +14,12 @@
 #include "Texture.h"
 #include "TriImage.h"
 #include "WindowControls/TextureEditorWindow.h"
+#include "Workspace.h"
 
-TextureEditor::TextureEditor() 
+TextureEditor::TextureEditor(Workspace* a_workspace) 
 {
+    m_workspace = a_workspace;
+
     m_layers = new std::list<LayerTexture>();
 
     m_selectedIndex = m_layers->end();
@@ -101,7 +105,7 @@ void TextureEditor::TriangulateClicked()
     const unsigned int vertexCount = triImage->GetVertexCount();
     ModelVertex* modelVerticies = triImage->ToModelVertices();
 
-    m_modelEditor->AddModel(layerTexture.Meta->Name, modelVerticies, vertexCount, indicies, indexCount);
+    m_workspace->AddModel(layerTexture.Meta->Name, modelVerticies, vertexCount, indicies, indexCount);
 
     delete triImage;
 }
@@ -172,10 +176,8 @@ void TextureEditor::LoadTexture(const char* a_path)
     m_layers->emplace_back(layerTexture);
 }
 
-void TextureEditor::Update(double a_delta, ModelEditor* a_modelEditor)
+void TextureEditor::Update(double a_delta)
 {
-    m_modelEditor = a_modelEditor;
-
     m_window->Update();
 }
 void TextureEditor::DrawLayerGUI() 
@@ -200,9 +202,18 @@ void TextureEditor::DrawLayerGUI()
             ImGui::Indent(20.0f);
         }
 
-        if (ImGui::Selectable(layerMeta->Name))
+        bool is_selected = (m_selectedIndex == iter); 
+
+        if (ImGui::Selectable(layerMeta->Name, &is_selected))
         {
             m_selectedIndex = iter;
+
+            m_workspace->SelectWorkspace(this);
+        }
+
+        if (is_selected)
+        {
+            ImGui::SetItemDefaultFocus();
         }
 
         if (ImGui::BeginPopupContextItem())
@@ -259,9 +270,9 @@ void TextureEditor::GetImageData(PropertyFileProperty& a_property, mz_zip_archiv
     m_layers->emplace_back(layerTexture);
 }
 
-TextureEditor* TextureEditor::Load(mz_zip_archive& a_archive)
+TextureEditor* TextureEditor::Load(mz_zip_archive& a_archive, Workspace* a_workspace)
 {
-    TextureEditor* textureEditor = new TextureEditor();
+    TextureEditor* textureEditor = new TextureEditor(a_workspace);
 
     char* propertiesData = ExtractFileFromArchive("texture.prop", a_archive);
 
@@ -326,5 +337,13 @@ void TextureEditor::Save(mz_zip_archive& a_archive) const
     if (m_layers->size() > 0)
     {
         SaveImageData(a_archive);
+    }
+}
+
+void TextureEditor::DrawPropertiesWindow()
+{
+    if (LayerSelected())
+    {
+        m_window->UpdatePropertiesWindow();
     }
 }

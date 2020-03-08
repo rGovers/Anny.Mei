@@ -30,6 +30,7 @@ public:
     ~TextureEditorWindow();
 
     void Update();
+    void UpdatePropertiesWindow();
 
     e_TriangulationMode GetTriangulationMode() const;
 

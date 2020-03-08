@@ -6,9 +6,9 @@
 
 class Camera;
 class ModelControllerWindow;
-class SkeletonEditor; 
 class Texture;
 class WebcamController;
+class Workspace;
 
 class ModelController
 {
@@ -24,7 +24,7 @@ public:
     ModelController();
     ~ModelController();
 
-    void DrawModel(const SkeletonEditor* a_skeletonEditor, double a_delta);
+    void DrawModel(const Workspace* a_workspace, double a_delta);
     void Update(const WebcamController& a_webcamController);
 
     static ModelController* Load(mz_zip_archive& a_archive);

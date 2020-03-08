@@ -3,7 +3,7 @@
 #include <istream>
 #include <list>
 
-#include "DataStore.h"
+#include "EditorController.h"
 #include "FileLoaders/ImageLoader.h"
 #include "miniz.h"
 
@@ -13,6 +13,7 @@ class PropertyFileProperty;
 class SkeletonController;
 class Texture;
 class TextureEditorWindow;
+class Workspace;
 
 struct ModelVertex;
 
@@ -29,15 +30,15 @@ enum class e_TriangulationMode
     Outline
 };
 
-class TextureEditor
+class TextureEditor : public EditorController
 {
 private:
+    Workspace*                        m_workspace;
+
     TextureEditorWindow*              m_window;
         
     std::list<LayerTexture>*          m_layers;
     std::list<LayerTexture>::iterator m_selectedIndex;
-
-    ModelEditor*                      m_modelEditor;
 
     Texture* GenerateTexture(LayerTexture& a_layerTexture) const;
     
@@ -47,18 +48,21 @@ private:
 protected:
 
 public:
-    TextureEditor();
+    TextureEditor() = delete;
+    TextureEditor(Workspace* a_workspace);
     ~TextureEditor();
 
     bool LayerSelected() const;
 
     void TriangulateClicked();
 
-    void Update(double a_delta, ModelEditor* a_modelEditor);
+    void Update(double a_delta);
     void DrawLayerGUI();
 
     void LoadTexture(const char* a_path);
 
-    static TextureEditor* Load(mz_zip_archive& a_archive);
+    static TextureEditor* Load(mz_zip_archive& a_archive, Workspace* a_workspace);
     void Save(mz_zip_archive& a_archive) const;
+
+    virtual void DrawPropertiesWindow();
 };

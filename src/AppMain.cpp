@@ -4,18 +4,17 @@
 #include <list>
 #include <stdio.h>
 
+#include "ColorTheme.h"
+#include "DataStore.h"
 #include "FileDialog.h"
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
 #include "imgui_internal.h"
-#include "miniz.h"
 #include "ModelController.h"
-#include "ModelEditor.h"
-#include "SkeletonEditor.h"
 #include "Texture.h"
-#include "TextureEditor.h"
 #include "WebcamController.h"
+#include "Workspace.h"
 
 void GLAPIENTRY
 MessageCallback( GLenum a_source,
@@ -39,27 +38,35 @@ void GUIStyle()
 
     ImVec4* colors = style->Colors;
 
-    colors[ImGuiCol_WindowBg]               = ImVec4(0.20f, 0.20f, 0.20f, 1.00f);
-    colors[ImGuiCol_TitleBg]                = ImVec4(0.10f, 0.10f, 0.10f, 1.00f);
-    colors[ImGuiCol_TitleBgActive]          = ImVec4(0.15f, 0.15f, 0.15f, 1.00f);
+    const ImVec4 iBackColor = ImVec4(BACKGROUND_COLOR.x, BACKGROUND_COLOR.y, BACKGROUND_COLOR.z, BACKGROUND_COLOR.w);
+    const ImVec4 iTitleColor = ImVec4(TITLE_COLOR.x, TITLE_COLOR.y, TITLE_COLOR.z, TITLE_COLOR.w);
+    const ImVec4 iActiveTitleColor = ImVec4(ACTIVE_TITLE_COLOR.x, ACTIVE_TITLE_COLOR.y, ACTIVE_TITLE_COLOR.z, ACTIVE_TITLE_COLOR.w);
 
-    colors[ImGuiCol_Header]                 = ImVec4(1.00f, 0.40f, 0.30f, 0.60f);
-    colors[ImGuiCol_HeaderHovered]          = ImVec4(1.00f, 0.40f, 0.30f, 0.80f);
-    colors[ImGuiCol_HeaderActive]           = ImVec4(1.00f, 0.40f, 0.30f, 1.00f);
+    const ImVec4 iInactiveColor = ImVec4(INACTIVE_COLOR.x, INACTIVE_COLOR.y, INACTIVE_COLOR.z, INACTIVE_COLOR.w);
+    const ImVec4 iHoverColor = ImVec4(HOVER_COLOR.x, HOVER_COLOR.y, HOVER_COLOR.z, HOVER_COLOR.w);
+    const ImVec4 iActiveColor = ImVec4(ACTIVE_COLOR.x, ACTIVE_COLOR.y, ACTIVE_COLOR.z, ACTIVE_COLOR.w);
 
-    colors[ImGuiCol_Tab]                    = ImVec4(1.00f, 0.40f, 0.30f, 0.60f);
-    colors[ImGuiCol_TabHovered]             = ImVec4(1.00f, 0.40f, 0.30f, 0.80f);
-    colors[ImGuiCol_TabActive]              = ImVec4(1.00f, 0.40f, 0.30f, 1.00f);
-    colors[ImGuiCol_TabUnfocused]           = ImVec4(0.80f, 0.40f, 0.30f, 0.80f);
-    colors[ImGuiCol_TabUnfocusedActive]     = ImVec4(0.80f, 0.40f, 0.30f, 1.00f);
+    colors[ImGuiCol_WindowBg]               = iBackColor;
+    colors[ImGuiCol_TitleBg]                = iTitleColor;
+    colors[ImGuiCol_TitleBgActive]          = iActiveTitleColor;
 
-    colors[ImGuiCol_FrameBg]                = ImVec4(1.00f, 0.40f, 0.30f, 0.60f);
-    colors[ImGuiCol_FrameBgHovered]         = ImVec4(1.00f, 0.40f, 0.30f, 0.80f);
-    colors[ImGuiCol_FrameBgActive]          = ImVec4(1.00f, 0.40f, 0.30f, 1.00f);
+    colors[ImGuiCol_Header]                 = iInactiveColor;
+    colors[ImGuiCol_HeaderHovered]          = iHoverColor;
+    colors[ImGuiCol_HeaderActive]           = iActiveColor;
 
-    colors[ImGuiCol_Button]                 = ImVec4(1.00f, 0.40f, 0.30f, 0.60f);
-    colors[ImGuiCol_ButtonHovered]          = ImVec4(1.00f, 0.40f, 0.30f, 0.80f);
-    colors[ImGuiCol_ButtonActive]           = ImVec4(1.00f, 0.40f, 0.30f, 1.00f);
+    colors[ImGuiCol_Tab]                    = iInactiveColor;
+    colors[ImGuiCol_TabHovered]             = iHoverColor;
+    colors[ImGuiCol_TabActive]              = iActiveColor;
+    colors[ImGuiCol_TabUnfocused]           = iInactiveColor;
+    colors[ImGuiCol_TabUnfocusedActive]     = iHoverColor;
+
+    colors[ImGuiCol_FrameBg]                = iInactiveColor;
+    colors[ImGuiCol_FrameBgHovered]         = iHoverColor;
+    colors[ImGuiCol_FrameBgActive]          = iActiveColor;
+
+    colors[ImGuiCol_Button]                 = iInactiveColor;
+    colors[ImGuiCol_ButtonHovered]          = iHoverColor;
+    colors[ImGuiCol_ButtonActive]           = iActiveColor;
 }
 
 AppMain::AppMain(int a_width, int a_height) : 
@@ -68,10 +75,6 @@ AppMain::AppMain(int a_width, int a_height) :
     m_webcamController = new WebcamController(1280, 720);
 
     m_modelController = nullptr;
-
-    m_skeletonEditor = nullptr;
-    m_textureEditor = nullptr;
-    m_modelEditor = nullptr;
 
     glEnable(GL_DEBUG_OUTPUT);
     glDebugMessageCallback(MessageCallback, 0);
@@ -92,6 +95,8 @@ AppMain::AppMain(int a_width, int a_height) :
 
     FileDialog::Create();
 
+    m_workspace = new Workspace();
+
     m_resetWindows = true;
 
     m_windowUpdateTimer = 0.0;
@@ -106,21 +111,11 @@ AppMain::~AppMain()
 
     delete m_webcamController;
 
-    if (m_skeletonEditor != nullptr)
-    {
-        delete m_skeletonEditor;
-    }
+    delete m_workspace;
+
     if (m_modelController != nullptr)
     {
         delete m_modelController;
-    }
-    if (m_modelEditor != nullptr)
-    {
-        delete m_modelEditor;
-    }
-    if (m_textureEditor != nullptr)
-    {
-        delete m_textureEditor;
     }
 }
 
@@ -130,18 +125,6 @@ void AppMain::New()
     {
         delete m_modelController;
     }
-    if (m_textureEditor != nullptr)
-    {
-        delete m_textureEditor;
-    }    
-    if (m_skeletonEditor != nullptr)
-    {
-        delete m_skeletonEditor;
-    }
-    if (m_modelEditor != nullptr)
-    {
-        delete m_modelEditor;
-    }
 
     if (m_dataStore != nullptr)
     {
@@ -150,12 +133,10 @@ void AppMain::New()
 
     m_dataStore = new DataStore();
 
-    m_skeletonEditor = new SkeletonEditor();
+    m_workspace->Init();
+
     m_modelController = new ModelController();
     
-    m_textureEditor = new TextureEditor();
-    m_modelEditor = new ModelEditor();
-
     m_filePath = nullptr;
 }
 void AppMain::Open()
@@ -183,23 +164,14 @@ void AppMain::Open()
                 {
                     delete m_modelController;
                 }
-                if (m_textureEditor != nullptr)
-                {
-                    delete m_textureEditor;
-                }
-                if (m_skeletonEditor != nullptr)
-                {
-                    delete m_skeletonEditor;
-                }
-                if (m_modelEditor != nullptr)
-                {
-                    delete m_modelEditor;
-                }
 
                 m_modelController = ModelController::Load(zip); 
-                m_skeletonEditor = SkeletonEditor::Load(zip);
-                m_textureEditor = TextureEditor::Load(zip);
-                m_modelEditor = ModelEditor::Load(zip);
+
+                m_workspace->Open(zip);
+            } 
+            else
+            {
+                m_workspace->Init();
             } 
 
             mz_zip_reader_end(&zip);
@@ -207,18 +179,6 @@ void AppMain::Open()
             if (m_modelController == nullptr)
             {
                 m_modelController = new ModelController();
-            }
-            if (m_skeletonEditor == nullptr)
-            {
-                m_skeletonEditor = new SkeletonEditor();
-            }
-            if (m_textureEditor == nullptr)
-            {
-                m_textureEditor = new TextureEditor();
-            }
-            if (m_modelEditor == nullptr)
-            {
-                m_modelEditor = new ModelEditor();
             }
         }
         else
@@ -237,9 +197,8 @@ void AppMain::Save() const
     if (mz_zip_writer_init_file(&zip, m_filePath, 0))
     {
         m_modelController->Save(zip);
-        m_textureEditor->Save(zip);
-        m_skeletonEditor->Save(zip);
-        m_modelEditor->Save(zip);
+
+        m_workspace->Save(zip);
 
         mz_zip_writer_finalize_archive(&zip);
         mz_zip_writer_end(&zip);
@@ -302,13 +261,10 @@ void AppMain::ResetDockedWindows()
     ImGuiID dockLeft = ImGui::DockBuilderSplitNode(dockMainID, ImGuiDir_Left, 0.1f, nullptr, &dockMainID);
 
     ImGui::DockBuilderDockWindow("Preview", dockMainID);
-    ImGui::DockBuilderDockWindow("Model Editor", dockMainID);
-    ImGui::DockBuilderDockWindow("Skeleton Preview", dockMainID);
+    ImGui::DockBuilderDockWindow("Editor", dockMainID);
 
     ImGui::DockBuilderDockWindow("Options", dockRight);
-    ImGui::DockBuilderDockWindow("Texture Editor Toolbox", dockRight);
-    ImGui::DockBuilderDockWindow("Model Properties", dockRight);
-    ImGui::DockBuilderDockWindow("Object Properties", dockRight);
+    ImGui::DockBuilderDockWindow("Properties", dockRight);
 
     ImGui::DockBuilderDockWindow("Texture List", dockLeft);
     ImGui::DockBuilderDockWindow("Model List", dockLeft);
@@ -355,7 +311,7 @@ void AppMain::Update(double a_delta)
 
     if (m_modelController != nullptr)
     {
-        m_modelController->DrawModel(m_skeletonEditor, a_delta);
+        m_modelController->DrawModel(m_workspace, a_delta);
     }
 
     m_webcamController->Update();
@@ -381,7 +337,7 @@ void AppMain::Update(double a_delta)
                 Open();
             }
             
-            const bool enabledModel = m_textureEditor != nullptr;
+            const bool enabledModel = m_workspace->IsEnabled();
 
             if (ImGui::MenuItem("Save", "Ctrl+S", nullptr, m_filePath != nullptr && enabledModel))
             {
@@ -401,12 +357,9 @@ void AppMain::Update(double a_delta)
                 
                 delete[] filters;
                 
-                if (filePath != nullptr)
-                {
-                    if (filePath[0] != 0)
+                if (filePath != nullptr && filePath[0] != 0)
                     {
-                        m_textureEditor->LoadTexture(filePath);
-                    }
+                    m_workspace->LoadTexture(filePath);
                 }
             }
 
@@ -440,22 +393,12 @@ void AppMain::Update(double a_delta)
         ResetDockedWindows();
     }
 
-    if (m_skeletonEditor != nullptr)
-    {
-        m_skeletonEditor->Update(a_delta);
-    }
-    if (m_textureEditor != nullptr)
-    {
-        m_textureEditor->Update(a_delta, m_modelEditor);
-    }
     if (m_modelController != nullptr)
     {
         m_modelController->Update(*m_webcamController);
     }
-    if (m_modelEditor != nullptr)
-    {
-        m_modelEditor->Update(a_delta);
-    }
+
+    m_workspace->Update(a_delta);
 
     ImGui::Render();
 

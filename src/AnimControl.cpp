@@ -4,6 +4,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 #include "AnimValue.h"
+#include "ColorTheme.h"
 #include "imgui.h"
 #include "IntermediateRenderer.h"
 #include "Object.h"
@@ -87,7 +88,7 @@ const Texture* AnimControl::DrawTimeline(int& a_height)
             {
                 const glm::vec4 pos = viewProj * glm::vec4(*keyIter, index + 0.5f, 0, 1);
 
-                m_imRenderer->DrawSolidCircle(pos, 10, 0.5f, { 0.8f, 0.3f, 0.2f, 1 }, 1.0f / (maxValue * 25.0f), 1.0f / size);
+                m_imRenderer->DrawSolidCircle(pos, 10, 0.5f, INACTIVE_COLOR, 1.0f / (maxValue * 25.0f), 1.0f / size);
 
                 if (*keyIter <= selectedTime)
                 {
@@ -135,7 +136,7 @@ const Texture* AnimControl::DrawTimeline(int& a_height)
     const glm::vec4 linePosA = viewProj * glm::vec4(selectedTime, size, 0, 1);
     const glm::vec4 linePosB = viewProj * glm::vec4(selectedTime, 0, 0, 1);
 
-    m_imRenderer->DrawLine(linePosA, linePosB, 0.05f / maxValue, { 1.0f, 0.4f, 0.3f, 1 });
+    m_imRenderer->DrawLine(linePosA, linePosB, 0.05f / maxValue, ACTIVE_COLOR);
 
     m_renderTexture->Bind();
 

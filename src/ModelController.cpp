@@ -10,10 +10,10 @@
 #include "MemoryStream.h"
 #include "Object.h"
 #include "PropertyFile.h"
-#include "SkeletonEditor.h"
 #include "Texture.h"
 #include "WebcamController.h"
 #include "WindowControls/ModelControllerWindow.h"
+#include "Workspace.h"
 
 ModelController::ModelController()
 {
@@ -47,14 +47,14 @@ void DrawObjects(Object* a_object, Camera* a_camera, double a_delta)
     }
 }
 
-void ModelController::DrawModel(const SkeletonEditor* a_skeletonEditor, double a_delta)
+void ModelController::DrawModel(const Workspace* a_workspace, double a_delta)
 {
     const glm::vec3 backColor = m_window->GetBackgroundColor();
 
     glClearColor(backColor.x, backColor.y, backColor.z, 1);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    Object* baseObject = a_skeletonEditor->GetBaseObject();
+    Object* baseObject = a_workspace->GetBaseObject();
 
     DrawObjects(baseObject, m_camera, a_delta);
 }

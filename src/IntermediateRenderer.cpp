@@ -93,7 +93,7 @@ void IntermediateRenderer::DrawLine(const glm::vec3& a_start, const glm::vec3& a
     m_indices.emplace_back(startInd + 2);
 }
 
-void IntermediateRenderer::DrawCircle(const glm::vec3& a_pos, int a_iteration, float a_radius, float a_width, const glm::vec4& a_color)
+void IntermediateRenderer::DrawCircle(const glm::vec3& a_pos, int a_iteration, float a_radius, float a_width, const glm::vec4& a_color, float a_widthScale, float a_heightScale)
 {
     const static float PI2 = (M_PI * 2);
 
@@ -105,8 +105,8 @@ void IntermediateRenderer::DrawCircle(const glm::vec3& a_pos, int a_iteration, f
         const glm::vec2 dirA = { sin(angleA), cos(angleA) };
         const glm::vec2 dirB = { sin(angleB), cos(angleB) };
 
-        const glm::vec3 posA = a_pos + glm::vec3(dirA, 0) * a_radius;
-        const glm::vec3 posB = a_pos + glm::vec3(dirB, 0) * a_radius;
+        const glm::vec3 posA = a_pos + glm::vec3(dirA.x * a_radius * a_widthScale, dirA.y * a_radius * a_heightScale, 0);
+        const glm::vec3 posB = a_pos + glm::vec3(dirB.x * a_radius * a_widthScale, dirB.y * a_radius * a_heightScale, 0) * a_radius;
 
         DrawLine(posA, posB, a_width, a_color);
     }

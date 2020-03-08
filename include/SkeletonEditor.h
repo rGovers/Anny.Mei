@@ -1,60 +1,52 @@
 #pragma once
 
-#define GLM_SWIZZLE
 #include <glm/glm.hpp>
 #include <istream>
 #include <map>
 
+#include "EditorController.h"
 #include "miniz.h"
 
 class AnimControl;
-class Camera;
 class IntermediateRenderer;
-class Model;
-struct ModelVertex;
 class Namer;
 class Object;
 class PropertyFile;
 class PropertyFileProperty;
 class RenderTexture;
+class SkeletonEditorWindow;
+class Texture;
+class Workspace;
 
-struct ModelData
-{
-    unsigned int* Indices;
-    ModelVertex* Vertices;
-    unsigned int IndexCount;
-    unsigned int VertexCount;
-    Model* GModel;
-};
-
-class SkeletonEditor
+class SkeletonEditor : public EditorController
 {
 private:
+    SkeletonEditorWindow* m_window;
+
+    Workspace*            m_workspace;
+
     Namer*                m_namer;
 
     Object*               m_baseObject;
     Object*               m_selectedObject;
 
-    Camera*               m_camera;
-
     IntermediateRenderer* m_imRenderer;
     RenderTexture*        m_renderTexture;
 
-    glm::vec2             m_lastMousePos;
-
     AnimControl*          m_animControl;
 
-    float                 m_zoom;
-
-    void ListObjects(Object* a_object, int& a_node);
+    double                m_delta;
 
     void LoadObject(Object* a_object, PropertyFileProperty* a_property);
     void SaveObject(PropertyFile* a_propertyFile, PropertyFileProperty* a_parent, Object* a_object) const;
 protected:
 
 public:
-    SkeletonEditor();
+    SkeletonEditor() = delete;
+    SkeletonEditor(Workspace* a_workspace);
     ~SkeletonEditor();
+
+    void ListObjects(Object* a_object, int& a_node);
 
     Object* GetBaseObject() const;
 
@@ -62,6 +54,11 @@ public:
 
     void Update(double a_delta);
 
-    static SkeletonEditor* Load(mz_zip_archive& a_archive);
+    const Texture* DrawEditor();
+
+    static SkeletonEditor* Load(mz_zip_archive& a_archive, Workspace* a_workspace);
     void Save(mz_zip_archive& a_archive) const;
+
+    virtual void DrawPropertiesWindow();
+    virtual void DrawEditorWindow();
 };
