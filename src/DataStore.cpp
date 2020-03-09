@@ -49,6 +49,11 @@ void DataStore::AddModel(const char* a_name, Model* a_model)
     {
         modelWrap = new ModelWrap();
 
+        modelWrap->Base = nullptr;
+        modelWrap->MorphPlane = nullptr;
+        modelWrap->MorphTarget = nullptr;
+        modelWrap->TextureName = nullptr;
+
         m_models.emplace(a_name, modelWrap);
     }
     
@@ -63,6 +68,12 @@ void DataStore::AddModel(const char* a_name, Model* a_model)
     case e_ModelType::MorphPlane:
     {
         modelWrap->MorphPlane = a_model;
+
+        break;
+    }
+    case e_ModelType::MorphTarget:
+    {
+        modelWrap->MorphTarget = a_model;
 
         break;
     }
@@ -84,6 +95,10 @@ Model* DataStore::GetModel(const char* a_name, e_ModelType a_modelType) const
         {
             return iter->second->MorphPlane;
         }
+        case e_ModelType::MorphTarget:
+        {
+            return iter->second->MorphTarget;
+        }
         }
     }
 
@@ -100,7 +115,7 @@ void DataStore::RemoveModelAll(const char* a_name)
         m_models.erase(iter);
     }
 }
-void DataStore::RemoteModel(const char* a_name, e_ModelType a_modelType)
+void DataStore::RemoveModel(const char* a_name, e_ModelType a_modelType)
 {
     auto iter = m_models.find(a_name);
 
@@ -117,11 +132,19 @@ void DataStore::RemoteModel(const char* a_name, e_ModelType a_modelType)
         case e_ModelType::MorphPlane:
         {
             iter->second->MorphPlane = nullptr;
+
+            break;
+        }
+        case e_ModelType::MorphTarget:
+        {
+            iter->second->MorphTarget = nullptr;
+
+            break;
         }
         }
     }
 
-    if (iter->second->Base == nullptr && iter->second->MorphPlane == nullptr)
+    if (iter->second->Base == nullptr && iter->second->MorphPlane == nullptr && iter->second->MorphTarget == nullptr)
     {
         RemoveModelAll(a_name);
     }

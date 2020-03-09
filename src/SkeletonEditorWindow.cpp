@@ -116,7 +116,7 @@ void SkeletonEditorWindow::UpdatePropertiesWindow(Object* a_selectedObject)
 void SkeletonEditorWindow::UpdateEditorWindow()
 {
     const ImVec2 size = ImGui::GetWindowSize();
-    const glm::vec2 useSize = { size.x - 20, size.y - 40 };
+    const glm::vec2 useSize = { size.x - 20, size.y - 60 };
     if (ImGui::IsWindowFocused())
     {
         const glm::vec2 halfSize = useSize * 0.5f;

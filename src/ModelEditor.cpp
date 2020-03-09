@@ -13,18 +13,20 @@
 #include "IntermediateRenderer.h"
 #include "Models/Model.h"
 #include "Models/MorphPlaneModel.h"
+#include "Models/MorphTargetModel.h"
 #include "MorphPlane.h"
 #include "Name.h"
 #include "Namer.h"
 #include "PropertyFile.h"
 #include "Renderers/ImageDisplay.h"
 #include "Renderers/MorphPlaneDisplay.h"
+#include "Renderers/MorphTargetDisplay.h"
 #include "RenderTexture.h"
 #include "StaticTransform.h"
 #include "WindowControls/ModelEditorWindow.h"
 #include "Workspace.h"
 
-const static int IMAGE_SIZE = 2048;
+const static int IMAGE_SIZE = 4096;
 
 ModelEditor::ModelEditor(Workspace* a_workspace)
 {
@@ -43,6 +45,7 @@ ModelEditor::ModelEditor(Workspace* a_workspace)
 
     m_imageDisplay = new ImageDisplay();
     m_morphPlaneDisplay = new MorphPlaneDisplay();
+    m_morphTargetDisplay = new MorphTargetDisplay();
 
     m_selectedModelData = nullptr;
     m_selectedMorphPlane = nullptr;
@@ -53,11 +56,7 @@ ModelEditor::~ModelEditor()
 
     for (auto iter = m_models->begin(); iter != m_models->end(); ++iter)
     {
-        delete[] (*iter)->TextureName;
-        delete (*iter)->ModelName;
-        delete (*iter)->BaseModel;
-
-        delete *iter;
+        DeleteModelData(*iter);
     }
 
     delete m_models;
@@ -65,6 +64,8 @@ ModelEditor::~ModelEditor()
     delete m_renderTexture;
 
     delete m_imageDisplay;
+    delete m_morphPlaneDisplay;
+    delete m_morphTargetDisplay;
 
     delete m_namer;
     delete m_morphPlaneNamer;
@@ -83,8 +84,6 @@ bool ModelEditor::IsMorphPlaneSelected() const
 
 void ModelEditor::DrawModelList()
 {
-    DataStore* store = DataStore::GetInstance();
-
     ImGui::BeginChild("Layer Model Scroll");
 
     auto removeIter = m_models->end();
@@ -97,6 +96,9 @@ void ModelEditor::DrawModelList()
         {
             m_selectedModelData = *iter;
             m_selectedMorphPlane = nullptr;
+            m_selectedMorphTarget = nullptr;
+
+            m_selectedIndices.clear();
 
             m_workspace->SelectWorkspace(this);
         }
@@ -112,6 +114,19 @@ void ModelEditor::DrawModelList()
             {
                 removeIter = iter;
             }
+            if (ImGui::MenuItem("Duplicate Model"))
+            {
+                const unsigned int vertexCount = (*iter)->VertexCount;
+                const unsigned int indexCount = (*iter)->IndexCount;
+
+                ModelVertex* vertices = new ModelVertex[vertexCount];
+                unsigned int* indices = new unsigned int[indexCount];
+
+                memcpy(vertices, (*iter)->Vertices, vertexCount * sizeof(ModelVertex));
+                memcpy(indices, (*iter)->Indices, indexCount * sizeof(unsigned int));
+
+                AddModel((*iter)->TextureName, vertices, vertexCount, indices, indexCount);
+            }
 
             ImGui::EndPopup();
         }
@@ -119,18 +134,16 @@ void ModelEditor::DrawModelList()
 
     if (removeIter != m_models->end())
     {
-        store->RemoteModel((*removeIter)->ModelName->GetName(), (*removeIter)->BaseModel->GetModelType());
-
         if (m_selectedModelData == *removeIter)
         {
             m_selectedModelData = nullptr;
+            m_selectedMorphPlane = nullptr;
+            m_selectedMorphTarget = nullptr;
+
+            m_selectedIndices.clear();
         }
 
-        delete[] (*removeIter)->TextureName;
-        delete (*removeIter)->ModelName;
-        delete (*removeIter)->BaseModel;
-
-        delete *removeIter;
+        DeleteModelData(*removeIter);
 
         m_models->erase(removeIter);
     }
@@ -138,6 +151,88 @@ void ModelEditor::DrawModelList()
     ImGui::EndChild();
 }
 
+void ModelEditor::DeleteModelData(ModelData* a_modelData)
+{
+    DataStore* store = DataStore::GetInstance();
+
+    store->RemoveModelAll(a_modelData->ModelName->GetName());
+
+    delete[] a_modelData->TextureName;
+    delete a_modelData->ModelName;
+
+    delete a_modelData->BaseModel;
+    delete a_modelData->PlaneModel;
+    delete a_modelData->TargetModel;
+
+    delete[] a_modelData->Vertices;
+    delete[] a_modelData->Indices;
+
+    for (auto iter = a_modelData->MorphPlanes.begin(); iter != a_modelData->MorphPlanes.end(); ++iter)
+    {
+        delete (*iter)->Plane;
+        delete (*iter)->MorphPlaneName;
+
+        delete *iter;
+    }
+
+    if (a_modelData->MorphTargetData != nullptr)
+    {
+        for (int i = 0; i < 8; ++i)
+        {
+            delete[] a_modelData->MorphTargetData[i];
+        }
+        delete[] a_modelData->MorphTargetData;
+    }
+
+    delete a_modelData;
+}
+
+void ModelEditor::LoadMorphTargetData(const char* a_modelName, const char* a_dirName, int a_index, ModelData* a_modelData, mz_zip_archive& a_archive) const
+{
+    DataStore* store = DataStore::GetInstance();
+
+    std::string morphTargetFileName = "mrpTrg/[" + std::string(a_modelName) + "] " + a_dirName + ".trgbin";
+
+    char* data = ExtractFileFromArchive(morphTargetFileName.c_str(), a_archive);
+
+    const unsigned int vertexCount = a_modelData->VertexCount;
+
+    if (data != nullptr)
+    {
+        if (a_modelData->TargetModel == nullptr)
+        {
+            a_modelData->TargetModel = new MorphTargetModel(*a_modelData->BaseModel);
+
+            a_modelData->MorphTargetData = new glm::vec4*[8];
+            
+            store->AddModel(a_modelData->ModelName->GetName(), a_modelData->TargetModel);
+        }
+
+        a_modelData->MorphTargetData[a_index] = new glm::vec4[vertexCount];
+
+        const size_t vertexSize = sizeof(glm::vec4);
+
+        a_modelData->MorphTargetData[a_index] = (glm::vec4*)data;
+
+        const unsigned int vbo = a_modelData->TargetModel->GetMorphVBO(a_index);
+
+        glBindBuffer(GL_ARRAY_BUFFER, vbo);
+        glBufferData(GL_ARRAY_BUFFER, vertexCount * vertexSize, a_modelData->MorphTargetData[a_index], GL_STATIC_DRAW);
+
+    }
+    else
+    {
+        if (a_modelData->TargetModel != nullptr)
+        {
+            if (a_modelData->MorphTargetData == nullptr)
+            {
+                a_modelData->MorphTargetData = new glm::vec4*[8];
+            }
+
+            a_modelData->MorphTargetData[a_index] = new glm::vec4[vertexCount];
+        }
+    }
+}
 void ModelEditor::GetModelData(PropertyFileProperty& a_property, mz_zip_archive& a_archive)
 {
     DataStore* dataStore = DataStore::GetInstance();
@@ -169,6 +264,16 @@ void ModelEditor::GetModelData(PropertyFileProperty& a_property, mz_zip_archive&
 
         ModelData* modelData = AddModel(texName, name, trueName, vertices, vertexCount, indicies, indexCount, (e_ModelType)modelType);
 
+        LoadMorphTargetData(name, "East", 0, modelData, a_archive);
+        LoadMorphTargetData(name, "West", 1, modelData, a_archive);
+        LoadMorphTargetData(name, "North", 2, modelData, a_archive);
+        LoadMorphTargetData(name, "South", 3, modelData, a_archive);
+
+        LoadMorphTargetData(name, "North East", 4, modelData, a_archive);
+        LoadMorphTargetData(name, "South East", 5, modelData, a_archive);
+        LoadMorphTargetData(name, "South West", 6, modelData, a_archive);
+        LoadMorphTargetData(name, "North West", 7, modelData, a_archive);
+
         const std::list<PropertyFileProperty*> children = a_property.GetChildren();
         for (auto iter = children.begin(); iter != children.end(); ++iter)
         {
@@ -190,15 +295,15 @@ void ModelEditor::GetModelData(PropertyFileProperty& a_property, mz_zip_archive&
 
                 if (valName != nullptr && valTrueName != nullptr && valSize != -1)
                 {
-                    if (modelData->MorphPlaneModel == nullptr)
+                    if (modelData->PlaneModel == nullptr)
                     {
-                        modelData->MorphPlaneModel = new MorphPlaneModel();
+                        modelData->PlaneModel = new MorphPlaneModel(*modelData->BaseModel);
 
                         modelData->MorphPlaneSize = valSize;
                         
                         GenerateMorphVertexData(modelData);
 
-                        dataStore->AddModel(modelData->ModelName->GetName(), modelData->MorphPlaneModel);
+                        dataStore->AddModel(modelData->ModelName->GetName(), modelData->PlaneModel);
                     }
 
                     MorphPlane* morphPlane = MorphPlane::Load((std::string("mrpPln/") + valName + ".mrpbin").c_str(), a_archive, valSize);
@@ -242,6 +347,10 @@ ModelData* ModelEditor::AddModel(const char* a_textureName, const char* a_name, 
 
     ModelData* modelData = new ModelData();
 
+    modelData->BaseModel = nullptr;
+    modelData->PlaneModel = nullptr;
+    modelData->TargetModel = nullptr;
+
     if (a_textureName != nullptr)
     {
         const size_t strLen = strlen(a_textureName);
@@ -250,25 +359,15 @@ ModelData* ModelEditor::AddModel(const char* a_textureName, const char* a_name, 
         strcpy(modelData->TextureName, a_textureName);
     }
     
-    size_t vertexSize = 0;
+    size_t vertexSize = sizeof(ModelVertex);
 
     Model* model;
 
     switch (a_modelType)
     {
-    case e_ModelType::MorphPlane:
-    {
-        model = modelData->MorphPlaneModel = new MorphPlaneModel();
-
-        vertexSize = sizeof(MorphPlaneModelVertex);
-
-        break;
-    }
     default:
     {
         model = modelData->BaseModel = new Model();            
-        
-        vertexSize = sizeof(ModelVertex);
 
         break;
     }
@@ -280,6 +379,7 @@ ModelData* ModelEditor::AddModel(const char* a_textureName, const char* a_name, 
     modelData->IndexCount = a_indexCount;
     modelData->Indices = a_indices;
     modelData->MorphPlaneSize = 10;
+    modelData->MorphTargetData = nullptr;
 
     if (a_name != nullptr)
     {
@@ -307,8 +407,7 @@ ModelData* ModelEditor::AddModel(const char* a_textureName, const char* a_name, 
 
 void ModelEditor::GenerateMorphVertexData(ModelData* a_model) const
 {
-    const int ibo = a_model->MorphPlaneModel->GetIBO();
-    const int vbo = a_model->MorphPlaneModel->GetVBO();
+    const int vbo = a_model->PlaneModel->GetMorphVBO();
     
     const unsigned int vertexCount = a_model->VertexCount;
 
@@ -323,9 +422,6 @@ void ModelEditor::GenerateMorphVertexData(ModelData* a_model) const
     for (unsigned int i = 0; i < vertexCount; ++i)
     {
         const glm::vec4 pos = modelVerts[i].Position;
-
-        verts[i].Position = pos;
-        verts[i].TexCoord = modelVerts[i].TexCoord;
 
         const glm::vec2 pos2 = { pos.x, pos.y };
         const glm::vec2 posScale = pos2 * (float)planeSize;
@@ -353,12 +449,53 @@ void ModelEditor::GenerateMorphVertexData(ModelData* a_model) const
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
     glBufferData(GL_ARRAY_BUFFER, vertexCount * sizeof(MorphPlaneModelVertex), verts, GL_STATIC_DRAW);
 
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, a_model->IndexCount * sizeof(unsigned int), a_model->Indices, GL_STATIC_DRAW);
-
-    a_model->MorphPlaneModel->SetIndicesCount(a_model->IndexCount);
-
     delete[] verts;
+}
+
+void ModelEditor::TransformArrows(const glm::vec2& a_pos, const glm::mat4& a_transform, e_ToolMode a_toolMode, const glm::vec2& a_scalar) const
+{
+    m_window->SetSelectionPoint(a_pos);
+
+    if (a_toolMode == e_ToolMode::Move)
+    {
+        const glm::vec4 pos = a_transform * glm::vec4(a_pos, 0, 1);
+        const glm::vec3 pos3 = { pos.x, pos.y, -0.2f };
+
+        const glm::vec3 up = { 0, 1, 0 };
+        const glm::vec3 right = { 1, 0, 0 };
+
+        const glm::vec3 upPos = pos3 + (up * 0.1f * a_scalar.y);
+        const glm::vec3 rightPos = pos3 + (right * 0.1f * a_scalar.x);
+
+        const e_Axis axis = m_window->GetAxis();
+        switch (axis)
+        {
+        case e_Axis::X:
+        {
+            m_intermediateRenderer->DrawArrow(upPos, up, 0.05f, 0.01f, { 0, 1, 0, 1 });
+            m_intermediateRenderer->DrawArrow(rightPos, right, 0.1f, 0.01f, { 0.5f, 0, 0, 1 });
+
+            break;
+        }
+        case e_Axis::Y:
+        {
+            m_intermediateRenderer->DrawArrow(upPos, up, 0.1f, 0.01f, { 0, 0.5f, 0, 1 });
+            m_intermediateRenderer->DrawArrow(rightPos, right, 0.05f, 0.01f, { 1, 0, 0, 1 });
+
+            break;
+        }
+        default:
+        {
+            m_intermediateRenderer->DrawArrow(upPos, up, 0.05f, 0.01f, { 0, 1, 0, 1 });
+            m_intermediateRenderer->DrawArrow(rightPos, right, 0.05f, 0.01f, { 1, 0, 0, 1 });
+
+            break;
+        }
+        }
+
+        m_intermediateRenderer->DrawLine(pos3, upPos, 0.01f, { 0, 1, 0, 1 });
+        m_intermediateRenderer->DrawLine(pos3, rightPos, 0.01f, { 1, 0, 0, 1 });
+    }
 }
 
 void ModelEditor::Update(double a_delta)
@@ -392,7 +529,12 @@ ModelEditor* ModelEditor::Load(mz_zip_archive& a_archive, Workspace* a_workspace
 
     return modelEditor;
 }
+void ModelEditor::SaveMorphTargetData(const char* a_modelName, const char* a_dirName, unsigned int a_vertexCount, const glm::vec4* a_data, mz_zip_archive& a_archive) const
+{
+    std::string morphTargetFileName = "mrpTrg/[" + std::string(a_modelName) + "] " + a_dirName + ".trgbin";
 
+    mz_zip_writer_add_mem(&a_archive, morphTargetFileName.c_str(), a_data, a_vertexCount * sizeof(glm::vec4), MZ_DEFAULT_COMPRESSION);
+}
 void ModelEditor::Save(mz_zip_archive& a_archive) const
 {
     if (m_models->size() > 0)
@@ -438,24 +580,21 @@ void ModelEditor::Save(mz_zip_archive& a_archive) const
                 mz_zip_writer_add_mem(&a_archive, morphPlaneFileName.c_str(), (*iIter)->Plane->GetMorphPositions(), trueMorphSize * sizeof(glm::vec2), MZ_DEFAULT_COMPRESSION);
             }
 
+            if ((*iter)->TargetModel != nullptr)
+            {
+                SaveMorphTargetData(name, "East", vertexCount, (*iter)->MorphTargetData[0], a_archive);
+                SaveMorphTargetData(name, "West", vertexCount, (*iter)->MorphTargetData[1], a_archive);
+                SaveMorphTargetData(name, "North", vertexCount, (*iter)->MorphTargetData[2], a_archive);
+                SaveMorphTargetData(name, "South", vertexCount, (*iter)->MorphTargetData[3], a_archive);
+
+                SaveMorphTargetData(name, "North East", vertexCount, (*iter)->MorphTargetData[4], a_archive);
+                SaveMorphTargetData(name, "South East", vertexCount, (*iter)->MorphTargetData[5], a_archive);
+                SaveMorphTargetData(name, "South West", vertexCount, (*iter)->MorphTargetData[6], a_archive);
+                SaveMorphTargetData(name, "North East", vertexCount, (*iter)->MorphTargetData[7], a_archive);
+            }
+
             const unsigned int indiciesSize = indexCount * sizeof(unsigned int);
-            unsigned int verticesSize = 0;
-
-            switch (modelType)
-            {
-            case e_ModelType::MorphPlane:
-            {
-                verticesSize = vertexCount * sizeof(MorphPlaneModelVertex);
-
-                break;
-            }
-            default:
-            {
-                verticesSize = vertexCount * sizeof(ModelVertex);
-
-                break;
-            }
-            }
+            unsigned int verticesSize = vertexCount * sizeof(ModelVertex);
 
             const std::string indexFileName = "mdl/" + std::string(name) + ".indbin";
             const std::string vertexFileName = "mdl/" + std::string(name) + ".verbin";
@@ -534,7 +673,6 @@ const Texture* ModelEditor::DrawEditor()
         scalar.y = scaledWinSize.x / scaledWinSize.y;
     }
     
-
     if (m_selectedMorphPlane)
     {
         const unsigned int size = m_selectedModelData->MorphPlaneSize;
@@ -570,56 +708,20 @@ const Texture* ModelEditor::DrawEditor()
 
         selectMid /= indexCount;
 
-        m_window->SetSelectionPoint(selectMid);
-
-        if (toolMode == e_ToolMode::Move)
-        {
-            const glm::vec4 pos = finalTransform * glm::vec4(selectMid, 0, 1);
-            const glm::vec3 pos3 = { pos.x, pos.y, -0.2f };
-
-            const glm::vec3 up = { 0, 1, 0 };
-            const glm::vec3 right = { 1, 0, 0 };
-
-            const glm::vec3 upPos = pos3 + (up * 0.1f * scalar.y);
-            const glm::vec3 rightPos = pos3 + (right * 0.1f * scalar.x);
-
-            const e_Axis axis = m_window->GetAxis();
-
-            switch (axis)
-            {
-            case e_Axis::X:
-            {
-                m_intermediateRenderer->DrawArrow(upPos, up, 0.05f, 0.01f, { 0, 1, 0, 1 });
-                m_intermediateRenderer->DrawArrow(rightPos, right, 0.1f, 0.01f, { 0.5f, 0, 0, 1 });
-
-                break;
-            }
-            case e_Axis::Y:
-            {
-                m_intermediateRenderer->DrawArrow(upPos, up, 0.1f, 0.01f, { 0, 0.5f, 0, 1 });
-                m_intermediateRenderer->DrawArrow(rightPos, right, 0.05f, 0.01f, { 1, 0, 0, 1 });
-
-                break;
-            }
-            default:
-            {
-                m_intermediateRenderer->DrawArrow(upPos, up, 0.05f, 0.01f, { 0, 1, 0, 1 });
-                m_intermediateRenderer->DrawArrow(rightPos, right, 0.05f, 0.01f, { 1, 0, 0, 1 });
-
-                break;
-            }
-            }
-
-            m_intermediateRenderer->DrawLine(pos3, upPos, 0.01f, { 0, 1, 0, 1 });
-            m_intermediateRenderer->DrawLine(pos3, rightPos, 0.01f, { 1, 0, 0, 1 });
-        }
+        TransformArrows(selectMid, finalTransform, toolMode, scalar);
 
         m_morphPlaneDisplay->SetModelName(m_selectedModelData->ModelName->GetName());
         m_morphPlaneDisplay->SetMorphPlaneName(m_selectedMorphPlane->MorphPlaneName->GetName());
 
         m_morphPlaneDisplay->Draw(finalTransform, alpha, solid, wireframe);
     }
-    else
+    else if (m_selectedMorphTarget)
+    {
+        m_morphTargetDisplay->SetModelName(m_selectedModelData->ModelName->GetName());
+
+        m_morphTargetDisplay->Draw(finalTransform, glm::vec2(1, 0), alpha, solid, wireframe);
+    }
+    else if (m_selectedModelData)
     {
         m_imageDisplay->SetModelName(m_selectedModelData->ModelName->GetName());
 
@@ -653,9 +755,9 @@ void ModelEditor::RenameModel(const char* a_newName)
     {
         store->AddModel(name, m_selectedModelData->BaseModel);
     }
-    if (m_selectedModelData->MorphPlaneModel != nullptr)
+    if (m_selectedModelData->PlaneModel != nullptr)
     {
-        store->AddModel(name, m_selectedModelData->MorphPlaneModel);
+        store->AddModel(name, m_selectedModelData->PlaneModel);
     }
 
     store->SetModelTextureName(name, m_selectedModelData->TextureName);
@@ -708,13 +810,13 @@ void ModelEditor::AddMorphPlaneClicked()
 {
     DataStore* store = DataStore::GetInstance();
 
-    if (m_selectedModelData->MorphPlaneModel == nullptr)
+    if (m_selectedModelData->PlaneModel == nullptr)
     {
-        m_selectedModelData->MorphPlaneModel = new MorphPlaneModel();
+        m_selectedModelData->PlaneModel = new MorphPlaneModel(*m_selectedModelData->BaseModel);
 
         GenerateMorphVertexData(m_selectedModelData);
 
-        store->AddModel(m_selectedModelData->ModelName->GetName(), m_selectedModelData->MorphPlaneModel);
+        store->AddModel(m_selectedModelData->ModelName->GetName(), m_selectedModelData->PlaneModel);
     }
 
     MorphPlaneData* morphData = new MorphPlaneData
@@ -726,13 +828,61 @@ void ModelEditor::AddMorphPlaneClicked()
     m_selectedModelData->MorphPlanes.emplace_back(morphData);
     store->AddMorphPlane(morphData->MorphPlaneName->GetName(), morphData->Plane);
 }
-bool ModelEditor::IsMorphPlaneSelected(MorphPlaneData* a_morphPlane) const
+bool ModelEditor::IsMorphPlaneSelected(const MorphPlaneData* a_morphPlane) const
 {
     return m_selectedMorphPlane == a_morphPlane;
 }
 void ModelEditor::MorphPlaneSelected(MorphPlaneData* a_morphPlane)
 {
     m_selectedMorphPlane = a_morphPlane;
+    m_selectedMorphTarget = nullptr;
+
+    m_window->ResetTools();
+
+    m_selectedIndices.clear();
+}
+
+void ModelEditor::AddMorphTargetsClicked()
+{
+    DataStore* store = DataStore::GetInstance();
+
+    if (m_selectedModelData->TargetModel == nullptr)
+    {
+        m_selectedModelData->TargetModel = new MorphTargetModel(*m_selectedModelData->BaseModel);
+
+        m_selectedModelData->MorphTargetData = new glm::vec4*[8];
+
+        const unsigned int vertexCount = m_selectedModelData->VertexCount;
+        const ModelVertex* modelVertices = m_selectedModelData->Vertices;
+
+        const size_t vertexSize = sizeof(glm::vec4);
+
+        for (int i = 0; i < 8; ++i)
+        {
+            m_selectedModelData->MorphTargetData[i] = new glm::vec4[vertexCount];
+
+            for (unsigned int j = 0; j < vertexCount; ++j)
+            {
+                m_selectedModelData->MorphTargetData[i][j] = modelVertices[j].Position;
+            }
+
+            const unsigned int vbo = m_selectedModelData->TargetModel->GetMorphVBO(i);
+
+            glBindBuffer(GL_ARRAY_BUFFER, vbo);
+            glBufferData(GL_ARRAY_BUFFER, vertexCount * vertexSize, m_selectedModelData->MorphTargetData[i], GL_STATIC_DRAW);
+        }
+
+        store->AddModel(m_selectedModelData->ModelName->GetName(), m_selectedModelData->TargetModel);
+    }
+}
+bool ModelEditor::IsMorphTargetSelected(const glm::vec4* a_morphTarget) const
+{
+    return m_selectedMorphTarget == a_morphTarget;
+}
+void ModelEditor::MorphTargetSelected(glm::vec4* a_morphTarget)
+{
+    m_selectedMorphPlane = nullptr;
+    m_selectedMorphTarget = a_morphTarget;
 
     m_window->ResetTools();
 
@@ -768,10 +918,13 @@ void ModelEditor::DragValue(const glm::vec2& a_dragMov)
 }
 void ModelEditor::SelectMouseUp(const glm::vec2& a_startPos, const glm::vec2& a_endPos)
 {
-    if (IsMorphPlaneSelected())
-    {
-        const ImGuiIO io = ImGui::GetIO();
+    const ImGuiIO io = ImGui::GetIO();
 
+    const glm::vec2 bMin = glm::vec2(glm::min(a_endPos.x, a_startPos.x), glm::min(a_endPos.y, a_startPos.y));
+    const glm::vec2 bMax = glm::vec2(glm::max(a_endPos.x, a_startPos.x), glm::max(a_endPos.y, a_startPos.y)); 
+
+    if (m_selectedMorphPlane)
+    {
         if (!io.KeyShift && !io.KeyCtrl)
         {
             m_selectedIndices.clear();
@@ -782,8 +935,6 @@ void ModelEditor::SelectMouseUp(const glm::vec2& a_startPos, const glm::vec2& a_
         const unsigned int trueSize = size * size;
 
         const glm::vec2* morpPositions = m_selectedMorphPlane->Plane->GetMorphPositions();
-        const glm::vec2 bMin = glm::vec2(glm::min(a_endPos.x, a_startPos.x), glm::min(a_endPos.y, a_startPos.y));
-        const glm::vec2 bMax = glm::vec2(glm::max(a_endPos.x, a_startPos.x), glm::max(a_endPos.y, a_startPos.y)); 
 
         for (unsigned int i = 0; i < trueSize; ++i)
         {

@@ -6,7 +6,8 @@ enum class e_ModelType
 {
     Base,
     Skinned,
-    MorphPlane
+    MorphPlane,
+    MorphTarget
 };
 
 struct ModelVertex
@@ -21,18 +22,21 @@ private:
     const static int IBO = 0;
     const static int VBO = 1;
 
-    unsigned int* m_buffers;
-    unsigned int  m_vao;
+    unsigned long* m_ref;
 
-    unsigned int  m_indicies;
-    unsigned int  m_verticies;
+    unsigned int*  m_buffers;
+    unsigned int   m_vao;
+ 
+    unsigned int   m_indices;
+
 protected:
+    Model(const Model& a_model);
 
 public:
     Model();
     virtual ~Model();
 
-    unsigned int GetVAO() const;
+    virtual unsigned int GetVAO() const;
     unsigned int GetVBO() const;
     unsigned int GetIBO() const;
 

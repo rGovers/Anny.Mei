@@ -1,8 +1,10 @@
+#pragma once
+
 #include "Model.h"
 
 const int INDEX_COUNT = 4;
 
-struct MorphPlaneModelVertex : ModelVertex
+struct MorphPlaneModelVertex
 {
     glm::vec2 MorphPlaneWeights[INDEX_COUNT];
 };
@@ -10,12 +12,17 @@ struct MorphPlaneModelVertex : ModelVertex
 class MorphPlaneModel : public Model
 {
 private:
-    char* m_modelName;
-    char* m_morphPlaneName;
+    unsigned int m_vao;
+    unsigned int m_vbo;
 protected:
 
 public:
     MorphPlaneModel();
+    MorphPlaneModel(const Model& a_model);
+    virtual ~MorphPlaneModel();
+
+    virtual unsigned int GetVAO() const;
+    unsigned int GetMorphVBO() const;
 
     virtual e_ModelType GetModelType() const;
 };

@@ -2,9 +2,12 @@
 
 #include <glad/glad.h>
 
-Model::Model() :
-    m_buffers(new unsigned int[2])
+Model::Model() 
 {
+    m_buffers = new unsigned int[2];
+
+    m_ref = new unsigned long(1UL);
+
     glGenBuffers(2, m_buffers);
     glGenVertexArrays(1, &m_vao);
 
@@ -19,12 +22,28 @@ Model::Model() :
     glVertexAttribPointer(0, 4, GL_FLOAT, false, vertexSize, (void*)offsetof(ModelVertex, Position));
     glVertexAttribPointer(1, 2, GL_FLOAT, false, vertexSize, (void*)offsetof(ModelVertex, TexCoord));
 }
+Model::Model(const Model& a_model)
+{
+    m_ref = a_model.m_ref;
+
+    ++(*m_ref);
+
+    m_buffers = a_model.m_buffers;
+    m_vao = a_model.m_vao;
+    
+    m_indices = a_model.m_indices;
+}
 Model::~Model()
 {
-    glDeleteBuffers(2, m_buffers);
-    glDeleteVertexArrays(1, &m_vao);
+    if (--(*m_ref) <= 0)
+    {
+        delete m_ref;
 
-    delete[] m_buffers;
+        glDeleteBuffers(2, m_buffers);
+        delete[] m_buffers;
+
+        glDeleteVertexArrays(1, &m_vao);
+    }
 }
 
 unsigned int Model::GetVAO() const
@@ -42,11 +61,11 @@ unsigned int Model::GetIBO() const
 
 void Model::SetIndicesCount(unsigned int a_indicies)
 {
-    m_indicies = a_indicies;
+    m_indices = a_indicies;
 }
 unsigned int Model::GetIndicesCount() const
 {
-    return m_indicies;
+    return m_indices;
 }
 
 e_ModelType Model::GetModelType() const

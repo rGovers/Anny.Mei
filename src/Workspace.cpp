@@ -96,7 +96,7 @@ void Workspace::Update(double a_delta)
 
     if (m_selectedEditor != nullptr)
     {
-        if (ImGui::Begin("Editor"))
+        if (ImGui::Begin("Editor", nullptr, ImGuiWindowFlags_MenuBar))
         {
             m_selectedEditor->DrawEditorWindow();
         }

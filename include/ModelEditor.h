@@ -16,6 +16,9 @@ class ModelEditorWindow;
 struct ModelVertex;
 class MorphPlane;
 class MorphPlaneDisplay;
+class MorphPlaneModel;
+class MorphTargetDisplay;
+class MorphTargetModel;
 class Name;
 class Namer;
 class PropertyFileProperty;
@@ -52,9 +55,12 @@ struct ModelData
     unsigned int IndexCount;
     unsigned int* Indices;
 
-    Model* MorphPlaneModel;
+    MorphPlaneModel* PlaneModel;
     int MorphPlaneSize;
     std::list<MorphPlaneData*> MorphPlanes;
+
+    MorphTargetModel* TargetModel;
+    glm::vec4** MorphTargetData;
 };
 
 class ModelEditor : public EditorController
@@ -68,6 +74,7 @@ private:
 
     ModelData*              m_selectedModelData;
     MorphPlaneData*         m_selectedMorphPlane;
+    glm::vec4*              m_selectedMorphTarget;
 
     std::list<ModelData*>*  m_models;
 
@@ -78,8 +85,14 @@ private:
 
     ImageDisplay*           m_imageDisplay;
     MorphPlaneDisplay*      m_morphPlaneDisplay;
+    MorphTargetDisplay*     m_morphTargetDisplay;
 
     std::list<unsigned int> m_selectedIndices;
+
+    void SaveMorphTargetData(const char* a_modelName, const char* a_dirName, unsigned int a_vertexCount, const glm::vec4* a_data, mz_zip_archive& a_archive) const;
+    void LoadMorphTargetData(const char* a_modelName, const char* a_dirName, int a_index, ModelData* a_modelData, mz_zip_archive& a_archive) const;
+
+    void DeleteModelData(ModelData* a_modelData);
 
     void GetModelData(PropertyFileProperty& a_property, mz_zip_archive& a_archive);
 
@@ -89,6 +102,8 @@ private:
     void SetMoveTool();
 
     void GenerateMorphVertexData(ModelData* a_model) const;
+
+    void TransformArrows(const glm::vec2& a_pos, const glm::mat4& a_transform, e_ToolMode a_toolMode, const glm::vec2& a_scalar) const;
 protected:
 
 public:
@@ -118,8 +133,12 @@ public:
 
     void ResizeMorphPlane(int a_newSize);
     void AddMorphPlaneClicked();
-    bool IsMorphPlaneSelected(MorphPlaneData* a_morphPlane) const;
+    bool IsMorphPlaneSelected(const MorphPlaneData* a_morphPlane) const;
     void MorphPlaneSelected(MorphPlaneData* a_morphPlane);
+
+    void AddMorphTargetsClicked();
+    bool IsMorphTargetSelected(const glm::vec4* a_morphTarget) const;
+    void MorphTargetSelected(glm::vec4* a_morphTarget);
 
     void DrawSelectionBox(const glm::vec2& a_startPos, const glm::vec2& a_endPos);
 

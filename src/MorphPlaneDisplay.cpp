@@ -58,6 +58,15 @@ MorphPlaneDisplay::MorphPlaneDisplay()
 
 MorphPlaneDisplay::~MorphPlaneDisplay()
 {
+    if (--Ref <= 0)
+    {
+        delete BaseShaderProgram;
+        BaseShaderProgram == nullptr;
+
+        delete WireShaderProgram;
+        WireShaderProgram = nullptr;
+    }
+
     if (m_modelName != nullptr)
     {
         delete[] m_modelName;

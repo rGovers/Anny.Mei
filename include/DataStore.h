@@ -15,6 +15,8 @@ private:
     {
         Model* Base;
         Model* MorphPlane;
+        Model* MorphTarget;
+
         char* TextureName;
     };
 
@@ -34,7 +36,7 @@ public:
     void AddModel(const char* a_name, Model* a_model);
     Model* GetModel(const char* a_name, e_ModelType a_modelType) const;
     void RemoveModelAll(const char* a_name);
-    void RemoteModel(const char* a_name, e_ModelType a_modelType);
+    void RemoveModel(const char* a_name, e_ModelType a_modelType);
 
     void SetModelTextureName(const char* a_modelName, const char* a_textureName);
     const char* GetModelTextureName(const char* a_modelName) const;

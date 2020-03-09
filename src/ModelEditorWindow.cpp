@@ -13,7 +13,7 @@
 
 const static int BUFFER_SIZE = 1024;
 
-const static int IMAGE_SIZE = 2048;
+const static int IMAGE_SIZE = 4096;
 
 const static float MOUSE_SENSITIVITY = 0.001f;
 const static float MOUSE_WHEEL_SENSITIVITY = 0.1f;
@@ -45,7 +45,7 @@ void ModelEditorWindow::SetSelectTool()
 {
     m_toolMode = e_ToolMode::Select;
 
-    m_startDragPos = glm::vec2(-std::numeric_limits<float>::infinity());
+    m_startDragPos = glm::vec2(-std::numeric_limits<float>::infinity());ImGui::EndChildFrame();
 }
 void ModelEditorWindow::SetMoveTool()
 {
@@ -53,6 +53,21 @@ void ModelEditorWindow::SetMoveTool()
 
     m_dragging = false;
     m_axis = e_Axis::Null;
+}
+
+void ModelEditorWindow::MorphTargetDisplay(const char* a_name, glm::vec4* a_morphTarget)
+{
+    bool is_selected = m_modelEditor->IsMorphTargetSelected(a_morphTarget);
+
+    if (ImGui::Selectable(a_name, &is_selected))
+    {
+        m_modelEditor->MorphTargetSelected(a_morphTarget);
+    }
+
+    if (is_selected)
+    {
+        ImGui::SetItemDefaultFocus();
+    }
 }
 
 void ModelEditorWindow::ResetTools()
@@ -156,6 +171,8 @@ void ModelEditorWindow::UpdatePropertiesWindow(const ModelData* a_modelData)
         }
         delete[] buff;
 
+        ImGui::Separator();
+
         if (ImGui::TreeNode("Morph Planes"))
         {
             const std::list<MorphPlaneData*> morphPlanes = a_modelData->MorphPlanes;
@@ -177,8 +194,6 @@ void ModelEditorWindow::UpdatePropertiesWindow(const ModelData* a_modelData)
 
             if (a_modelData->MorphPlanes.size() > 0)
             {
-                ImGui::Separator();
-
                 for (auto iter = morphPlanes.begin(); iter != morphPlanes.end(); ++iter)
                 {
                     bool is_selected = m_modelEditor->IsMorphPlaneSelected(*iter);
@@ -196,6 +211,33 @@ void ModelEditorWindow::UpdatePropertiesWindow(const ModelData* a_modelData)
             }
 
             ImGui::TreePop();
+        }
+
+        ImGui::Separator();
+
+        if (a_modelData->TargetModel != nullptr)
+        {
+            if (ImGui::TreeNode("Morph Targets"))
+            {
+                MorphTargetDisplay("North Morph Target", a_modelData->MorphTargetData[0]);
+                MorphTargetDisplay("South Morph Target", a_modelData->MorphTargetData[1]);
+                MorphTargetDisplay("East Morph Target", a_modelData->MorphTargetData[2]);
+                MorphTargetDisplay("West Morph Target", a_modelData->MorphTargetData[3]);
+
+                MorphTargetDisplay("North East Morph Target", a_modelData->MorphTargetData[4]);
+                MorphTargetDisplay("South East Morph Target", a_modelData->MorphTargetData[5]);
+                MorphTargetDisplay("South West Morph Target", a_modelData->MorphTargetData[6]);
+                MorphTargetDisplay("North West Morph Target", a_modelData->MorphTargetData[7]);
+
+                ImGui::TreePop();   
+            }
+        }
+        else
+        {
+            if (ImGui::Button("Add Morph Targets"))
+            {
+                m_modelEditor->AddMorphTargetsClicked();
+            }
         }
     }
 }

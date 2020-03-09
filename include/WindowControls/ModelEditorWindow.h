@@ -40,6 +40,8 @@ private:
 
     void SetSelectTool();
     void SetMoveTool();
+
+    void MorphTargetDisplay(const char* a_name, glm::vec4* a_morphTarget);
 protected:
 
 public:

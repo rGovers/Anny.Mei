@@ -1,4 +1,4 @@
-#include "Renderers/ImageDisplay.h"
+#include "Renderers/MorphTargetDisplay.h"
 
 #include <glad/glad.h>
 #include <string.h>
@@ -6,23 +6,23 @@
 #include "DataStore.h"
 #include "Models/Model.h"
 #include "ShaderProgram.h"
-#include "Shaders/ModelVertex.h"
+#include "Shaders/MorphTargetVertex.h"
 #include "Shaders/SolidPixel.h"
 #include "Shaders/StandardPixel.h"
 #include "Texture.h"
 
-unsigned int ImageDisplay::Ref = 0;
-ShaderProgram* ImageDisplay::BaseShaderProgram = nullptr;
-ShaderProgram* ImageDisplay::WireShaderProgram = nullptr;
+unsigned int MorphTargetDisplay::Ref = 0;
+ShaderProgram* MorphTargetDisplay::BaseShaderProgram = nullptr;
+ShaderProgram* MorphTargetDisplay::WireShaderProgram = nullptr;
 
-ImageDisplay::ImageDisplay()
+MorphTargetDisplay::MorphTargetDisplay()
 {
     m_modelName = nullptr;
 
     if (BaseShaderProgram == nullptr)
     {
         const unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
-        glShaderSource(vertexShader, 1, &MODELVERTEX, 0);
+        glShaderSource(vertexShader, 1, &MORPHTARGETVERTEX, 0);
         glCompileShader(vertexShader);
 
         const unsigned int pixelShader = glCreateShader(GL_FRAGMENT_SHADER);
@@ -38,7 +38,7 @@ ImageDisplay::ImageDisplay()
     if (WireShaderProgram == nullptr)
     {
         const unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
-        glShaderSource(vertexShader, 1, &MODELVERTEX, 0);
+        glShaderSource(vertexShader, 1, &MORPHTARGETVERTEX, 0);
         glCompileShader(vertexShader);
 
         const unsigned int solidPixelShader = glCreateShader(GL_FRAGMENT_SHADER);
@@ -53,13 +53,8 @@ ImageDisplay::ImageDisplay()
     
     ++Ref;
 }
-ImageDisplay::~ImageDisplay()
+MorphTargetDisplay::~MorphTargetDisplay()
 {
-    if (m_modelName != nullptr)
-    {
-        delete[] m_modelName;
-    }
-
     if (--Ref <= 0)
     {
         delete WireShaderProgram;
@@ -68,14 +63,18 @@ ImageDisplay::~ImageDisplay()
         delete BaseShaderProgram;
         BaseShaderProgram = nullptr;
     }
+
+    if (m_modelName != nullptr)
+    {
+        delete[] m_modelName;
+    }
 }
 
-const char* ImageDisplay::GetModelName() const
+const char* MorphTargetDisplay::GetModelName() const
 {
     return m_modelName;
 }
-
-void ImageDisplay::SetModelName(const char* a_name)
+void MorphTargetDisplay::SetModelName(const char* a_name)
 {
     if (m_modelName != nullptr)
     {
@@ -87,16 +86,13 @@ void ImageDisplay::SetModelName(const char* a_name)
     {
         const size_t len = strlen(a_name);
 
-        if (len > 0)
-        {
-            m_modelName = new char[len + 1];
+        m_modelName = new char[len + 1];
 
-            strcpy(m_modelName, a_name);
-        }
+        strcpy(m_modelName, a_name);
     }
 }
 
-void ImageDisplay::Draw(const glm::mat4& a_transform, bool a_alpha, bool a_solid, bool a_wireframe) const
+void MorphTargetDisplay::Draw(const glm::mat4& a_transform, const glm::vec2& a_lerp, bool a_alpha, bool a_solid, bool a_wireframe) const
 {
     DataStore* store = DataStore::GetInstance();
 
@@ -104,7 +100,7 @@ void ImageDisplay::Draw(const glm::mat4& a_transform, bool a_alpha, bool a_solid
     Texture* tex = nullptr;
     if (m_modelName != nullptr)
     {
-        model = store->GetModel(m_modelName, e_ModelType::Base);
+        model = store->GetModel(m_modelName, e_ModelType::MorphTarget);
         
         const char* texName = store->GetModelTextureName(m_modelName);
 
@@ -134,6 +130,9 @@ void ImageDisplay::Draw(const glm::mat4& a_transform, bool a_alpha, bool a_solid
             const int modelLocation = glGetUniformLocation(wireHandle, "Model");
             glUniformMatrix4fv(modelLocation, 1, GL_FALSE, (float*)&a_transform);
 
+            const int lerpLocation = glGetUniformLocation(wireHandle, "Lerp");
+            glUniform2fv(lerpLocation, 1, (float*)&a_lerp);
+
             glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
             glDrawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_INT, 0);
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
@@ -151,6 +150,9 @@ void ImageDisplay::Draw(const glm::mat4& a_transform, bool a_alpha, bool a_solid
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, tex->GetHandle());
             glUniform1i(location, 0);
+
+            const int lerpLocation = glGetUniformLocation(baseHandle, "Lerp");
+            glUniform2fv(lerpLocation, 1, (float*)&a_lerp);
 
             glDrawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_INT, 0);
         }
