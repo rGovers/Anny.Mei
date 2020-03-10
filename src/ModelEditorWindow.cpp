@@ -45,14 +45,13 @@ void ModelEditorWindow::SetSelectTool()
 {
     m_toolMode = e_ToolMode::Select;
 
-    m_startDragPos = glm::vec2(-std::numeric_limits<float>::infinity());ImGui::EndChildFrame();
+    ResetTools();
 }
 void ModelEditorWindow::SetMoveTool()
 {
     m_toolMode = e_ToolMode::Move;
 
-    m_dragging = false;
-    m_axis = e_Axis::Null;
+    ResetTools();
 }
 
 void ModelEditorWindow::MorphTargetDisplay(const char* a_name, glm::vec4* a_morphTarget)
@@ -121,7 +120,6 @@ void ModelEditorWindow::Update()
 
     if (m_modelEditor->IsModelSelected())
     {
-        ImGui::SetNextWindowSize({ 200, 100 }, ImGuiCond_Appearing);
         if (ImGui::Begin("Model Tools"))
         {
             if (ImGui::Button("Select"))

@@ -81,6 +81,68 @@ bool ModelEditor::IsMorphPlaneSelected() const
 {
     return m_selectedMorphPlane != nullptr;
 }
+bool ModelEditor::IsMorphTargetSelected(const glm::vec4* a_morphTarget) const
+{
+    return m_selectedMorphTarget == a_morphTarget;
+}
+
+int ModelEditor::MorphTargetPtrToIndex(const glm::vec4* a_ptr) const
+{
+    if (m_selectedModelData != nullptr)
+    {   
+        for (int i = 0; i < 8; ++i)
+        {
+            if (m_selectedModelData->MorphTargetData[i] == a_ptr)
+            {
+                return i;
+            }
+        }
+    }
+
+    return -1;
+}
+glm::vec2 ModelEditor::MorphTargetIndexToLerp(int a_index) const
+{
+    // Might be better to just have a static lookup table
+    // It works but
+    switch (a_index)
+    {
+    case 0:
+    {
+        return { 1, 0 };
+    }
+    case 1:
+    {
+        return { -1, 0 };
+    }
+    case 2:
+    {
+        return { 0, 1 };
+    }
+    case 3:
+    {
+        return { 0, -1 };
+    }
+    case 4:
+    {
+        return { 1, 1 };
+    }
+    case 5:
+    {
+        return { 1, -1 };
+    }
+    case 6:
+    {
+        return { -1, -1 };
+    }
+    case 7:
+    {
+        return { -1, 1 };
+    }
+    }
+
+    return glm::vec2(std::numeric_limits<float>::infinity());
+}
 
 void ModelEditor::DrawModelList()
 {
@@ -673,7 +735,7 @@ const Texture* ModelEditor::DrawEditor()
         scalar.y = scaledWinSize.x / scaledWinSize.y;
     }
     
-    if (m_selectedMorphPlane)
+    if (m_selectedMorphPlane != nullptr)
     {
         const unsigned int size = m_selectedModelData->MorphPlaneSize;
         const unsigned int scaledSize = size + 1;
@@ -715,13 +777,32 @@ const Texture* ModelEditor::DrawEditor()
 
         m_morphPlaneDisplay->Draw(finalTransform, alpha, solid, wireframe);
     }
-    else if (m_selectedMorphTarget)
+    else if (m_selectedMorphTarget != nullptr)
     {
+        glm::vec2 selectMid = glm::vec2(0);
+
+        unsigned int indexCount = 0;
+        for (auto iter = m_selectedIndices.begin(); iter != m_selectedIndices.end(); ++iter)
+        {
+            const glm::vec4 pos = m_selectedMorphTarget[*iter];
+            const glm::vec4 fPos = finalTransform * pos;
+
+            selectMid += glm::vec2(pos.x, pos.y);
+
+            m_intermediateRenderer->DrawSolidCircle({ fPos.x, fPos.y, -0.1f }, 20, 0.025f, ACTIVE_COLOR, scalar.x, scalar.y);
+
+            ++indexCount;
+        }
+
+        selectMid /= indexCount;
+
+        TransformArrows(selectMid, finalTransform, toolMode, scalar);
+
         m_morphTargetDisplay->SetModelName(m_selectedModelData->ModelName->GetName());
 
-        m_morphTargetDisplay->Draw(finalTransform, glm::vec2(1, 0), alpha, solid, wireframe);
+        m_morphTargetDisplay->Draw(finalTransform, MorphTargetIndexToLerp(MorphTargetPtrToIndex(m_selectedMorphTarget)), alpha, solid, wireframe);
     }
-    else if (m_selectedModelData)
+    else if (m_selectedModelData != nullptr)
     {
         m_imageDisplay->SetModelName(m_selectedModelData->ModelName->GetName());
 
@@ -875,10 +956,7 @@ void ModelEditor::AddMorphTargetsClicked()
         store->AddModel(m_selectedModelData->ModelName->GetName(), m_selectedModelData->TargetModel);
     }
 }
-bool ModelEditor::IsMorphTargetSelected(const glm::vec4* a_morphTarget) const
-{
-    return m_selectedMorphTarget == a_morphTarget;
-}
+
 void ModelEditor::MorphTargetSelected(glm::vec4* a_morphTarget)
 {
     m_selectedMorphPlane = nullptr;
@@ -909,11 +987,30 @@ void ModelEditor::DrawSelectionBox(const glm::vec2& a_startPos, const glm::vec2&
 
 void ModelEditor::DragValue(const glm::vec2& a_dragMov)
 {
-    glm::vec2* morphPositions = m_selectedMorphPlane->Plane->GetMorphPositions();
-
-    for (auto iter = m_selectedIndices.begin(); iter != m_selectedIndices.end(); ++iter)
+    if (m_selectedMorphPlane != nullptr)
     {
-        morphPositions[*iter] += a_dragMov;
+        glm::vec2* morphPositions = m_selectedMorphPlane->Plane->GetMorphPositions();
+
+        for (auto iter = m_selectedIndices.begin(); iter != m_selectedIndices.end(); ++iter)
+        {
+            morphPositions[*iter] += a_dragMov;
+        }
+    }
+    else if (m_selectedMorphTarget != nullptr)
+    {
+        const glm::vec4 mov = glm::vec4(a_dragMov, 0, 0);
+
+        for (auto iter = m_selectedIndices.begin(); iter != m_selectedIndices.end(); ++iter)
+        {
+            m_selectedMorphTarget[*iter] += mov;
+        }
+
+        int index = MorphTargetPtrToIndex(m_selectedMorphTarget);
+
+        const unsigned int vbo = m_selectedModelData->TargetModel->GetMorphVBO(index);
+
+        glBindBuffer(GL_ARRAY_BUFFER, vbo);
+        glBufferData(GL_ARRAY_BUFFER, m_selectedModelData->VertexCount * sizeof(glm::vec4), m_selectedMorphTarget, GL_STATIC_DRAW);
     }
 }
 void ModelEditor::SelectMouseUp(const glm::vec2& a_startPos, const glm::vec2& a_endPos)
@@ -923,7 +1020,7 @@ void ModelEditor::SelectMouseUp(const glm::vec2& a_startPos, const glm::vec2& a_
     const glm::vec2 bMin = glm::vec2(glm::min(a_endPos.x, a_startPos.x), glm::min(a_endPos.y, a_startPos.y));
     const glm::vec2 bMax = glm::vec2(glm::max(a_endPos.x, a_startPos.x), glm::max(a_endPos.y, a_startPos.y)); 
 
-    if (m_selectedMorphPlane)
+    if (m_selectedMorphPlane != nullptr)
     {
         if (!io.KeyShift && !io.KeyCtrl)
         {
@@ -943,6 +1040,36 @@ void ModelEditor::SelectMouseUp(const glm::vec2& a_startPos, const glm::vec2& a_
             const glm::vec2 diff = nearPoint - morphPosition;
 
             if ((diff.x == 0 && diff.y == 0) || glm::length(diff) <= 0.025f)
+            {
+                auto iter = std::find(m_selectedIndices.begin(), m_selectedIndices.end(), i);
+
+                if (iter == m_selectedIndices.end())
+                {
+                    m_selectedIndices.emplace_back(i);
+                }
+                else if (io.KeyCtrl)
+                {
+                    m_selectedIndices.erase(iter);
+                }
+            } 
+        }
+    }
+    else if (m_selectedMorphTarget != nullptr)
+    {
+        if (!io.KeyShift && !io.KeyCtrl)
+        {
+            m_selectedIndices.clear();
+        } 
+
+        const unsigned int vertexCount = m_selectedModelData->VertexCount;
+
+        for (unsigned int i = 0; i < vertexCount; ++i)
+        {
+            const glm::vec2 morphPosition = m_selectedMorphTarget[i];
+            const glm::vec2 nearPoint = glm::vec2(glm::clamp(morphPosition.x, bMin.x, bMax.x), glm::clamp(morphPosition.y, bMin.y, bMax.y));
+            const glm::vec2 diff = nearPoint - morphPosition;
+
+            if ((diff.x == 0 && diff.y == 0) || glm::length(diff) <= 0.01f)
             {
                 auto iter = std::find(m_selectedIndices.begin(), m_selectedIndices.end(), i);
 

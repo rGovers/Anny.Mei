@@ -89,6 +89,9 @@ private:
 
     std::list<unsigned int> m_selectedIndices;
 
+    int MorphTargetPtrToIndex(const glm::vec4* a_ptr) const;
+    glm::vec2 MorphTargetIndexToLerp(int a_index) const;
+
     void SaveMorphTargetData(const char* a_modelName, const char* a_dirName, unsigned int a_vertexCount, const glm::vec4* a_data, mz_zip_archive& a_archive) const;
     void LoadMorphTargetData(const char* a_modelName, const char* a_dirName, int a_index, ModelData* a_modelData, mz_zip_archive& a_archive) const;
 
