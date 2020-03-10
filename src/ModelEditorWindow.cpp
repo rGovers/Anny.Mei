@@ -31,7 +31,7 @@ ModelEditorWindow::ModelEditorWindow(ModelEditor* a_modelEditor)
     m_zoom = 1;
 
     m_solid = true;
-    m_wireframe = false;
+    m_wireframe = true;
     m_alpha = false;
 
     ResetTools();

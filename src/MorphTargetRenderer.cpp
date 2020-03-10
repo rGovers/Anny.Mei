@@ -101,6 +101,12 @@ void MorphTargetRenderer::Draw(bool a_preview, double a_delta, Camera* a_camera)
 
     switch (m_renderMode)
     {
+    case e_MorphRenderMode::Point9:
+    {
+        m_morphTargetDisplay->Draw9Point(finalTransform, lerp);
+
+        break;
+    }
     case e_MorphRenderMode::Point5:
     {
         m_morphTargetDisplay->Draw(finalTransform, lerp);

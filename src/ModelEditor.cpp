@@ -652,7 +652,7 @@ void ModelEditor::Save(mz_zip_archive& a_archive) const
                 SaveMorphTargetData(name, "North East", vertexCount, (*iter)->MorphTargetData[4], a_archive);
                 SaveMorphTargetData(name, "South East", vertexCount, (*iter)->MorphTargetData[5], a_archive);
                 SaveMorphTargetData(name, "South West", vertexCount, (*iter)->MorphTargetData[6], a_archive);
-                SaveMorphTargetData(name, "North East", vertexCount, (*iter)->MorphTargetData[7], a_archive);
+                SaveMorphTargetData(name, "North West", vertexCount, (*iter)->MorphTargetData[7], a_archive);
             }
 
             const unsigned int indiciesSize = indexCount * sizeof(unsigned int);
@@ -800,7 +800,7 @@ const Texture* ModelEditor::DrawEditor()
 
         m_morphTargetDisplay->SetModelName(m_selectedModelData->ModelName->GetName());
 
-        m_morphTargetDisplay->Draw(finalTransform, MorphTargetIndexToLerp(MorphTargetPtrToIndex(m_selectedMorphTarget)), alpha, solid, wireframe);
+        m_morphTargetDisplay->Draw9Point(finalTransform, MorphTargetIndexToLerp(MorphTargetPtrToIndex(m_selectedMorphTarget)), alpha, solid, wireframe);
     }
     else if (m_selectedModelData != nullptr)
     {

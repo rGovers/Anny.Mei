@@ -34,6 +34,10 @@ FileToHeader(
     SOURCE_FILE "shaders/MorphTargetVertex.glsl"
     HEADER_FILE "include/Shaders/MorphTargetVertex.h"
     VARIABLE_NAME "MorphTargetVertex")
+FileToHeader(
+    SOURCE_FILE "shaders/MorphTarget9PointVertex.glsl"
+    HEADER_FILE "include/Shaders/MorphTarget9PointVertex.h"
+    VARIABLE_NAME "MorphTarget9PointVertex")
 
 FileToHeader(
     SOURCE_FILE "shaders/StandardPixel.glsl" 
