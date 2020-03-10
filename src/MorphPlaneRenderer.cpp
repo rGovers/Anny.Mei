@@ -567,6 +567,18 @@ void MorphPlaneRenderer::ObjectRenamed()
     const std::string baseName = std::string("[") + object->GetName() + "] [" + this->ComponentName() + "] ";
 
     m_morphPlaneName->Rename((baseName + "Morph Plane Name").c_str());
+
+    m_lerp->Rename((baseName + "Lerp").c_str());
+
+    m_northPlaneName->Rename((baseName + "North Plane Name").c_str());
+    m_southPlaneName->Rename((baseName + "South Plane Name").c_str());
+    m_eastPlaneName->Rename((baseName + "East Plane Name").c_str());
+    m_westPlaneName->Rename((baseName + "West Plane Name").c_str());
+
+    m_northEastPlaneName->Rename((baseName + "North East Plane Name").c_str());
+    m_southEastPlaneName->Rename((baseName + "South East Plane Name").c_str());
+    m_southWestPlaneName->Rename((baseName + "South West Plane Name").c_str());
+    m_northWestPlaneName->Rename((baseName + "North West Plane Name").c_str());
 }
 
 const char* MorphPlaneRenderer::ComponentName() const

@@ -6,12 +6,13 @@
 #include "AnimControl.h"
 #include "Components/ImageRenderer.h"
 #include "Components/MorphPlaneRenderer.h"
+#include "Components/MorphTargetRenderer.h"
 #include "imgui.h"
 #include "Name.h"
 #include "PropertyFile.h"
 #include "Transform.h"
 
-#define ISCREATECOMPONENT(Comp, Obj, Name, Construct, AControl) { if (strcmp(Name, Construct::COMPONENT_NAME) == 0) { Comp = new Construct(Obj, AControl); Comp->Init(); }}
+#define ISCREATECOMPONENT(Comp, Obj, Name, Construct, AControl) if (strcmp(Name, Construct::COMPONENT_NAME) == 0) { Comp = new Construct(Obj, AControl); Comp->Init(); }
 
 Object::Object(Namer* a_namer, AnimControl* a_animControl) 
 {
@@ -128,7 +129,8 @@ void Object::LoadComponent(PropertyFileProperty* a_property)
     Component* comp = nullptr;
 
     ISCREATECOMPONENT(comp, this, a_property->GetName(), ImageRenderer, m_animControl)
-    ISCREATECOMPONENT(comp, this, a_property->GetName(), MorphPlaneRenderer, m_animControl)
+    else ISCREATECOMPONENT(comp, this, a_property->GetName(), MorphPlaneRenderer, m_animControl)
+    else ISCREATECOMPONENT(comp, this, a_property->GetName(), MorphTargetRenderer, m_animControl)
 
     if (comp != nullptr)
     {
@@ -160,16 +162,23 @@ void Object::UpdateComponentUI()
 
         bool createImageRenderer = true;
         bool createMorphPlaneRenderer = true;
+        bool createMorphTargetRenderer = true;
 
         for (auto iter = m_components.begin(); iter != m_components.end(); ++iter)
         {
-            if (strcmp((*iter)->ComponentName(), ImageRenderer::COMPONENT_NAME) == 0)
+            const char* componentName = (*iter)->ComponentName();
+
+            if (strcmp(componentName, ImageRenderer::COMPONENT_NAME) == 0)
             {
                 createImageRenderer = false;
             }
-            else if (strcmp((*iter)->ComponentName(), MorphPlaneRenderer::COMPONENT_NAME) == 0)
+            else if (strcmp(componentName, MorphPlaneRenderer::COMPONENT_NAME) == 0)
             {
                 createMorphPlaneRenderer = false;
+            }
+            else if (strcmp(componentName, MorphTargetRenderer::COMPONENT_NAME) == 0)
+            {
+                createMorphTargetRenderer = false;
             }
         }
 
@@ -180,6 +189,10 @@ void Object::UpdateComponentUI()
         if (createMorphPlaneRenderer && ImGui::Selectable(MorphPlaneRenderer::COMPONENT_NAME))
         {
             component = new MorphPlaneRenderer(this, m_animControl);
+        }
+        if (createMorphTargetRenderer && ImGui::Selectable(MorphTargetRenderer::COMPONENT_NAME))
+        {
+            component = new MorphTargetRenderer(this, m_animControl);
         }
 
         if (component != nullptr)

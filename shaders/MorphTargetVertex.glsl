@@ -2,10 +2,10 @@
 
 layout (location = 0) in vec4 position;
 layout (location = 1) in vec2 texCoords;
-layout (location = 2) in vec4 positionE;
-layout (location = 3) in vec4 positionW;
-layout (location = 4) in vec4 positionN;
-layout (location = 5) in vec4 positionS;
+layout (location = 2) in vec4 positionN;
+layout (location = 3) in vec4 positionS;
+layout (location = 4) in vec4 positionE;
+layout (location = 5) in vec4 positionW;
 
 uniform mat4 Model;
 uniform vec2 Lerp;

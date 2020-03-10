@@ -109,19 +109,19 @@ glm::vec2 ModelEditor::MorphTargetIndexToLerp(int a_index) const
     {
     case 0:
     {
-        return { 1, 0 };
+        return { 0, 1 };
     }
     case 1:
     {
-        return { -1, 0 };
+        return { 0, -1 };
     }
     case 2:
     {
-        return { 0, 1 };
+        return { 1, 0 };
     }
     case 3:
     {
-        return { 0, -1 };
+        return { -1, 0 };
     }
     case 4:
     {
@@ -326,10 +326,10 @@ void ModelEditor::GetModelData(PropertyFileProperty& a_property, mz_zip_archive&
 
         ModelData* modelData = AddModel(texName, name, trueName, vertices, vertexCount, indicies, indexCount, (e_ModelType)modelType);
 
-        LoadMorphTargetData(name, "East", 0, modelData, a_archive);
-        LoadMorphTargetData(name, "West", 1, modelData, a_archive);
-        LoadMorphTargetData(name, "North", 2, modelData, a_archive);
-        LoadMorphTargetData(name, "South", 3, modelData, a_archive);
+        LoadMorphTargetData(name, "North", 0, modelData, a_archive);
+        LoadMorphTargetData(name, "South", 1, modelData, a_archive);
+        LoadMorphTargetData(name, "East", 2, modelData, a_archive);
+        LoadMorphTargetData(name, "West", 3, modelData, a_archive);
 
         LoadMorphTargetData(name, "North East", 4, modelData, a_archive);
         LoadMorphTargetData(name, "South East", 5, modelData, a_archive);
@@ -644,10 +644,10 @@ void ModelEditor::Save(mz_zip_archive& a_archive) const
 
             if ((*iter)->TargetModel != nullptr)
             {
-                SaveMorphTargetData(name, "East", vertexCount, (*iter)->MorphTargetData[0], a_archive);
-                SaveMorphTargetData(name, "West", vertexCount, (*iter)->MorphTargetData[1], a_archive);
-                SaveMorphTargetData(name, "North", vertexCount, (*iter)->MorphTargetData[2], a_archive);
-                SaveMorphTargetData(name, "South", vertexCount, (*iter)->MorphTargetData[3], a_archive);
+                SaveMorphTargetData(name, "North", vertexCount, (*iter)->MorphTargetData[0], a_archive);
+                SaveMorphTargetData(name, "South", vertexCount, (*iter)->MorphTargetData[1], a_archive);
+                SaveMorphTargetData(name, "East", vertexCount, (*iter)->MorphTargetData[2], a_archive);
+                SaveMorphTargetData(name, "West", vertexCount, (*iter)->MorphTargetData[3], a_archive);
 
                 SaveMorphTargetData(name, "North East", vertexCount, (*iter)->MorphTargetData[4], a_archive);
                 SaveMorphTargetData(name, "South East", vertexCount, (*iter)->MorphTargetData[5], a_archive);

@@ -9,6 +9,14 @@
 
 class PropertyFileProperty;
 
+enum class e_MorphRenderMode
+{
+    Null,
+    Point3,
+    Point5,
+    Point9
+};
+
 class Renderer : public Component
 {
 private:
