@@ -1,4 +1,4 @@
-#include "PropertyFile.h"
+#include "FileLoaders/PropertyFile.h"
 
 #include <string.h>
 
@@ -15,6 +15,21 @@ PropertyFileProperty::~PropertyFileProperty()
     {
         delete[] iter->Name;
         delete[] iter->Value;
+    }
+
+    for (auto iter = m_children.begin(); iter != m_children.end(); ++iter)
+    {
+        (*iter)->m_parent = m_parent;
+
+        if (m_parent != nullptr)
+        {
+            m_parent->m_children.emplace_back(*iter);
+        }
+    }
+
+    if (m_parent != nullptr)
+    {
+        m_parent->m_children.remove(this);
     }
 }
 

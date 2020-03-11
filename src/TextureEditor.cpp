@@ -4,11 +4,12 @@
 #include <stb/stb_image.h>
 
 #include "DataStore.h"
+#include "FileLoaders/KritaLoader.h"
+#include "FileLoaders/PropertyFile.h"
 #include "FileUtils.h"
 #include "imgui.h"
 #include "MemoryStream.h"
 #include "ModelEditor.h"
-#include "PropertyFile.h"
 #include "RenderTexture.h"
 #include "SkeletonEditor.h"
 #include "Texture.h"
@@ -98,14 +99,17 @@ void TextureEditor::TriangulateClicked()
 
     const unsigned int indexCount = triImage->GetIndexCount();
 
-    const unsigned int indexSize = indexCount * sizeof(unsigned int);
-    unsigned int* indicies = new unsigned int[indexSize];
-    memcpy(indicies, triImage->GetIndices(), indexSize);
+    if (indexCount >= 3)
+    {
+        const unsigned int indexSize = indexCount * sizeof(unsigned int);
+        unsigned int* indicies = new unsigned int[indexSize];
+        memcpy(indicies, triImage->GetIndices(), indexSize);
 
-    const unsigned int vertexCount = triImage->GetVertexCount();
-    ModelVertex* modelVerticies = triImage->ToModelVertices();
+        const unsigned int vertexCount = triImage->GetVertexCount();
+        ModelVertex* modelVerticies = triImage->ToModelVertices();
 
-    m_workspace->AddModel(layerTexture.Meta->Name, modelVerticies, vertexCount, indicies, indexCount);
+        m_workspace->AddModel(layerTexture.Meta->Name, modelVerticies, vertexCount, indicies, indexCount);
+    }
 
     delete triImage;
 }
@@ -135,14 +139,19 @@ void TextureEditor::LoadTexture(const char* a_path)
     const char* cExt = ext.c_str();
     const unsigned int iExt = *(unsigned int*)cExt;
 
-    LayerMeta* layerMeta = new LayerMeta();
-    layerMeta->Name = nullptr;
-
-    LayerTexture layerTexture;
-
-    // .png
-    if (iExt == 0x676E702E)
+    switch (iExt)
     {
+    // .png
+    case 0x676E702E:
+    {
+        LayerMeta* layerMeta = new LayerMeta();
+        layerMeta->Name = nullptr;
+        layerMeta->Width = -1;
+        layerMeta->Height = -1;
+
+        LayerTexture layerTexture;
+        layerTexture.Meta = layerMeta;
+
         int channels;
 
         unsigned char* data = stbi_load(a_path, &layerMeta->Width, &layerMeta->Height, &channels, STBI_rgb_alpha);
@@ -155,7 +164,7 @@ void TextureEditor::LoadTexture(const char* a_path)
         }
 
         const size_t size = layerMeta->Width * layerMeta->Height * 4;
-        layerTexture.Data = new unsigned char[size];/* constant-expression */
+        layerTexture.Data = new unsigned char[size];
         memcpy(layerTexture.Data, data, size);
 
         stbi_image_free(data);
@@ -167,13 +176,51 @@ void TextureEditor::LoadTexture(const char* a_path)
 
         layerMeta->Name = new char[fileNameLen + 1];
         strcpy(layerMeta->Name, filename.c_str());
+
+        if (layerMeta->Name != nullptr && layerMeta->Width > 0 && layerMeta->Height > 0)
+        {
+            store->AddTexture(layerMeta->Name, GenerateTexture(layerTexture));
+
+            m_layers->emplace_back(layerTexture);
+        }
+
+        break;
     }
+    // .kra
+    case 0x61726B2E:
+    {
+        KritaLoader* loader = KritaLoader::Load(a_path);
 
-    layerTexture.Meta = layerMeta;
+        const int layerCount = loader->GetLayerCount();
 
-    store->AddTexture(layerMeta->Name, GenerateTexture(layerTexture));
+        for (int i = 0; i < layerCount; ++i)
+        {
+            Layer* layer = loader->ToLayer(i);
 
-    m_layers->emplace_back(layerTexture);
+            if (layer != nullptr)
+            {
+                LayerMeta* layerMeta = new LayerMeta();
+
+                LayerTexture layerTexture;
+                layerTexture.Meta = layerMeta;
+
+                layerTexture.Data = (unsigned char*)layer->Data;
+                *layerMeta = layer->MetaData;
+
+                if (layerMeta->Name != nullptr && layerMeta->Width > 0 && layerMeta->Height > 0)
+                {
+                    store->AddTexture(layerMeta->Name, GenerateTexture(layerTexture));
+
+                    m_layers->emplace_back(layerTexture);
+                }
+            }
+        }
+
+        delete loader;
+
+        break;
+    }
+    }
 }
 
 void TextureEditor::Update(double a_delta)

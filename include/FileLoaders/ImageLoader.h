@@ -24,6 +24,6 @@ protected:
 
 public:
     virtual int GetLayerCount() const = 0;
-    virtual LayerMeta* GetLayerMeta(int a_index) const = 0;
-    virtual Layer* GetLayer(int a_index) const = 0;
+    virtual LayerMeta ToLayerMeta(int a_index) const = 0;
+    virtual Layer* ToLayer(int a_index) const = 0;
 };

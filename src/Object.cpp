@@ -7,9 +7,9 @@
 #include "Components/ImageRenderer.h"
 #include "Components/MorphPlaneRenderer.h"
 #include "Components/MorphTargetRenderer.h"
+#include "FileLoaders/PropertyFile.h"
 #include "imgui.h"
 #include "Name.h"
-#include "PropertyFile.h"
 #include "Transform.h"
 
 #define ISCREATECOMPONENT(Comp, Obj, Name, Construct, AControl) if (strcmp(Name, Construct::COMPONENT_NAME) == 0) { Comp = new Construct(Obj, AControl); Comp->Init(); }

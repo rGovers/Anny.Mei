@@ -9,7 +9,6 @@
 #include "Material.h"
 #include "Models/Model.h"
 #include "Object.h"
-#include "PropertyFile.h"
 #include "Renderers/ImageDisplay.h"
 #include "StaticTransform.h"
 #include "Texture.h"

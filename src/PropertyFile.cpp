@@ -1,4 +1,4 @@
-#include "PropertyFile.h"
+#include "FileLoaders/PropertyFile.h"
 
 #include <assert.h>
 #include <string.h>
@@ -7,18 +7,18 @@ int PropertyFile::LoadProperty(PropertyFileProperty* a_parent, const char* a_dat
 {
     PropertyFileProperty* property = nullptr;
 
-    int end = 0;
+    long end = 0;
 
-    int spc = -1;
-    int open = -1;
-    int colon = -1;
-    int close = -1;
-    int quote = -1;
-    int closeQuote = -1;
+    long spc = -1;
+    long open = -1;
+    long colon = -1;
+    long close = -1;
+    long quote = -1;
+    long closeQuote = -1;
 
     PropertyFileValue value;
 
-    for (int i = 0; a_data[i] != 0; ++i)
+    for (unsigned int i = 0; a_data[i] != 0; ++i)
     {
         const char chr = a_data[i];
 
@@ -26,53 +26,59 @@ int PropertyFile::LoadProperty(PropertyFileProperty* a_parent, const char* a_dat
         {
         case '<':
         {
-            open = i;
+            if (quote == closeQuote)
+            {
+                open = i;
 
-            property = new PropertyFileProperty();
+                property = new PropertyFileProperty();
+            }
 
             break;
         }
         case '>':
         {
-            close = i;
-
-            assert(property != nullptr);
-            property->SetParent(a_parent);
-            
-            m_properties->emplace_back(property);
-
-            if (spc == -1)
+            if (quote == closeQuote)
             {
-                const int len = i - open;
+                close = i;
 
-                char* name = new char[len];
-                memcpy(name, a_data + open + 1, len - 1);
-                name[len - 1] = 0;
+                assert(property != nullptr);
+                property->SetParent(a_parent);
 
-                property->SetName(name);
+                m_properties->emplace_back(property);
 
-                delete[] name;
-            }            
+                if (open > spc)
+                {
+                    const int len = i - open;
+
+                    char* name = new char[len];
+                    memcpy(name, a_data + open + 1, len - 1);
+                    name[len - 1] = 0;
+
+                    property->SetName(name);
+
+                    delete[] name;
+                }  
+            }
 
             break;
         }
         case ' ':
         {
-            if (open > spc)
-            {
-                const int len = i - open;
-
-                char* name = new char[len];
-                memcpy(name, a_data + open + 1, len - 1);
-                name[len - 1] = 0;
-
-                property->SetName(name);
-
-                delete[] name;
-            }
-            
             if (quote == closeQuote)
             {
+                if (open > spc)
+                {
+                    const int len = i - open;
+
+                    char* name = new char[len];
+                    memcpy(name, a_data + open + 1, len - 1);
+                    name[len - 1] = 0;
+
+                    property->SetName(name);
+
+                    delete[] name;
+                }
+
                 spc = i;
             }
 

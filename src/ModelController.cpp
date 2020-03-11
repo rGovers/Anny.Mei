@@ -6,10 +6,10 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 #include "Camera.h"
+#include "FileLoaders/PropertyFile.h"
 #include "FileUtils.h"
 #include "MemoryStream.h"
 #include "Object.h"
-#include "PropertyFile.h"
 #include "Texture.h"
 #include "WebcamController.h"
 #include "WindowControls/ModelControllerWindow.h"

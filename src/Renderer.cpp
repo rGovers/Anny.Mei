@@ -3,10 +3,10 @@
 #include <limits>
 
 #include "AnimControl.h"
+#include "FileLoaders/PropertyFile.h"
 #include "FileUtils.h"
 #include "imgui/imgui.h"
 #include "Object.h"
-#include "PropertyFile.h"
 
 const static int BUFFER_SIZE = 1024;
 

@@ -4,10 +4,10 @@
 #include <string>
 #include <string.h>
 
+#include "FileLoaders/PropertyFile.h"
 #include "FileUtils.h"
 #include "KeyValues/KeyValue.h"
 #include "miniz.h"
-#include "PropertyFile.h"
 
 class AnimControl;
 

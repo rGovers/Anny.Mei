@@ -352,13 +352,13 @@ void AppMain::Update(double a_delta)
 
             if (ImGui::MenuItem("Open Image File", "", nullptr, enabledModel))
             {
-                char* const* const filters = new char*[1] { "*.png" };
-                const char* filePath = FileDialog::OpenFile("Open Image File", filters, 1);
+                char* const* const filters = new char*[2] { "*.png", "*.kra" };
+                const char* filePath = FileDialog::OpenFile("Open Image File", filters, 2);
                 
                 delete[] filters;
                 
                 if (filePath != nullptr && filePath[0] != 0)
-                    {
+                {
                     m_workspace->LoadTexture(filePath);
                 }
             }

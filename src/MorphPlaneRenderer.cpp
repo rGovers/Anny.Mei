@@ -6,12 +6,12 @@
 
 #include "Camera.h"
 #include "DataStore.h"
+#include "FileLoaders/PropertyFile.h"
 #include "FileUtils.h"
 #include "imgui.h"
 #include "Models/Model.h"
 #include "MorphPlane.h"
 #include "Object.h"
-#include "PropertyFile.h"
 #include "Renderers/MorphPlaneDisplay.h"
 #include "StaticTransform.h"
 #include "Texture.h"
