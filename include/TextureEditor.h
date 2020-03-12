@@ -4,18 +4,18 @@
 #include <list>
 
 #include "EditorController.h"
-#include "FileLoaders/ImageLoader.h"
 #include "miniz.h"
 
+struct LayerMeta;
 class ModelEditor;
 class ModelPreview;
+struct ModelVertex;
 class PropertyFileProperty;
 class SkeletonController;
 class Texture;
 class TextureEditorWindow;
 class Workspace;
 
-struct ModelVertex;
 
 struct LayerTexture
 {

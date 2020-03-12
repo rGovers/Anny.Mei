@@ -144,7 +144,12 @@ LayerMeta KritaLoader::ToLayerMeta(int a_index) const
             {
                 if (count++ == a_index)
                 {
-                    return (*iIter)->ToLayerMeta();
+                    LayerMeta layerMeta = (*iIter)->ToLayerMeta();
+
+                    layerMeta.ImageWidth = (*iter)->GetWidth();
+                    layerMeta.ImageHeight = (*iter)->GetHeight();
+
+                    return layerMeta;
                 }
 
                 break;
@@ -176,7 +181,12 @@ Layer* KritaLoader::ToLayer(int a_index) const
             {
                 if (count++ == a_index)
                 {
-                    return (*iIter)->ToLayer();
+                    Layer* layer = (*iIter)->ToLayer();
+
+                    layer->MetaData.ImageWidth = (*iter)->GetWidth();
+                    layer->MetaData.ImageHeight = (*iter)->GetHeight();
+
+                    return layer;
                 }
 
                 break;

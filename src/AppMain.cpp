@@ -76,6 +76,8 @@ AppMain::AppMain(int a_width, int a_height) :
 
     m_modelController = nullptr;
 
+    m_filePath = nullptr;
+
     glEnable(GL_DEBUG_OUTPUT);
     glDebugMessageCallback(MessageCallback, 0);
 
@@ -113,6 +115,11 @@ AppMain::~AppMain()
 
     delete m_workspace;
 
+    if (m_filePath != nullptr)
+    {
+        delete[] m_filePath;
+    }
+
     if (m_modelController != nullptr)
     {
         delete m_modelController;
@@ -137,24 +144,37 @@ void AppMain::New()
 
     m_modelController = new ModelController();
     
-    m_filePath = nullptr;
+    if (m_filePath != nullptr)
+    {
+        delete[] m_filePath;
+        m_filePath = nullptr;
+    }
 }
 void AppMain::Open()
 {
     char* const* const filters = new char*[1] { "*.aMei" };
-    m_filePath = FileDialog::OpenFile("Open Project File", filters, 1);
+    const char* path = FileDialog::OpenFile("Open Project File", filters, 1);
 
-    if (m_dataStore != nullptr)
+    if (path != nullptr)
     {
-        delete m_dataStore;
-    }
-        
-    m_dataStore = new DataStore();
-
-    if (m_filePath != nullptr)
-    {
-        if (m_filePath[0] != 0)
+        if (path[0] != 0)
         {
+            if (m_dataStore != nullptr)
+            {
+                delete m_dataStore;
+            }
+
+            m_dataStore = new DataStore();
+
+            if (m_filePath != nullptr)
+            {
+                delete[] m_filePath;
+            }
+
+            const size_t len = strlen(path);
+            m_filePath = new char[len + 1];
+            strcpy(m_filePath, path);
+
             mz_zip_archive zip;
             memset(&zip, 0, sizeof(zip));
 
@@ -181,8 +201,9 @@ void AppMain::Open()
                 m_modelController = new ModelController();
             }
         }
-        else
+        else if (m_filePath != nullptr)
         {
+            delete[] m_filePath;
             m_filePath = nullptr;
         }
     }
@@ -207,10 +228,19 @@ void AppMain::Save() const
 void AppMain::SaveAs()
 {
     char* const* const filters = new char*[1] { "*.aMei" };
-    m_filePath = FileDialog::SaveFile("Save Project File", filters, 1);
+    const char* path = FileDialog::SaveFile("Save Project File", filters, 1);
 
-    if (m_filePath != nullptr)
+    if (path != nullptr && path[0] != 0)
     {
+        if (m_filePath != nullptr)
+        {
+            delete[] m_filePath;
+        }
+
+        const size_t len = strlen(path);
+        m_filePath = new char[len + 1];
+        strcpy(m_filePath, path);
+
         Save();
     }
 
@@ -350,7 +380,7 @@ void AppMain::Update(double a_delta)
 
             ImGui::Separator();
 
-            if (ImGui::MenuItem("Open Image File", "", nullptr, enabledModel))
+            if (ImGui::MenuItem("Import Image File", "", nullptr, enabledModel))
             {
                 char* const* const filters = new char*[2] { "*.png", "*.kra" };
                 const char* filePath = FileDialog::OpenFile("Open Image File", filters, 2);

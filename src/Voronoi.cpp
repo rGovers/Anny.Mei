@@ -1,11 +1,14 @@
 #include "Voronoi.h"
 
-Voronoi::Voronoi(const glm::vec2* a_verts, unsigned int a_count, unsigned int a_xRes, unsigned int a_yRes) :
-    m_xRes(a_xRes),
-    m_yRes(a_yRes),
-    m_diagram(new int[a_xRes * a_yRes])
+#include "Models/Model.h"
+
+Voronoi::Voronoi(const ModelVertex* a_verts, unsigned int a_count, int a_xOffset, int a_yOffset, unsigned int a_xRes, unsigned int a_yRes)
 {
     const float INFI = std::numeric_limits<float>::infinity();
+    
+    m_xRes = a_xRes;
+    m_yRes = a_yRes;
+    m_diagram = new int[a_xRes * a_yRes];
 
     for (unsigned int x = 0; x < m_xRes; ++x)
     {
@@ -16,12 +19,14 @@ Voronoi::Voronoi(const glm::vec2* a_verts, unsigned int a_count, unsigned int a_
 
             for (unsigned int i = 0; i < a_count; ++i)
             {
-                const glm::vec2 vertPos = glm::vec2(a_verts[i].x * m_xRes, a_verts[i].y * m_yRes);
+                const glm::vec4 aPos = a_verts[i].Position;
+
+                const glm::vec2 vertPos = glm::vec2(aPos.x * m_xRes - a_xOffset, aPos.y * m_yRes - a_yOffset);
                 const glm::vec2 pos = glm::vec2(x, y);
 
                 const glm::vec2 diff = vertPos - pos;
 
-                const float dist = glm::dot(diff, diff);
+                const float dist = glm::length(diff);
 
                 if (dist < closeDist)
                 {

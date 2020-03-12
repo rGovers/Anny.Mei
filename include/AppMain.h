@@ -18,7 +18,7 @@ private:
 
     Workspace*            m_workspace;
     
-    const char*           m_filePath;
+    char*                 m_filePath;
 
     double                m_windowUpdateTimer;
 

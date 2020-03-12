@@ -10,6 +10,8 @@ extern "C"
     #include "lzf.h"
 }
 
+const static int INDEX_TABLE[] = { 2, 1, 0, 3};
+
 KritaLayer::KritaLayer(KritaImage* a_image)
 {
     m_image = a_image;
@@ -73,6 +75,33 @@ std::list<KritaLayer*> KritaLayer::GetChildren() const
     return m_children;
 }
 
+int KritaLayer::GetXOffset() const
+{
+    return m_xOffset;
+}
+void KritaLayer::SetXOffset(int a_offset)
+{
+    m_xOffset = a_offset;
+}
+
+int KritaLayer::GetYOffset() const
+{
+    return m_yOffset;
+}
+void KritaLayer::SetYOffset(int a_offset)
+{
+    m_yOffset = a_offset;
+}
+
+int KritaLayer::GetWidth() const
+{
+    return m_width;
+}
+int KritaLayer::GetHeight() const
+{
+    return m_height;
+}
+
 e_LayerType KritaLayer::GetLayerType() const
 {
     return m_layerType;
@@ -125,8 +154,6 @@ void KritaLayer::SetFilename(const char* a_name)
         strcpy(m_filename, a_name);
     }
 }
-
-
 
 void KritaLayer::DelinearizeColors(char* a_input, char* a_output, unsigned int a_size, unsigned int a_pixelSize)
 {
@@ -379,24 +406,36 @@ void KritaLayer::LoadData(mz_zip_archive& a_archive)
 
             delete[] tiles;
 
-            const unsigned int imageSize = imageWidth * imageHeight * 4;
+            glm::vec2 diff = max - min;
 
-            m_width = imageWidth;
-            m_height = imageHeight;
+            diff.x = glm::abs(diff.x);
+            diff.y = glm::abs(diff.y);
+
+            m_width = diff.x * tileWidth + tileWidth;
+            m_height = diff.y * tileWidth + tileWidth;
+
+            m_xOffset = min.x * tileWidth + m_xOffset * tileWidth;
+            m_yOffset = min.y * tileHeight + m_yOffset * tileHeight;
+
+            const unsigned int imageSize = m_width * m_height * 4;
 
             m_data = new char[imageSize];
             memset(m_data, 0, imageSize);
 
             const int pMax = glm::min(pixelSize, 4);
 
-            for (unsigned int x = 0; x < imageWidth; ++x)
+            for (unsigned int x = 0; x < m_width; ++x)
             {
-                const int gridX = x / tileWidth;
+                const int tX = x + min.x * tileWidth;
+
+                const int gridX = tX / tileWidth;
                 const int relIndX = x % tileWidth;
 
-                for (unsigned int y = 0; y < imageHeight; ++y)
+                for (unsigned int y = 0; y < m_height; ++y)
                 {
-                    const int gridY = y / tileHeight;
+                    const int tY = y + min.y * tileHeight;
+
+                    const int gridY = tY / tileHeight;
                     const int relIndY = y % tileHeight;
 
                     auto iter = tileGraph.find(gridX);
@@ -412,35 +451,7 @@ void KritaLayer::LoadData(mz_zip_archive& a_archive)
 
                                 for (int i = 0; i < pMax; ++i)
                                 {
-                                    int colInd;
-
-                                    switch (i)
-                                    {
-                                    case 3:
-                                    {
-                                        colInd = 3;
-
-                                        break;
-                                    }
-                                    case 2:
-                                    {
-                                        colInd = 0;
-
-                                        break;
-                                    }
-                                    case 1:
-                                    {
-                                        colInd = 1;
-
-                                        break;
-                                    }
-                                    case 0:
-                                    {
-                                        colInd = 2;
-
-                                        break;
-                                    }
-                                    }
+                                    const int colInd = INDEX_TABLE[i];
 
                                     const unsigned int index = y * m_width * 4 + x * 4 + i;
                                     const unsigned int relIndex = relIndY * tileWidth * pixelSize + relIndX * pixelSize + colInd;
@@ -481,6 +492,8 @@ LayerMeta KritaLayer::ToLayerMeta() const
 
     meta.Width = m_width;
     meta.Height = m_height;
+    meta.xOffset = GetXOffset();
+    meta.yOffset = GetYOffset();
 
     return meta;
 }

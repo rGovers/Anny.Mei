@@ -55,6 +55,14 @@ void KritaImage::LoadLayers(mz_zip_archive& a_archive, KritaLayer* a_layer, XMLF
             {
                 layer->SetFilename(iter->Value);
             }
+            else if (strcmp(attName, "x") == 0)
+            {
+                layer->SetXOffset(std::stoi(iter->Value));
+            }
+            else if (strcmp(attName, "y") == 0)
+            {
+                layer->SetYOffset(std::stoi(iter->Value));
+            }
             else if (strcmp(attName, "nodetype") == 0)
             {
                 const char* attValue = iter->Value;

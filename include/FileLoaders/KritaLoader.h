@@ -54,10 +54,7 @@ public:
     void SetYOffset(int a_offset);
 
     int GetWidth() const;
-    void SetWidth(int a_width);
-
     int GetHeight() const;
-    int SetHeight(int a_height);
 
     KritaLayer* GetParent() const;
     void SetParent(KritaLayer* a_parent);

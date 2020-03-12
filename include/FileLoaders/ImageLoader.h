@@ -4,7 +4,12 @@ struct LayerMeta
 {
     char* Name;
 
-    // It is possible for the size to be indepent of the image size
+    int ImageWidth;
+    int ImageHeight;
+
+    int xOffset;
+    int yOffset;
+    
     int Width;
     int Height;
 };

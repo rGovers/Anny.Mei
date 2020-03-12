@@ -1,9 +1,10 @@
 #pragma once
 
-#include "Models/Model.h"
-#include "Models/SkinnedModel.h"
+#include <glm/glm.hpp>
+#include <list>
 
-class Texture;
+struct LayerMeta;
+struct ModelVertex;
 
 struct TriImageTriangle
 {
@@ -19,24 +20,29 @@ class TriImage
 {
 private:
     unsigned int         m_vertCount;
-    glm::vec2*           m_verts;
+    ModelVertex*         m_verts;
     
     unsigned int*        m_indicies;
     unsigned int         m_indexCount;
 
     const unsigned char* m_textureData;
-    int                  m_width;
-    int                  m_height;
 
+    glm::ivec2           m_size;
+    glm::ivec2           m_offset;
+
+    glm::ivec2           m_imageSize;
+                 
     void WindTriangle(unsigned int& a_a, unsigned int& a_b, unsigned int& a_c) const;
     void WindQuad(unsigned int& a_a, unsigned int& a_b, unsigned int& a_c, unsigned int& a_d) const;
 
     void VoronoiTriangulation(int a_vWidth, int a_vHeight);
+
+    bool PlaceAlphaVertex(std::list<ModelVertex>* a_verts, int a_x, int a_y, int a_texXStep, int a_texYStep, float a_alpha) const;
 protected:
 
 public:
     TriImage() = delete;
-    TriImage(const unsigned char* a_textureData, int a_width, int a_height);
+    TriImage(const unsigned char* a_textureData, const LayerMeta* a_meta);
     ~TriImage();
 
     void AlphaTriangulation(int a_texXStep, int a_texYStep, float a_alphaThreshold, int a_vWidth, int a_vHeight);
@@ -48,5 +54,5 @@ public:
 
     unsigned int GetVertexCount() const;
 
-    ModelVertex* ToModelVertices() const;
+    ModelVertex* GetVertices() const;
 };

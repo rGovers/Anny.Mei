@@ -2,6 +2,8 @@
 
 #include <glm/glm.hpp>
 
+struct ModelVertex;
+
 class Voronoi
 {
 private:
@@ -12,7 +14,7 @@ private:
 protected:
 
 public:
-    Voronoi(const glm::vec2* a_verts, unsigned int a_count, unsigned int a_xRex, unsigned int a_yRes);
+    Voronoi(const ModelVertex* a_verts, unsigned int a_count, int a_xOffset, int a_yOffset, unsigned int a_xRex, unsigned int a_yRes);
     ~Voronoi();
 
     inline unsigned int GetXResolution() const;

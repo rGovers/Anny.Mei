@@ -4,12 +4,14 @@
 #include <stb/stb_image.h>
 
 #include "DataStore.h"
+#include "FileLoaders/ImageLoader.h"
 #include "FileLoaders/KritaLoader.h"
 #include "FileLoaders/PropertyFile.h"
 #include "FileUtils.h"
 #include "imgui.h"
 #include "MemoryStream.h"
 #include "ModelEditor.h"
+#include "Models/Model.h"
 #include "RenderTexture.h"
 #include "SkeletonEditor.h"
 #include "Texture.h"
@@ -62,7 +64,7 @@ void TextureEditor::TriangulateClicked()
 {
     const LayerTexture layerTexture = *m_selectedIndex;
 
-    TriImage* triImage = new TriImage(layerTexture.Data, layerTexture.Meta->Width, layerTexture.Meta->Height);
+    TriImage* triImage = new TriImage(layerTexture.Data, layerTexture.Meta);
 
     const e_TriangulationMode triMode = m_window->GetTriangulationMode();
 
@@ -106,7 +108,9 @@ void TextureEditor::TriangulateClicked()
         memcpy(indicies, triImage->GetIndices(), indexSize);
 
         const unsigned int vertexCount = triImage->GetVertexCount();
-        ModelVertex* modelVerticies = triImage->ToModelVertices();
+        const unsigned int vertexSize = vertexCount * sizeof(ModelVertex);
+        ModelVertex* modelVerticies = new ModelVertex[vertexSize];
+        memcpy(modelVerticies, triImage->GetVertices(), vertexSize);
 
         m_workspace->AddModel(layerTexture.Meta->Name, modelVerticies, vertexCount, indicies, indexCount);
     }
@@ -148,6 +152,8 @@ void TextureEditor::LoadTexture(const char* a_path)
         layerMeta->Name = nullptr;
         layerMeta->Width = -1;
         layerMeta->Height = -1;
+        layerMeta->xOffset = 0;
+        layerMeta->yOffset = 0;
 
         LayerTexture layerTexture;
         layerTexture.Meta = layerMeta;
@@ -155,6 +161,9 @@ void TextureEditor::LoadTexture(const char* a_path)
         int channels;
 
         unsigned char* data = stbi_load(a_path, &layerMeta->Width, &layerMeta->Height, &channels, STBI_rgb_alpha);
+
+        layerMeta->ImageWidth = layerMeta->Width;
+        layerMeta->ImageHeight = layerMeta->Height;
 
         if (data == nullptr)
         {
@@ -202,9 +211,10 @@ void TextureEditor::LoadTexture(const char* a_path)
                 LayerMeta* layerMeta = new LayerMeta();
 
                 LayerTexture layerTexture;
-                layerTexture.Meta = layerMeta;
 
+                layerTexture.Meta = layerMeta;
                 layerTexture.Data = (unsigned char*)layer->Data;
+
                 *layerMeta = layer->MetaData;
 
                 if (layerMeta->Name != nullptr && layerMeta->Width > 0 && layerMeta->Height > 0)
@@ -298,12 +308,29 @@ void TextureEditor::GetImageData(PropertyFileProperty& a_property, mz_zip_archiv
     LayerTexture layerTexture;
 
     LayerMeta* meta = layerTexture.Meta = new LayerMeta();
+    meta->ImageWidth = -1;
+    meta->ImageHeight = -1;
+    meta->xOffset = 0;
+    meta->yOffset = 0;
 
     for (auto iter = a_property.Values().begin(); iter != a_property.Values().end(); ++iter)
     {
         IFSETTOATTVALCPY("name", iter->Name, meta->Name, iter->Value)
+        else IFSETTOATTVALI("imagewidth", iter->Name, meta->ImageWidth, iter->Value)
+        else IFSETTOATTVALI("imageheight", iter->Name, meta->ImageHeight, iter->Value)
         else IFSETTOATTVALI("width", iter->Name, meta->Width, iter->Value)
         else IFSETTOATTVALI("height", iter->Name, meta->Height, iter->Value)
+        else IFSETTOATTVALI("xoffset", iter->Name, meta->xOffset, iter->Value)
+        else IFSETTOATTVALI("yoffset", iter->Name, meta->yOffset, iter->Value)
+    }
+
+    if (meta->ImageWidth == -1)
+    {
+        meta->ImageWidth = meta->Width;
+    }
+    if (meta->ImageHeight == -1)
+    {
+        meta->ImageHeight = meta->Height;
     }
 
     std::string fileName = "img/" + std::string(meta->Name) + ".imgbin";
@@ -357,8 +384,12 @@ void TextureEditor::SaveImageData(mz_zip_archive& a_archive) const
 
         property->SetName("image");
         property->EmplaceValue("name", layerMeta->Name);
+        property->EmplaceValue("imagewidth", std::to_string(layerMeta->ImageWidth).c_str());
+        property->EmplaceValue("imageheight", std::to_string(layerMeta->ImageHeight).c_str());
         property->EmplaceValue("width", std::to_string(layerMeta->Width).c_str());
         property->EmplaceValue("height", std::to_string(layerMeta->Height).c_str());
+        property->EmplaceValue("xoffset", std::to_string(layerMeta->xOffset).c_str());
+        property->EmplaceValue("yoffset", std::to_string(layerMeta->yOffset).c_str());
     }
 
     char* data = propertyFile->ToString();
