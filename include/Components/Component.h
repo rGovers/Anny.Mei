@@ -39,6 +39,6 @@ public:
 
     virtual void DisplayValues(bool a_value) { };
 
-    virtual void Load(PropertyFileProperty* a_property, AnimControl* a_animControl) = 0;
-    virtual void Save(PropertyFile* a_propertyFile, PropertyFileProperty* a_parent) const = 0;
+    virtual void Load(PropertyFileProperty* a_property, AnimControl* a_animControl) { };
+    virtual void Save(PropertyFile* a_propertyFile, PropertyFileProperty* a_parent) const { };
 };

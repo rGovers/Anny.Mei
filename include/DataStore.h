@@ -1,12 +1,15 @@
 #pragma once
 
+#include <list>
 #include <map>
 #include <string>
 
-enum class e_ModelType;
+class DepthRenderTexture;
 class Model;
 class MorphPlane;
 class Texture;
+
+enum class e_ModelType;
 
 class DataStore
 {
@@ -22,9 +25,10 @@ private:
 
     static DataStore* Instance;
 
-    std::map<std::string, Texture*>    m_textures;
-    std::map<std::string, ModelWrap*>  m_models;
-    std::map<std::string, MorphPlane*> m_morphPlanes;
+    std::map<std::string, Texture*>                       m_textures;
+    std::map<std::string, ModelWrap*>                     m_models;
+    std::map<std::string, MorphPlane*>                    m_morphPlanes;
+    std::map<std::string, std::list<DepthRenderTexture*>> m_masks;
 protected:
 
 public:
@@ -48,4 +52,8 @@ public:
     void AddTexture(const char* a_name, Texture* a_texture);
     Texture* GetTexture(const char* a_name) const;
     void RemoveTexture(const char* a_name);
+
+    void AddMask(const char* a_name, DepthRenderTexture* a_texture);
+    DepthRenderTexture* GetMask(const char* a_name) const;
+    void RemoveMask(const char* a_name, DepthRenderTexture* a_texture);
 };

@@ -1,6 +1,6 @@
 #include "DataStore.h"
 
-#include <string.h>
+#include <algorithm>
 
 #include "Models/Model.h"
 #include "MorphPlane.h"
@@ -261,5 +261,50 @@ void DataStore::RemoveTexture(const char* a_name)
     if (iter != m_textures.end())
     {
         m_textures.erase(iter);
+    }
+}
+
+void DataStore::AddMask(const char* a_name, DepthRenderTexture* a_texture)
+{
+    auto iter = m_masks.find(a_name);
+    if (iter == m_masks.end())
+    {
+        std::list<DepthRenderTexture*> maskList;
+
+        maskList.emplace_back(a_texture);
+
+        m_masks.emplace(a_name, maskList);
+    }
+    else
+    {
+        iter->second.emplace_back(a_texture);
+    }
+}
+DepthRenderTexture* DataStore::GetMask(const char* a_name) const
+{
+    auto iter = m_masks.find(a_name);
+    if (iter != m_masks.end())
+    {
+        return *iter->second.begin();
+    }
+
+    return nullptr;
+}
+void DataStore::RemoveMask(const char* a_name, DepthRenderTexture* a_texture)
+{
+    auto iter = m_masks.find(a_name);
+    if (iter != m_masks.end())
+    {
+        auto eIter = std::find(iter->second.begin(), iter->second.end(), a_texture);
+
+        if (eIter != iter->second.end())
+        {
+            iter->second.erase(eIter);
+        }
+
+        if (iter->second.size() <= 0)
+        {
+            m_masks.erase(iter);
+        }
     }
 }

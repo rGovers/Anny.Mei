@@ -4,9 +4,11 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 #include "DataStore.h"
+#include "DepthRenderTexture.h"
 #include "Models/MorphPlaneModel.h"
 #include "MorphPlane.h"
 #include "ShaderProgram.h"
+#include "Shaders/MaskedPixel.h"
 #include "Shaders/MorphPlaneVertex.h"
 #include "Shaders/SolidPixel.h"
 #include "Shaders/StandardPixel.h"
@@ -14,12 +16,14 @@
 
 unsigned int MorphPlaneDisplay::Ref = 0;
 ShaderProgram* MorphPlaneDisplay::BaseShaderProgram = nullptr;
+ShaderProgram* MorphPlaneDisplay::MaskShaderProgram = nullptr;
 ShaderProgram* MorphPlaneDisplay::WireShaderProgram = nullptr;
 
 MorphPlaneDisplay::MorphPlaneDisplay()
 {
     m_modelName = nullptr;
     m_morphPlaneName = nullptr;
+    m_maskName = nullptr;
 
     if (BaseShaderProgram == nullptr)
     {
@@ -37,6 +41,22 @@ MorphPlaneDisplay::MorphPlaneDisplay()
         glDeleteShader(pixelShader);
     }
     
+    if (MaskShaderProgram == nullptr)
+    {
+        const unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
+        glShaderSource(vertexShader, 1, &MORPHPLANEVERTEX, 0);
+        glCompileShader(vertexShader);
+
+        const unsigned int maskedPixelShader = glCreateShader(GL_FRAGMENT_SHADER);
+        glShaderSource(maskedPixelShader, 1, &MASKEDPIXEL, 0);
+        glCompileShader(maskedPixelShader);
+
+        MaskShaderProgram = new ShaderProgram(maskedPixelShader, vertexShader);
+
+        glDeleteShader(vertexShader);
+        glDeleteShader(maskedPixelShader);
+    }
+
     if (WireShaderProgram == nullptr)
     {
         const unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
@@ -61,7 +81,10 @@ MorphPlaneDisplay::~MorphPlaneDisplay()
     if (--Ref <= 0)
     {
         delete BaseShaderProgram;
-        BaseShaderProgram == nullptr;
+        BaseShaderProgram = nullptr;
+
+        delete MaskShaderProgram;
+        MaskShaderProgram = nullptr;
 
         delete WireShaderProgram;
         WireShaderProgram = nullptr;
@@ -81,7 +104,6 @@ const char* MorphPlaneDisplay::GetModelName() const
 {
     return m_modelName;
 }
-
 void MorphPlaneDisplay::SetModelName(const char* a_name)
 {
     if (m_modelName != nullptr)
@@ -107,7 +129,6 @@ const char* MorphPlaneDisplay::GetMorphPlaneName() const
 {
     return m_morphPlaneName;
 }
-
 void MorphPlaneDisplay::SetMorphPlaneName(const char* a_name)
 {
     if (m_morphPlaneName != nullptr)
@@ -125,6 +146,31 @@ void MorphPlaneDisplay::SetMorphPlaneName(const char* a_name)
             m_morphPlaneName = new char[len + 1];
 
             strcpy(m_morphPlaneName, a_name);
+        }
+    }
+}
+
+const char* MorphPlaneDisplay::GetMaskName() const
+{
+    return m_maskName;
+}
+void MorphPlaneDisplay::SetMaskName(const char* a_name)
+{
+    if (m_maskName != nullptr)
+    {
+        delete[] m_maskName;
+        m_maskName = nullptr;
+    }
+
+    if (a_name != nullptr)
+    {
+        const size_t len = strlen(a_name);
+
+        if (len > 0)
+        {
+            m_maskName = new char[len + 1];
+
+            strcpy(m_maskName, a_name);
         }
     }
 }
@@ -221,6 +267,98 @@ void MorphPlaneDisplay::Draw(const MorphPlane* a_morphPlane, const glm::mat4& a_
 
             glDrawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_INT, 0);
         }
+
+        glDisable(GL_BLEND);
+
+        delete morphTex;
+    }
+}
+
+void MorphPlaneDisplay::DrawMasked(const glm::mat4& a_transform) const
+{
+    DataStore* store = DataStore::GetInstance();
+
+    if (m_morphPlaneName != nullptr)
+    {
+        const MorphPlane* morphPlane = store->GetMorphPlane(m_morphPlaneName);
+
+        DrawMasked(morphPlane, a_transform);
+    }
+}
+void MorphPlaneDisplay::DrawMasked(const MorphPlane* a_morphPlane, const glm::mat4& a_transform) const
+{
+    DataStore* store = DataStore::GetInstance();
+
+    Model* model = nullptr;
+    Texture* tex = nullptr;
+    DepthRenderTexture* maskTexture = nullptr;
+    if (m_modelName != nullptr)
+    {
+        model = store->GetModel(m_modelName, e_ModelType::MorphPlane);
+        
+        const char* texName = store->GetModelTextureName(m_modelName);
+        if (texName != nullptr)
+        {
+            tex = store->GetTexture(texName);
+        }
+    }
+
+    if (m_maskName != nullptr)
+    {
+        maskTexture = store->GetMask(m_maskName);
+    }
+
+    if (model != nullptr && tex != nullptr && a_morphPlane != nullptr && maskTexture != nullptr)
+    {
+        const Texture* morphTex = a_morphPlane->ToTexture();
+
+        glm::vec4 view;
+
+        glGetFloatv(GL_VIEWPORT, (float*)&view);
+
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);     
+
+        glBindVertexArray(model->GetVAO());
+
+        const unsigned int indexCount = model->GetIndicesCount();
+
+        const unsigned int dim = a_morphPlane->GetSize();
+        const unsigned int sSize = dim * dim;
+        const float scale = 1.0f / (dim + 1);
+
+        const glm::mat4 finalTran = a_transform * glm::scale(glm::mat4(1), glm::vec3(1 - scale));
+
+        const int baseHandle = MaskShaderProgram->GetHandle();
+        glUseProgram(baseHandle);
+
+        const int modelLocation = glGetUniformLocation(baseHandle, "Model");
+        glUniformMatrix4fv(modelLocation, 1, GL_FALSE, (float*)&finalTran);
+
+        const int mainTexLocation = glGetUniformLocation(baseHandle, "MainTex");
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, tex->GetHandle());
+        glUniform1i(mainTexLocation, 0);
+
+        const int morphTexLocation = glGetUniformLocation(baseHandle, "MorphTex");
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, morphTex->GetHandle());
+        glUniform1i(morphTexLocation, 1);
+
+        const int maskTexLocation = glGetUniformLocation(baseHandle, "MaskTex");
+        glActiveTexture(GL_TEXTURE2);
+        glBindTexture(GL_TEXTURE_2D, maskTexture->GetDepthTexture()->GetHandle());
+        glUniform1i(maskTexLocation, 2);
+
+        // I cant be stuffed anymore I want sleep
+        const glm::vec2 screenSize = glm::vec2(view.z, view.w);
+        const int screenSizeLocation = glGetUniformLocation(baseHandle, "ScreenSize");
+        glUniform2fv(screenSizeLocation, 1, (float*)&screenSize);
+
+        const int morphTexSizeLocation = glGetUniformLocation(baseHandle, "MorphSize");
+        glUniform1ui(morphTexSizeLocation, sSize);
+
+        glDrawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_INT, 0);
 
         glDisable(GL_BLEND);
 

@@ -18,6 +18,7 @@ Renderer::~Renderer()
 {
     delete m_modelName;
     delete m_anchor;
+    delete m_useMask;
 }
 
 void Renderer::InitValues()
@@ -29,6 +30,7 @@ void Renderer::InitValues()
 
     m_modelName = new AnimValue<StringKeyValue>((baseName + "Model Name").c_str(), animControl);
     m_anchor = new AnimValue<Vec3KeyValue>((baseName + "Anchor").c_str(), animControl);
+    m_useMask = new AnimValue<StringKeyValue>((baseName + "Use Mask").c_str(), animControl);
 
     m_anchor->SelectKeyFrame(0);
     m_anchor->GetValue()->SetBaseValue({ 0.5f, 0.5f, 0.0f });
@@ -41,6 +43,7 @@ void Renderer::RenameValues()
 
     m_modelName->Rename((baseName + "Model Name").c_str());
     m_anchor->Rename((baseName + "Anchor").c_str());
+    m_useMask->Rename((baseName + "Use Mask").c_str());
 }
 
 void Renderer::DisplayRendererValues(bool a_value)
@@ -48,6 +51,8 @@ void Renderer::DisplayRendererValues(bool a_value)
     m_anchor->SetDisplayState(a_value);
     
     m_modelName->SetDisplayState(a_value);
+
+    m_useMask->SetDisplayState(a_value);
 }
 
 void Renderer::Init()
@@ -58,7 +63,6 @@ void Renderer::Init()
 void Renderer::UpdateRendererGUI()
 {
     StringKeyValue* nameValue = m_modelName->GetValue();
-
     if (nameValue != nullptr)
     {
         const char* str = nameValue->GetBaseString();
@@ -88,7 +92,6 @@ void Renderer::UpdateRendererGUI()
     }
 
     Vec3KeyValue* anchorValue = m_anchor->GetValue();
-
     if (anchorValue != nullptr)
     {
         glm::vec3 anchor = anchorValue->GetBaseValue();
@@ -96,6 +99,35 @@ void Renderer::UpdateRendererGUI()
         ImGui::InputFloat3("Anchor Position", (float*)&anchor);
 
         anchorValue->SetBaseValue(anchor);
+    }
+
+    StringKeyValue* maskValue = m_useMask->GetValue();
+    if (nameValue != nullptr)
+    {
+        const char* str = maskValue->GetBaseString();
+
+        char* buff;
+        if (str != nullptr)
+        {
+            const size_t len = strlen(str);
+
+            buff = new char[len + 2] { 0 };
+
+            strcpy(buff, str);
+        }
+        else
+        {
+            buff = new char[3] { 0 };
+        }
+
+        ImGui::InputText("Use Mask", buff, BUFFER_SIZE);
+
+        if (str == nullptr || strcmp(buff, str) != 0)
+        {
+            maskValue->SetString(buff);
+        }
+
+        delete[] buff;
     }
 }
 
@@ -154,6 +186,29 @@ glm::vec3 Renderer::GetBaseAnchor() const
     return glm::vec3(0.5f, 0.5f, 0.0f);
 }
 
+const char* Renderer::GetMaskName() const
+{
+    StringKeyValue* value = m_useMask->GetAnimValue();
+
+    if (value != nullptr)
+    {
+        return value->GetString();
+    }
+
+    return nullptr;
+}
+const char* Renderer::GetBaseMaskName() const
+{
+    StringKeyValue* value = m_useMask->GetValue();
+
+    if (value != nullptr)
+    {
+        return value->GetBaseString();
+    }
+
+    return nullptr;
+}
+
 void Renderer::ObjectRenamed()
 {
     RenameValues();
@@ -167,4 +222,9 @@ const char* Renderer::ComponentName() const
 void Renderer::DisplayValues(bool a_value)
 {
     DisplayRendererValues(a_value);
+}
+
+void Renderer::Save(PropertyFile* a_propertyFile, PropertyFileProperty* a_parent) const
+{
+    SaveValues(a_propertyFile, a_parent);
 }

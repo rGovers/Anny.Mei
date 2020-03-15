@@ -23,6 +23,8 @@ private:
     AnimValue<StringKeyValue>* m_modelName;
 
     AnimValue<Vec3KeyValue>*   m_anchor;
+
+    AnimValue<StringKeyValue>* m_useMask;
 protected:
     void UpdateRendererGUI();
 
@@ -33,6 +35,9 @@ protected:
 
     glm::vec3 GetAnchor() const;
     glm::vec3 GetBaseAnchor() const;
+
+    const char* GetMaskName() const;
+    const char* GetBaseMaskName() const;
 
     void InitValues();
     void RenameValues();
@@ -54,6 +59,5 @@ public:
 
     virtual void DisplayValues(bool a_value);
 
-    virtual void Load(PropertyFileProperty* a_property, AnimControl* a_animControl) = 0;
-    virtual void Save(PropertyFile* a_propertyFile, PropertyFileProperty* a_parent) const = 0;
+    virtual void Save(PropertyFile* a_propertyFile, PropertyFileProperty* a_parent) const;
 };

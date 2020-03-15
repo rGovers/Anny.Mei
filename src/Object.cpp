@@ -5,6 +5,7 @@
 
 #include "AnimControl.h"
 #include "Components/ImageRenderer.h"
+#include "Components/MorphPlaneMask.h"
 #include "Components/MorphPlaneRenderer.h"
 #include "Components/MorphTargetRenderer.h"
 #include "FileLoaders/PropertyFile.h"
@@ -131,6 +132,7 @@ void Object::LoadComponent(PropertyFileProperty* a_property)
     ISCREATECOMPONENT(comp, this, a_property->GetName(), ImageRenderer, m_animControl)
     else ISCREATECOMPONENT(comp, this, a_property->GetName(), MorphPlaneRenderer, m_animControl)
     else ISCREATECOMPONENT(comp, this, a_property->GetName(), MorphTargetRenderer, m_animControl)
+    else ISCREATECOMPONENT(comp, this, a_property->GetName(), MorphPlaneMask, m_animControl)
 
     if (comp != nullptr)
     {
@@ -163,6 +165,7 @@ void Object::UpdateComponentUI()
         bool createImageRenderer = true;
         bool createMorphPlaneRenderer = true;
         bool createMorphTargetRenderer = true;
+        bool createMorphPlaneMask = true;
 
         for (auto iter = m_components.begin(); iter != m_components.end(); ++iter)
         {
@@ -180,6 +183,10 @@ void Object::UpdateComponentUI()
             {
                 createMorphTargetRenderer = false;
             }
+            else if (strcmp(componentName, MorphPlaneMask::COMPONENT_NAME) == 0)
+            {
+                createMorphPlaneMask = false;
+            }
         }
 
         if (createImageRenderer && ImGui::Selectable(ImageRenderer::COMPONENT_NAME))
@@ -193,6 +200,10 @@ void Object::UpdateComponentUI()
         if (createMorphTargetRenderer && ImGui::Selectable(MorphTargetRenderer::COMPONENT_NAME))
         {
             component = new MorphTargetRenderer(this, m_animControl);
+        }
+        if (createMorphPlaneMask && ImGui::Selectable(MorphPlaneMask::COMPONENT_NAME))
+        {
+            component = new MorphPlaneMask(this, m_animControl);
         }
 
         if (component != nullptr)
@@ -209,18 +220,60 @@ void Object::UpdateComponentUI()
         ImGui::ListBoxFooter();
     }
 
-    int index = 0;
+    auto removeIter = m_components.end();
 
+    bool gen = false;
+
+    int index = 0;
     for (auto iter = m_components.begin(); iter != m_components.end(); ++iter)
     {
         if (ImGui::TreeNode((void*)index, (*iter)->ComponentName()))
         {
+            if (!gen && ImGui::BeginPopupContextItem("NYAH HAHA REMOVE ME FOR NO ID CRASHES!!!"))
+            {
+                gen = true;
+
+                if (ImGui::MenuItem("Remove Component"))
+                {
+                    removeIter = iter;
+                }
+
+                ImGui::EndPopup();
+            }
+
             (*iter)->UpdateGUI();
 
             ImGui::TreePop();
         }
+        else
+        {
+            // Seems to be a 50/50 that if I remove the string that it will either assert or combo boxes will stop working
+            // I have no idea
+            // Tried push id does not work
+            // Dont need the string elsewhere
+            // Cant find exact cause to report
+            if (!gen && ImGui::BeginPopupContextItem("NYAH HAHA REMOVE ME FOR NO ID CRASHES!!!"))
+            {
+                // Stop Duplicate Buttons
+                gen = true;
+
+                if (ImGui::MenuItem("Remove Component"))
+                {
+                    removeIter = iter;
+                }
+
+                ImGui::EndPopup();
+            }
+        }
 
         ++index;
+    }
+
+    if (removeIter != m_components.end())
+    {
+        delete *removeIter;
+
+        m_components.erase(removeIter);
     }
 }
 

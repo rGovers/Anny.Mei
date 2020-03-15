@@ -44,6 +44,10 @@ FileToHeader(
     HEADER_FILE "include/Shaders/StandardPixel.h"
     VARIABLE_NAME "StandardPixel")
 FileToHeader(
+    SOURCE_FILE "shaders/MaskedPixel.glsl" 
+    HEADER_FILE "include/Shaders/MaskedPixel.h"
+    VARIABLE_NAME "MaskedPixel")
+FileToHeader(
     SOURCE_FILE "shaders/SolidPixelColor.glsl"
     HEADER_FILE "include/Shaders/SolidPixelColor.h"
     VARIABLE_NAME "SolidPixelColor")
