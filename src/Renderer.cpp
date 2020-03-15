@@ -66,15 +66,15 @@ void Renderer::UpdateRendererGUI()
         char* buff;
         if (str != nullptr)
         {
-            const size_t len = strlen(str) + 1;
+            const size_t len = strlen(str);
 
-            buff = new char[len] { 0 };
+            buff = new char[len + 2] { 0 };
 
             strcpy(buff, str);
         }
         else
         {
-            buff = new char[1] { 0 };
+            buff = new char[3] { 0 };
         }
 
         ImGui::InputText("Model Name", buff, BUFFER_SIZE);

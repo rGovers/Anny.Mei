@@ -63,13 +63,13 @@ void SkeletonEditorWindow::UpdatePropertiesWindow(Object* a_selectedObject)
         {
             const size_t strLen = strlen(name);
 
-            buffer = new char[strLen];
+            buffer = new char[strLen + 2];
 
             strcpy(buffer, name);
         }
         else
         {
-            buffer = new char[1] { 0 };
+            buffer = new char[3] { 0 };
         }
 
         if (a_selectedObject != baseObject)

@@ -142,7 +142,7 @@ void ModelEditorWindow::UpdatePropertiesWindow(const ModelData* a_modelData)
 
         size_t len = strlen(name);
 
-        char* buff = new char[len + 1];
+        char* buff = new char[len + 2];
         strcpy(buff, name);
 
         ImGui::InputText("Model Name", buff, BUFFER_SIZE);
@@ -158,7 +158,7 @@ void ModelEditorWindow::UpdatePropertiesWindow(const ModelData* a_modelData)
 
         len = strlen(name);
 
-        buff = new char[len + 1];
+        buff = new char[len + 2];
         strcpy(buff, name);
 
         ImGui::InputText("Texture Name", buff, BUFFER_SIZE);

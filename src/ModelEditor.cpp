@@ -1015,7 +1015,8 @@ void ModelEditor::DragValue(const glm::vec2& a_dragMov)
 }
 void ModelEditor::SelectMouseUp(const glm::vec2& a_startPos, const glm::vec2& a_endPos)
 {
-    const ImGuiIO io = ImGui::GetIO();
+    // Needs to be reference otherwise I get exceptions from ImGui
+    const ImGuiIO& io = ImGui::GetIO();
 
     const glm::vec2 bMin = glm::vec2(glm::min(a_endPos.x, a_startPos.x), glm::min(a_endPos.y, a_startPos.y));
     const glm::vec2 bMax = glm::vec2(glm::max(a_endPos.x, a_startPos.x), glm::max(a_endPos.y, a_startPos.y)); 

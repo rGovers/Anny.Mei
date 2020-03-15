@@ -31,12 +31,12 @@ void DisplayStringValue(StringKeyValue* a_value, const char* a_name)
     {
         const size_t len = strlen(nameVal);
 
-        buff = new char[len + 1];
+        buff = new char[len + 2];
         strcpy(buff, nameVal);
     }
     else
     {
-        buff = new char[2] { 0 };
+        buff = new char[3] { 0 };
     }
 
     ImGui::InputText(a_name, buff, BUFFER_SIZE);
