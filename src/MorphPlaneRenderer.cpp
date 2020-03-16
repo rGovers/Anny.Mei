@@ -234,28 +234,29 @@ void MorphPlaneRenderer::MorphPlaneUpdateGUI()
 
         ImGui::Spacing();
 
-        if (ImGui::BeginCombo("Morph Mode", m_selectedMode))
-        {
-            for (int i = 0; i < IM_ARRAYSIZE(ITEMS); ++i)
-            {
-                bool is_selected = (m_selectedMode == ITEMS[i]); 
-                if (ImGui::Selectable(ITEMS[i], is_selected))
-                {
-                    m_selectedMode = ITEMS[i];
-                }
-                if (is_selected)
-                {
-                    ImGui::SetItemDefaultFocus();
-                }
-            }
-
-            ImGui::EndCombo();
-        }
-
         SetIntKeyValue* renderModeValue = m_renderMode->GetValue();
 
         if (renderModeValue != nullptr)
         {
+            m_selectedMode = ITEMS[renderModeValue->GetBaseInt()];
+            if (ImGui::BeginCombo("Morph Mode", m_selectedMode))
+            {
+                for (int i = 0; i < IM_ARRAYSIZE(ITEMS); ++i)
+                {
+                    bool is_selected = (m_selectedMode == ITEMS[i]); 
+                    if (ImGui::Selectable(ITEMS[i], is_selected))
+                    {
+                        m_selectedMode = ITEMS[i];
+                    }
+                    if (is_selected)
+                    {
+                        ImGui::SetItemDefaultFocus();
+                    }
+                }
+
+                ImGui::EndCombo();
+            }
+        
             if (strcmp(m_selectedMode, "Lerp") == 0)
             {
                 renderModeValue->SetInt((int)e_MorphRenderMode::Point3);

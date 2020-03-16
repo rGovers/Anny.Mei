@@ -4,6 +4,7 @@
 
 #include "AnimControl.h"
 #include "Camera.h"
+#include "DataStore.h"
 #include "imgui.h"
 #include "Object.h"
 #include "Renderers/MorphTargetDisplay.h"
@@ -20,8 +21,7 @@ MorphTargetRenderer::MorphTargetRenderer(Object* a_object, AnimControl* a_animCo
 {
     m_morphTargetDisplay = new MorphTargetDisplay();
 
-    m_renderMode = e_MorphRenderMode::Null;
-    m_selectedMode = ITEMS[0];
+    m_selectedMode = ITEMS[(int)e_MorphRenderMode::Null];
 
     m_animValuesDisplayed = false;
 }
@@ -30,30 +30,27 @@ MorphTargetRenderer::~MorphTargetRenderer()
     delete m_morphTargetDisplay;
 
     delete m_lerp;
+    delete m_renderMode;
 }
 
-void MorphTargetRenderer::Init()
+void MorphTargetRenderer::MorphTargetDraw(bool a_preview, double a_delta, Camera* a_camera)
 {
-    InitValues();
+    DataStore* store = DataStore::GetInstance();
 
-    AnimControl* animControl = GetAnimControl();
-    const Object* object = GetObject();
-
-    const std::string baseName = std::string("[") + object->GetName() + "] [" + this->ComponentName() + "] ";
-
-    m_lerp = new AnimValue<Vec2KeyValue>((baseName + "Lerp").c_str(), animControl);
-}
-void MorphTargetRenderer::Draw(bool a_preview, double a_delta, Camera* a_camera)
-{
     const Object* object = GetObject();
 
     const Transform* transform = object->GetTransform();
 
     glm::mat4 transformMat;
     glm::vec3 anchor;
-    const char* modelName;
+    const char* modelName = nullptr;
+    const char* useMask = nullptr;
 
     glm::vec2 lerp = glm::vec2(0);
+
+    e_MorphRenderMode renderMode = e_MorphRenderMode::Null;
+
+    DepthRenderTexture* mask = nullptr;
 
     if (a_preview)
     {
@@ -61,12 +58,23 @@ void MorphTargetRenderer::Draw(bool a_preview, double a_delta, Camera* a_camera)
 
         anchor = -GetBaseAnchor();
         modelName = GetBaseModelName();
+        useMask = GetBaseMaskName();
 
         Vec2KeyValue* lerpValue = m_lerp->GetValue();
-
         if (lerpValue != nullptr)
         {
             lerp = lerpValue->GetBaseValue();
+        }
+
+        SetIntKeyValue* renderValue = m_renderMode->GetValue();
+        if (renderValue != nullptr)
+        {
+            renderMode = (e_MorphRenderMode)renderValue->GetBaseInt();
+        }
+
+        if (useMask != nullptr)
+        {
+            mask = store->GetPreviewMask(useMask);
         }
     }
     else
@@ -75,12 +83,23 @@ void MorphTargetRenderer::Draw(bool a_preview, double a_delta, Camera* a_camera)
         
         anchor = -GetAnchor();  
         modelName = GetModelName();
+        useMask = GetMaskName();
 
         Vec2KeyValue* lerpValue = m_lerp->GetAnimValue();
-
         if (lerpValue != nullptr)
         {
             lerp = lerpValue->GetValue();
+        }
+
+        SetIntKeyValue* renderValue = m_renderMode->GetAnimValue();
+        if (renderValue != nullptr)
+        {
+            renderMode = (e_MorphRenderMode)renderValue->GetInt();
+        }
+
+        if (useMask != nullptr)
+        {
+            mask = store->GetMask(useMask);
         }
     }
 
@@ -99,123 +118,175 @@ void MorphTargetRenderer::Draw(bool a_preview, double a_delta, Camera* a_camera)
 
     const glm::mat4 finalTransform = view * proj * shift;
 
-    switch (m_renderMode)
+    switch (renderMode)
     {
     case e_MorphRenderMode::Point9:
     {
-        m_morphTargetDisplay->Draw9Point(finalTransform, lerp);
-
+        if (useMask == nullptr || useMask[0] == 0)
+        {
+            m_morphTargetDisplay->Draw9Point(finalTransform, lerp);
+        }
+        else
+        {
+            m_morphTargetDisplay->Draw9PointMasked(finalTransform, mask, lerp);
+        }
+        
         break;
     }
     case e_MorphRenderMode::Point5:
     {
-        m_morphTargetDisplay->Draw(finalTransform, lerp);
+        if (useMask == nullptr || useMask[0] == 0)
+        {
+            m_morphTargetDisplay->Draw(finalTransform, lerp);
+        }
+        else
+        {
+            m_morphTargetDisplay->DrawMasked(finalTransform, mask, lerp);
+        }
 
         break;
     }
     case e_MorphRenderMode::Point3:
     {
-        m_morphTargetDisplay->Draw(finalTransform, glm::vec2(lerp.x, 0));
+        if (useMask == nullptr || useMask[0] == 0)
+        {
+            m_morphTargetDisplay->Draw(finalTransform, glm::vec2(lerp.x, 0));
+        }
+        else
+        {
+            m_morphTargetDisplay->DrawMasked(finalTransform, mask, glm::vec2(lerp.x, 0));
+        }
 
         break;
     }
     default:
     {
-        m_morphTargetDisplay->Draw(finalTransform, glm::vec2(0));
+        if (useMask == nullptr || useMask[0] == 0)
+        {
+            m_morphTargetDisplay->Draw(finalTransform);
+        }
+        else
+        {
+            m_morphTargetDisplay->DrawMasked(finalTransform, mask);
+        }
 
         break;
     }
     }
 }
-
-void MorphTargetRenderer::Update(double a_delta, Camera* a_camera)
-{
-    Draw(false, a_delta, a_camera);
-}
-void MorphTargetRenderer::UpdatePreview(double a_delta, Camera* a_camera)
-{
-    Draw(true, a_delta, a_camera);
-}
-void MorphTargetRenderer::UpdateGUI()
+void MorphTargetRenderer::MorphTargetUpdateGUI()
 {
     UpdateRendererGUI();
 
     ImGui::Spacing();
 
-    if (ImGui::BeginCombo("Morph Mode", m_selectedMode))
+    SetIntKeyValue* renderModeValue = m_renderMode->GetValue();
+    
+    if (renderModeValue != nullptr)
     {
-        for (int i = 0; i < IM_ARRAYSIZE(ITEMS); ++i)
+        m_selectedMode = ITEMS[renderModeValue->GetBaseInt()];
+        if (ImGui::BeginCombo("Morph Mode", m_selectedMode))
         {
-            bool is_selected = (m_selectedMode == ITEMS[i]); 
-            if (ImGui::Selectable(ITEMS[i], is_selected))
+            for (int i = 0; i < IM_ARRAYSIZE(ITEMS); ++i)
             {
-                m_selectedMode = ITEMS[i];
+                bool is_selected = (m_selectedMode == ITEMS[i]); 
+                if (ImGui::Selectable(ITEMS[i], is_selected))
+                {
+                    m_selectedMode = ITEMS[i];
+                }
+                if (is_selected)
+                {
+                    ImGui::SetItemDefaultFocus();
+                }
             }
-            if (is_selected)
+
+            ImGui::EndCombo();
+        }
+
+        if (strcmp(m_selectedMode, "Lerp") == 0)
+        {
+            renderModeValue->SetInt((int)e_MorphRenderMode::Point3);
+        }
+        else if (strcmp(m_selectedMode, "5 Point") == 0)
+        {
+            renderModeValue->SetInt((int)e_MorphRenderMode::Point5);
+        }
+        else if (strcmp(m_selectedMode, "9 Point") == 0)
+        {
+            renderModeValue->SetInt((int)e_MorphRenderMode::Point9);
+        }
+        else
+        {
+            renderModeValue->SetInt((int)e_MorphRenderMode::Null);
+        }
+
+        DisplayValues(m_animValuesDisplayed);
+
+        switch ((e_MorphRenderMode)renderModeValue->GetBaseInt())
+        {
+        case e_MorphRenderMode::Point3:
+        {
+            Vec2KeyValue* vecValue = m_lerp->GetValue();
+            if (vecValue != nullptr)
             {
-                ImGui::SetItemDefaultFocus();
+                glm::vec2 val = vecValue->GetBaseValue();
+
+                ImGui::DragFloat("Lerp", &val.x, 0.01f);
+
+                val.x = glm::clamp(val.x, -1.0f, 1.0f);
+
+                vecValue->SetBaseValue(val);
             }
+
+            break;
         }
-
-        ImGui::EndCombo();
-     }
-
-    if (strcmp(m_selectedMode, "Lerp") == 0)
-    {
-        m_renderMode = e_MorphRenderMode::Point3;
-    }
-    else if (strcmp(m_selectedMode, "5 Point") == 0)
-    {
-        m_renderMode = e_MorphRenderMode::Point5;
-    }
-    else if (strcmp(m_selectedMode, "9 Point") == 0)
-    {
-        m_renderMode = e_MorphRenderMode::Point9;
-    }
-    else
-    {
-        m_renderMode = e_MorphRenderMode::Null;
-    }
-
-    DisplayValues(m_animValuesDisplayed);
-
-    switch (m_renderMode)
-    {
-    case e_MorphRenderMode::Point3:
-    {
-        Vec2KeyValue* vecValue = m_lerp->GetValue();
-        if (vecValue != nullptr)
+        case e_MorphRenderMode::Point5:
+        case e_MorphRenderMode::Point9:
         {
-            glm::vec2 val = vecValue->GetBaseValue();
+            Vec2KeyValue* vecValue = m_lerp->GetValue();
+            if (vecValue != nullptr)
+            {
+                glm::vec2 val = vecValue->GetBaseValue();
 
-            ImGui::DragFloat("Lerp", &val.x, 0.01f);
+                ImGui::DragFloat2("Lerp", (float*)&val, 0.01f);
 
-            val.x = glm::clamp(val.x, -1.0f, 1.0f);
+                val.x = glm::clamp(val.x, -1.0f, 1.0f);
+                val.y = glm::clamp(val.y, -1.0f, 1.0f);
 
-            vecValue->SetBaseValue(val);
+                vecValue->SetBaseValue(val);
+            }
+
+            break;
         }
-
-        break;
-    }
-    case e_MorphRenderMode::Point5:
-    case e_MorphRenderMode::Point9:
-    {
-        Vec2KeyValue* vecValue = m_lerp->GetValue();
-        if (vecValue != nullptr)
-        {
-            glm::vec2 val = vecValue->GetBaseValue();
-
-            ImGui::DragFloat2("Lerp", (float*)&val, 0.01f);
-
-            val.x = glm::clamp(val.x, -1.0f, 1.0f);
-            val.y = glm::clamp(val.y, -1.0f, 1.0f);
-
-            vecValue->SetBaseValue(val);
         }
+    }
+}
 
-        break;
-    }
-    }
+void MorphTargetRenderer::Init()
+{
+    InitValues();
+
+    AnimControl* animControl = GetAnimControl();
+    const Object* object = GetObject();
+
+    const std::string baseName = std::string("[") + object->GetName() + "] [" + this->ComponentName() + "] ";
+
+    m_lerp = new AnimValue<Vec2KeyValue>((baseName + "Lerp").c_str(), animControl);
+
+    m_renderMode = new AnimValue<SetIntKeyValue>((baseName + "Render Mode").c_str(), animControl);
+}
+
+void MorphTargetRenderer::Update(double a_delta, Camera* a_camera)
+{
+    MorphTargetDraw(false, a_delta, a_camera);
+}
+void MorphTargetRenderer::UpdatePreview(double a_delta, Camera* a_camera)
+{
+    MorphTargetDraw(true, a_delta, a_camera);
+}
+void MorphTargetRenderer::UpdateGUI()
+{
+    MorphTargetUpdateGUI();
 }
 
 const char* MorphTargetRenderer::ComponentName() const
@@ -232,6 +303,8 @@ void MorphTargetRenderer::ObjectRenamed()
     const std::string baseName = std::string("[") + object->GetName() + "] [" + this->ComponentName() + "] ";
 
     m_lerp->Rename((baseName + "Lerp").c_str());
+
+    m_renderMode->Rename((baseName + "Render Mode").c_str());
 }
 
 void MorphTargetRenderer::DisplayValues(bool a_value)
@@ -240,7 +313,17 @@ void MorphTargetRenderer::DisplayValues(bool a_value)
 
     DisplayRendererValues(a_value);
 
-    switch (m_renderMode)
+    m_renderMode->SetDisplayState(a_value);
+
+    e_MorphRenderMode renderMode = e_MorphRenderMode::Null;
+
+    SetIntKeyValue* renderModeKeyValue = m_renderMode->GetValue();
+    if (renderModeKeyValue != nullptr)
+    {
+        renderMode = (e_MorphRenderMode)renderModeKeyValue->GetBaseInt();
+    }
+
+    switch (renderMode)
     {
     case e_MorphRenderMode::Point3:
     case e_MorphRenderMode::Point5:
@@ -257,29 +340,4 @@ void MorphTargetRenderer::DisplayValues(bool a_value)
         break;
     }
     }
-}
-
-void MorphTargetRenderer::Load(PropertyFileProperty* a_property, AnimControl* a_animControl)
-{
-    const std::list<PropertyFileValue> values = a_property->Values();
-
-    int renderMode = -1;
-
-    for (auto iter = values.begin(); iter != values.end(); ++iter)
-    {
-        IFSETTOATTVALI(iter->Name, "renderMode", renderMode, iter->Value)
-    }
-
-    if (renderMode != -1)
-    {
-        m_renderMode = (e_MorphRenderMode)renderMode;
-
-        m_selectedMode = ITEMS[renderMode];
-    }
-}
-void MorphTargetRenderer::Save(PropertyFile* a_propertyFile, PropertyFileProperty* a_parent) const
-{
-    PropertyFileProperty* property = SaveValues(a_propertyFile, a_parent);
-
-    property->EmplaceValue("renderMode", std::to_string((int)m_renderMode).c_str());
 }

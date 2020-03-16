@@ -8,6 +8,7 @@
 #include "Components/ImageRenderer.h"
 #include "Components/MorphPlaneMask.h"
 #include "Components/MorphPlaneRenderer.h"
+#include "Components/MorphTargetMask.h"
 #include "Components/MorphTargetRenderer.h"
 #include "FileLoaders/PropertyFile.h"
 #include "imgui.h"
@@ -134,6 +135,7 @@ void Object::LoadComponent(PropertyFileProperty* a_property)
     else ISCREATECOMPONENT(comp, this, a_property->GetName(), ImageRenderer, m_animControl)
     else ISCREATECOMPONENT(comp, this, a_property->GetName(), MorphPlaneMask, m_animControl)
     else ISCREATECOMPONENT(comp, this, a_property->GetName(), MorphPlaneRenderer, m_animControl)
+    else ISCREATECOMPONENT(comp, this, a_property->GetName(), MorphTargetMask, m_animControl)
     else ISCREATECOMPONENT(comp, this, a_property->GetName(), MorphTargetRenderer, m_animControl)
 
     if (comp != nullptr)
@@ -168,6 +170,7 @@ void Object::UpdateComponentUI()
         bool createImageRenderer = true;
         bool createMorphPlaneMask = true;
         bool createMorphPlaneRenderer = true;
+        bool cerateMorphTargetMask = true;
         bool createMorphTargetRenderer = true;
 
         for (auto iter = m_components.begin(); iter != m_components.end(); ++iter)
@@ -190,6 +193,10 @@ void Object::UpdateComponentUI()
             {
                 createMorphPlaneRenderer = false;
             }
+            else if (strcmp(componentName, MorphTargetMask::COMPONENT_NAME) == 0)
+            {
+                cerateMorphTargetMask = false;
+            }
             else if (strcmp(componentName, MorphTargetRenderer::COMPONENT_NAME) == 0)
             {
                 createMorphTargetRenderer = false;
@@ -211,6 +218,10 @@ void Object::UpdateComponentUI()
         if (createMorphPlaneRenderer && ImGui::Selectable(MorphPlaneRenderer::COMPONENT_NAME))
         {
             component = new MorphPlaneRenderer(this, m_animControl);
+        }
+        if (createMorphPlaneMask && ImGui::Selectable(MorphTargetMask::COMPONENT_NAME))
+        {
+            component = new MorphTargetMask(this, m_animControl);
         }
         if (createMorphTargetRenderer && ImGui::Selectable(MorphTargetRenderer::COMPONENT_NAME))
         {
