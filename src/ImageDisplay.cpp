@@ -4,8 +4,10 @@
 #include <string.h>
 
 #include "DataStore.h"
+#include "DepthRenderTexture.h"
 #include "Models/Model.h"
 #include "ShaderProgram.h"
+#include "Shaders/MaskedPixel.h"
 #include "Shaders/ModelVertex.h"
 #include "Shaders/SolidPixel.h"
 #include "Shaders/StandardPixel.h"
@@ -13,6 +15,7 @@
 
 unsigned int ImageDisplay::Ref = 0;
 ShaderProgram* ImageDisplay::BaseShaderProgram = nullptr;
+ShaderProgram* ImageDisplay::MaskShaderProgram = nullptr;
 ShaderProgram* ImageDisplay::WireShaderProgram = nullptr;
 
 ImageDisplay::ImageDisplay()
@@ -35,6 +38,22 @@ ImageDisplay::ImageDisplay()
         glDeleteShader(pixelShader);
     }
     
+    if (MaskShaderProgram == nullptr)
+    {
+        const unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
+        glShaderSource(vertexShader, 1, &MODELVERTEX, 0);
+        glCompileShader(vertexShader);
+
+        const unsigned int maskPixelShader = glCreateShader(GL_FRAGMENT_SHADER);
+        glShaderSource(maskPixelShader, 1, &MASKEDPIXEL, 0);
+        glCompileShader(maskPixelShader);
+
+        MaskShaderProgram = new ShaderProgram(maskPixelShader, vertexShader);
+
+        glDeleteShader(vertexShader);
+        glDeleteShader(maskPixelShader);
+    }
+
     if (WireShaderProgram == nullptr)
     {
         const unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
@@ -64,6 +83,9 @@ ImageDisplay::~ImageDisplay()
     {
         delete WireShaderProgram;
         WireShaderProgram = nullptr;
+
+        delete MaskShaderProgram;
+        MaskShaderProgram = nullptr;
 
         delete BaseShaderProgram;
         BaseShaderProgram = nullptr;
@@ -154,6 +176,62 @@ void ImageDisplay::Draw(const glm::mat4& a_transform, bool a_alpha, bool a_solid
 
             glDrawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_INT, 0);
         }
+
+        glDisable(GL_BLEND);
+    }
+}
+void ImageDisplay::DrawMasked(const glm::mat4& a_transform, const DepthRenderTexture* a_mask) const
+{
+    DataStore* store = DataStore::GetInstance();
+
+    Model* model = nullptr;
+    Texture* tex = nullptr;
+    if (m_modelName != nullptr)
+    {
+        model = store->GetModel(m_modelName, e_ModelType::Base);
+        
+        const char* texName = store->GetModelTextureName(m_modelName);
+
+        if (texName != nullptr)
+        {
+            tex = store->GetTexture(texName);
+        }
+    }
+
+    if (model != nullptr && tex != nullptr && a_mask != nullptr)
+    {
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); 
+
+        glBindVertexArray(model->GetVAO());
+
+        glm::vec4 view;
+
+        glGetFloatv(GL_VIEWPORT, (float*)&view);
+
+        const unsigned int indexCount = model->GetIndicesCount();
+
+        const int baseHandle = MaskShaderProgram->GetHandle();
+        glUseProgram(baseHandle);
+
+        const int modelLocation = glGetUniformLocation(baseHandle, "Model");
+        glUniformMatrix4fv(modelLocation, 1, GL_FALSE, (float*)&a_transform);
+
+        const int mainTexLocation = glGetUniformLocation(baseHandle, "MainTex");
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, tex->GetHandle());
+        glUniform1i(mainTexLocation, 0);
+
+        const int maskTexLocation = glGetUniformLocation(baseHandle, "MaskTex");
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, a_mask->GetDepthTexture()->GetHandle());
+        glUniform1i(maskTexLocation, 1);
+
+        const glm::vec2 screenSize = glm::vec2(view.z, view.w);
+        const int screenSizeLocation = glGetUniformLocation(baseHandle, "ScreenSize");
+        glUniform2fv(screenSizeLocation, 1, (float*)&screenSize);
+
+        glDrawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_INT, 0);
 
         glDisable(GL_BLEND);
     }

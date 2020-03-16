@@ -1,16 +1,12 @@
 #pragma once
 
-#include "MorphPlaneRenderer.h"
-
-#include "KeyValues/Vec2KeyValue.h"
+#include "Components/ImageRenderer.h"
 
 class DepthRenderTexture;
 
-class MorphPlaneMask : public MorphPlaneRenderer
+class ImageMask : public ImageRenderer
 {
 private:
-    bool                m_animValuesDisplayed;
-
     char*               m_maskName;
 
     DepthRenderTexture* m_renderTexture;
@@ -22,17 +18,15 @@ protected:
 public:
     const static char* COMPONENT_NAME;
 
-    MorphPlaneMask() = delete;
-    MorphPlaneMask(Object* a_object, AnimControl* a_animControl);
-    virtual ~MorphPlaneMask();
+    ImageMask() = delete;
+    ImageMask(Object* a_object, AnimControl* a_animControl);
+    virtual ~ImageMask();
 
     virtual void Update(double a_delta, Camera* a_camera);
     virtual void UpdatePreview(double a_delta, Camera* a_camera);
     virtual void UpdateGUI();
 
     virtual const char* ComponentName() const;
-
-    virtual void DisplayValues(bool a_value);
 
     virtual void Load(PropertyFileProperty* a_property, AnimControl* a_animControl);
     virtual void Save(PropertyFile* a_propertyFile, PropertyFileProperty* a_parent) const;

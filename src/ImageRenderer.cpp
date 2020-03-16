@@ -26,15 +26,20 @@ ImageRenderer::~ImageRenderer()
     delete m_imageDisplay;
 }
 
-void ImageRenderer::Draw(bool a_preview, Camera* a_camera)
+void ImageRenderer::ImageDraw(bool a_preview, Camera* a_camera)
 {  
+    DataStore* store = DataStore::GetInstance();
+
     const Object* object = GetObject();
 
     Transform* transform = object->GetTransform();
 
     glm::mat4 transformMat;
     glm::vec3 anchor;
-    const char* modelName;
+    const char* modelName = nullptr;
+    const char* useMask = nullptr;
+
+    DepthRenderTexture* mask = nullptr;
 
     if (a_preview)
     {
@@ -42,6 +47,12 @@ void ImageRenderer::Draw(bool a_preview, Camera* a_camera)
 
         anchor = -GetBaseAnchor();
         modelName = GetBaseModelName();
+        useMask = GetBaseMaskName();
+
+        if (useMask != nullptr)
+        {
+            mask = store->GetPreviewMask(useMask);
+        }
     }
     else
     {
@@ -49,7 +60,14 @@ void ImageRenderer::Draw(bool a_preview, Camera* a_camera)
         
         anchor = -GetAnchor();  
         modelName = GetModelName();
+        useMask = GetMaskName();
+
+        if (useMask != nullptr)
+        {
+            mask = store->GetMask(useMask);
+        }
     }
+
 
     m_imageDisplay->SetModelName(modelName);
 
@@ -66,16 +84,23 @@ void ImageRenderer::Draw(bool a_preview, Camera* a_camera)
 
     const glm::mat4 finalTransform = view * proj * shift;
 
-    m_imageDisplay->Draw(finalTransform);
+    if (useMask == nullptr || useMask[0] == 0)
+    {
+        m_imageDisplay->Draw(finalTransform);
+    }
+    else
+    {
+        m_imageDisplay->DrawMasked(finalTransform, mask);
+    }
 }
 
 void ImageRenderer::Update(double a_delta, Camera* a_camera)
 {
-    Draw(false, a_camera);
+    ImageDraw(false, a_camera);
 }
 void ImageRenderer::UpdatePreview(double a_delta, Camera* a_camera)
 {
-    Draw(true, a_camera);
+    ImageDraw(true, a_camera);
 }
 void ImageRenderer::UpdateGUI()
 {
@@ -85,13 +110,4 @@ void ImageRenderer::UpdateGUI()
 const char* ImageRenderer::ComponentName() const
 {
     return COMPONENT_NAME;
-}
-
-void ImageRenderer::Load(PropertyFileProperty* a_property, AnimControl* a_animControl)
-{
-    
-}
-void ImageRenderer::Save(PropertyFile* a_propertyFile, PropertyFileProperty* a_parent) const
-{
-    SaveValues(a_propertyFile, a_parent);
 }

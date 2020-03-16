@@ -11,12 +11,13 @@ class ImageRenderer : public Renderer
 private:
     ImageDisplay*  m_imageDisplay;
 
-    void Draw(bool a_preview, Camera* a_camera);
 protected:
+    void ImageDraw(bool a_preview, Camera* a_camera);
 
 public:
     const static char* COMPONENT_NAME;
 
+    ImageRenderer() = delete;
     ImageRenderer(Object* a_object, AnimControl* a_animControl);
     virtual ~ImageRenderer();
 
@@ -25,7 +26,4 @@ public:
     virtual void UpdateGUI();
 
     virtual const char* ComponentName() const;
-
-    virtual void Load(PropertyFileProperty* a_property, AnimControl* a_animControl);
-    virtual void Save(PropertyFile* a_propertyFile, PropertyFileProperty* a_parent) const;
 };

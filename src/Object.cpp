@@ -4,6 +4,7 @@
 #include <string.h>
 
 #include "AnimControl.h"
+#include "Components/ImageMask.h"
 #include "Components/ImageRenderer.h"
 #include "Components/MorphPlaneMask.h"
 #include "Components/MorphPlaneRenderer.h"
@@ -129,10 +130,11 @@ void Object::LoadComponent(PropertyFileProperty* a_property)
 {
     Component* comp = nullptr;
 
-    ISCREATECOMPONENT(comp, this, a_property->GetName(), ImageRenderer, m_animControl)
+    ISCREATECOMPONENT(comp, this, a_property->GetName(), ImageMask, m_animControl)
+    else ISCREATECOMPONENT(comp, this, a_property->GetName(), ImageRenderer, m_animControl)
+    else ISCREATECOMPONENT(comp, this, a_property->GetName(), MorphPlaneMask, m_animControl)
     else ISCREATECOMPONENT(comp, this, a_property->GetName(), MorphPlaneRenderer, m_animControl)
     else ISCREATECOMPONENT(comp, this, a_property->GetName(), MorphTargetRenderer, m_animControl)
-    else ISCREATECOMPONENT(comp, this, a_property->GetName(), MorphPlaneMask, m_animControl)
 
     if (comp != nullptr)
     {
@@ -162,18 +164,27 @@ void Object::UpdateComponentUI()
 
         Component* component = nullptr;
 
+        bool createImageMask = true;
         bool createImageRenderer = true;
+        bool createMorphPlaneMask = true;
         bool createMorphPlaneRenderer = true;
         bool createMorphTargetRenderer = true;
-        bool createMorphPlaneMask = true;
 
         for (auto iter = m_components.begin(); iter != m_components.end(); ++iter)
         {
             const char* componentName = (*iter)->ComponentName();
 
-            if (strcmp(componentName, ImageRenderer::COMPONENT_NAME) == 0)
+            if (strcmp(componentName, ImageMask::COMPONENT_NAME) == 0)
+            {
+                createImageMask = false;
+            }
+            else if (strcmp(componentName, ImageRenderer::COMPONENT_NAME) == 0)
             {
                 createImageRenderer = false;
+            }
+            else if (strcmp(componentName, MorphPlaneMask::COMPONENT_NAME) == 0)
+            {
+                createMorphPlaneMask = false;
             }
             else if (strcmp(componentName, MorphPlaneRenderer::COMPONENT_NAME) == 0)
             {
@@ -183,15 +194,19 @@ void Object::UpdateComponentUI()
             {
                 createMorphTargetRenderer = false;
             }
-            else if (strcmp(componentName, MorphPlaneMask::COMPONENT_NAME) == 0)
-            {
-                createMorphPlaneMask = false;
-            }
         }
 
+        if (createImageMask && ImGui::Selectable(ImageMask::COMPONENT_NAME))
+        {
+            component = new ImageMask(this, m_animControl);
+        }
         if (createImageRenderer && ImGui::Selectable(ImageRenderer::COMPONENT_NAME))
         {
             component = new ImageRenderer(this, m_animControl);
+        }
+        if (createMorphPlaneMask && ImGui::Selectable(MorphPlaneMask::COMPONENT_NAME))
+        {
+            component = new MorphPlaneMask(this, m_animControl);
         }
         if (createMorphPlaneRenderer && ImGui::Selectable(MorphPlaneRenderer::COMPONENT_NAME))
         {
@@ -201,11 +216,7 @@ void Object::UpdateComponentUI()
         {
             component = new MorphTargetRenderer(this, m_animControl);
         }
-        if (createMorphPlaneMask && ImGui::Selectable(MorphPlaneMask::COMPONENT_NAME))
-        {
-            component = new MorphPlaneMask(this, m_animControl);
-        }
-
+        
         if (component != nullptr)
         {
             component->Init();
