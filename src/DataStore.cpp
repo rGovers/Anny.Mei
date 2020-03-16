@@ -280,6 +280,23 @@ void DataStore::AddMask(const char* a_name, DepthRenderTexture* a_texture)
         iter->second.emplace_back(a_texture);
     }
 }
+void DataStore::AddPreviewMask(const char* a_name, DepthRenderTexture* a_texture)
+{
+    auto iter = m_previewMasks.find(a_name);
+    if (iter == m_previewMasks.end())
+    {
+        std::list<DepthRenderTexture*> maskList;
+
+        maskList.emplace_back(a_texture);
+
+        m_previewMasks.emplace(a_name, maskList);
+    }
+    else
+    {
+        iter->second.emplace_back(a_texture);
+    }
+}
+
 DepthRenderTexture* DataStore::GetMask(const char* a_name) const
 {
     auto iter = m_masks.find(a_name);
@@ -290,6 +307,17 @@ DepthRenderTexture* DataStore::GetMask(const char* a_name) const
 
     return nullptr;
 }
+DepthRenderTexture* DataStore::GetPreviewMask(const char* a_name) const
+{
+    auto iter = m_previewMasks.find(a_name);
+    if (iter != m_previewMasks.end())
+    {
+        return *iter->second.begin();
+    }
+
+    return nullptr;
+}
+
 void DataStore::RemoveMask(const char* a_name, DepthRenderTexture* a_texture)
 {
     auto iter = m_masks.find(a_name);
@@ -305,6 +333,24 @@ void DataStore::RemoveMask(const char* a_name, DepthRenderTexture* a_texture)
         if (iter->second.size() <= 0)
         {
             m_masks.erase(iter);
+        }
+    }
+}
+void DataStore::RemovePreviewMask(const char* a_name, DepthRenderTexture* a_texture)
+{
+    auto iter = m_previewMasks.find(a_name);
+    if (iter != m_previewMasks.end())
+    {
+        auto eIter = std::find(iter->second.begin(), iter->second.end(), a_texture);
+
+        if (eIter != iter->second.end())
+        {
+            iter->second.erase(eIter);
+        }
+
+        if (iter->second.size() <= 0)
+        {
+            m_previewMasks.erase(iter);
         }
     }
 }

@@ -23,7 +23,6 @@ MorphPlaneDisplay::MorphPlaneDisplay()
 {
     m_modelName = nullptr;
     m_morphPlaneName = nullptr;
-    m_maskName = nullptr;
 
     if (BaseShaderProgram == nullptr)
     {
@@ -150,31 +149,6 @@ void MorphPlaneDisplay::SetMorphPlaneName(const char* a_name)
     }
 }
 
-const char* MorphPlaneDisplay::GetMaskName() const
-{
-    return m_maskName;
-}
-void MorphPlaneDisplay::SetMaskName(const char* a_name)
-{
-    if (m_maskName != nullptr)
-    {
-        delete[] m_maskName;
-        m_maskName = nullptr;
-    }
-
-    if (a_name != nullptr)
-    {
-        const size_t len = strlen(a_name);
-
-        if (len > 0)
-        {
-            m_maskName = new char[len + 1];
-
-            strcpy(m_maskName, a_name);
-        }
-    }
-}
-
 void MorphPlaneDisplay::Draw(const glm::mat4& a_transform, bool a_alpha, bool a_solid, bool a_wireframe) const
 {
     DataStore* store = DataStore::GetInstance();
@@ -274,7 +248,7 @@ void MorphPlaneDisplay::Draw(const MorphPlane* a_morphPlane, const glm::mat4& a_
     }
 }
 
-void MorphPlaneDisplay::DrawMasked(const glm::mat4& a_transform) const
+void MorphPlaneDisplay::DrawMasked(const glm::mat4& a_transform, const DepthRenderTexture* a_mask) const
 {
     DataStore* store = DataStore::GetInstance();
 
@@ -282,16 +256,15 @@ void MorphPlaneDisplay::DrawMasked(const glm::mat4& a_transform) const
     {
         const MorphPlane* morphPlane = store->GetMorphPlane(m_morphPlaneName);
 
-        DrawMasked(morphPlane, a_transform);
+        DrawMasked(morphPlane, a_transform, a_mask);
     }
 }
-void MorphPlaneDisplay::DrawMasked(const MorphPlane* a_morphPlane, const glm::mat4& a_transform) const
+void MorphPlaneDisplay::DrawMasked(const MorphPlane* a_morphPlane, const glm::mat4& a_transform, const DepthRenderTexture* a_mask) const
 {
     DataStore* store = DataStore::GetInstance();
 
     Model* model = nullptr;
     Texture* tex = nullptr;
-    DepthRenderTexture* maskTexture = nullptr;
     if (m_modelName != nullptr)
     {
         model = store->GetModel(m_modelName, e_ModelType::MorphPlane);
@@ -303,12 +276,7 @@ void MorphPlaneDisplay::DrawMasked(const MorphPlane* a_morphPlane, const glm::ma
         }
     }
 
-    if (m_maskName != nullptr)
-    {
-        maskTexture = store->GetMask(m_maskName);
-    }
-
-    if (model != nullptr && tex != nullptr && a_morphPlane != nullptr && maskTexture != nullptr)
+    if (model != nullptr && tex != nullptr && a_morphPlane != nullptr && a_mask != nullptr)
     {
         const Texture* morphTex = a_morphPlane->ToTexture();
 
@@ -347,7 +315,7 @@ void MorphPlaneDisplay::DrawMasked(const MorphPlane* a_morphPlane, const glm::ma
 
         const int maskTexLocation = glGetUniformLocation(baseHandle, "MaskTex");
         glActiveTexture(GL_TEXTURE2);
-        glBindTexture(GL_TEXTURE_2D, maskTexture->GetDepthTexture()->GetHandle());
+        glBindTexture(GL_TEXTURE_2D, a_mask->GetDepthTexture()->GetHandle());
         glUniform1i(maskTexLocation, 2);
 
         // I cant be stuffed anymore I want sleep

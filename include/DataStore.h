@@ -29,6 +29,7 @@ private:
     std::map<std::string, ModelWrap*>                     m_models;
     std::map<std::string, MorphPlane*>                    m_morphPlanes;
     std::map<std::string, std::list<DepthRenderTexture*>> m_masks;
+    std::map<std::string, std::list<DepthRenderTexture*>> m_previewMasks;
 protected:
 
 public:
@@ -54,6 +55,11 @@ public:
     void RemoveTexture(const char* a_name);
 
     void AddMask(const char* a_name, DepthRenderTexture* a_texture);
+    void AddPreviewMask(const char* a_name, DepthRenderTexture* a_texture);
+
     DepthRenderTexture* GetMask(const char* a_name) const;
+    DepthRenderTexture* GetPreviewMask(const char* a_name) const;
+
     void RemoveMask(const char* a_name, DepthRenderTexture* a_texture);
+    void RemovePreviewMask(const char* a_name, DepthRenderTexture* a_texture);
 };

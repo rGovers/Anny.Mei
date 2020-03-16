@@ -448,6 +448,8 @@ void MorphPlaneRenderer::MorphPlaneDraw(bool a_preview, double a_delta, Camera* 
 
     const char* useMask = nullptr;
 
+    const DepthRenderTexture* mask = nullptr;
+
     if (a_preview)
     {
         transformMat = transform->GetBaseWorldMatrix();
@@ -455,6 +457,11 @@ void MorphPlaneRenderer::MorphPlaneDraw(bool a_preview, double a_delta, Camera* 
         anchor = -GetBaseAnchor();
         modelName = GetBaseModelName();
         useMask = GetBaseMaskName();
+
+        if (useMask != nullptr)
+        {
+            mask = store->GetPreviewMask(useMask);
+        }
 
         const Vec2KeyValue* lerpValue = m_lerp->GetValue();
         if (lerpValue != nullptr)
@@ -523,6 +530,11 @@ void MorphPlaneRenderer::MorphPlaneDraw(bool a_preview, double a_delta, Camera* 
         anchor = -GetAnchor();  
         modelName = GetModelName();
         useMask = GetMaskName();
+
+        if (useMask != nullptr)
+        {
+            mask = store->GetMask(useMask);
+        }
 
         const Vec2KeyValue* lerpValue = m_lerp->GetAnimValue();
         if (lerpValue != nullptr)
@@ -622,9 +634,7 @@ void MorphPlaneRenderer::MorphPlaneDraw(bool a_preview, double a_delta, Camera* 
                 }
                 else
                 {
-                    m_morphPlaneDisplay->SetMaskName(useMask);
-
-                    m_morphPlaneDisplay->DrawMasked(morphPlane, finalTransform);
+                    m_morphPlaneDisplay->DrawMasked(morphPlane, finalTransform, mask);
                 }
 
                 delete morphPlane;
@@ -654,9 +664,7 @@ void MorphPlaneRenderer::MorphPlaneDraw(bool a_preview, double a_delta, Camera* 
                 }
                 else
                 {
-                    m_morphPlaneDisplay->SetMaskName(useMask);
-
-                    m_morphPlaneDisplay->DrawMasked(morphPlane, finalTransform);
+                    m_morphPlaneDisplay->DrawMasked(morphPlane, finalTransform, mask);
                 }
 
                 delete morphPlane;
@@ -694,9 +702,7 @@ void MorphPlaneRenderer::MorphPlaneDraw(bool a_preview, double a_delta, Camera* 
                 }
                 else
                 {
-                    m_morphPlaneDisplay->SetMaskName(useMask);
-
-                    m_morphPlaneDisplay->DrawMasked(morphPlane, finalTransform);
+                    m_morphPlaneDisplay->DrawMasked(morphPlane, finalTransform, mask);
                 }
                 
                 delete morphPlane;
@@ -713,9 +719,7 @@ void MorphPlaneRenderer::MorphPlaneDraw(bool a_preview, double a_delta, Camera* 
         }
         else
         {
-            m_morphPlaneDisplay->SetMaskName(useMask);
-
-            m_morphPlaneDisplay->DrawMasked(finalTransform);
+            m_morphPlaneDisplay->DrawMasked(finalTransform, mask);
         }
 
         break;

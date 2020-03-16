@@ -22,13 +22,23 @@ MorphPlaneMask::MorphPlaneMask(Object* a_object, AnimControl* a_animControl) :
 {
     m_animValuesDisplayed = false;
 
-    m_renderTexture = new DepthRenderTexture(1280, 720);
+    m_renderTexture = new DepthRenderTexture(2048, 2048);
+    m_previewRenderTexture = new DepthRenderTexture(2048, 2048);
 
     m_maskName = new char[1] { 0 };
 }
 MorphPlaneMask::~MorphPlaneMask()
 {
+    if (m_maskName != nullptr)
+    {   
+        DataStore* store = DataStore::GetInstance();
+
+        store->RemoveMask(m_maskName, m_renderTexture);
+        store->RemovePreviewMask(m_maskName, m_previewRenderTexture);
+    }
+
     delete m_renderTexture;
+    delete m_previewRenderTexture;
 
     delete[] m_maskName;
 }
@@ -46,13 +56,24 @@ void MorphPlaneMask::Draw(bool a_preview, double a_delta, Camera* a_camera)
 {
     DataStore* store = DataStore::GetInstance();
 
-    m_renderTexture->Bind();
+    DepthRenderTexture* renderTexture;
+
+    if (a_preview)
+    {
+        renderTexture = m_previewRenderTexture;
+    }
+    else
+    {
+        renderTexture = m_renderTexture;
+    }    
+
+    renderTexture->Bind();
 
     glClear(GL_DEPTH_BUFFER_BIT);
 
     MorphPlaneDraw(a_preview, a_delta, a_camera);
 
-    m_renderTexture->Unbind();
+    renderTexture->Unbind();
 }
 
 void MorphPlaneMask::Update(double a_delta, Camera* a_camera)
@@ -79,6 +100,7 @@ void MorphPlaneMask::UpdateGUI()
     if (strcmp(buff, m_maskName) != 0)
     {
         store->RemoveMask(m_maskName, m_renderTexture);
+        store->RemovePreviewMask(m_maskName, m_previewRenderTexture);
 
         delete[] m_maskName;
 
@@ -87,6 +109,7 @@ void MorphPlaneMask::UpdateGUI()
         if (buff[0] != 0)
         {
             store->AddMask(buff, m_renderTexture);
+            store->AddPreviewMask(buff, m_previewRenderTexture);
         }
     }
     else
@@ -133,6 +156,7 @@ void MorphPlaneMask::Load(PropertyFileProperty* a_property, AnimControl* a_animC
         if (m_maskName[0] != 0)
         {
             store->AddMask(m_maskName, m_renderTexture);
+            store->AddPreviewMask(m_maskName, m_previewRenderTexture);
         }
     }
 }

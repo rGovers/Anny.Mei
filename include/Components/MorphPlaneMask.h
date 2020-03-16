@@ -14,6 +14,7 @@ private:
     char*               m_maskName;
 
     DepthRenderTexture* m_renderTexture;
+    DepthRenderTexture* m_previewRenderTexture;
 
     void Draw(bool a_preview, double a_delta, Camera* a_camera);
 protected:
