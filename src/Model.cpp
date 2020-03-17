@@ -32,6 +32,7 @@ Model::Model(const Model& a_model)
     m_vao = a_model.m_vao;
     
     m_indices = a_model.m_indices;
+    m_vertices = a_model.m_vertices;
 }
 Model::~Model()
 {
@@ -66,6 +67,15 @@ void Model::SetIndicesCount(unsigned int a_indicies)
 unsigned int Model::GetIndicesCount() const
 {
     return m_indices;
+}
+
+void Model::SetVertexCount(unsigned int a_vertices)
+{
+    m_vertices = a_vertices;
+}
+unsigned int Model::GetVerticesCount() const
+{
+    return m_vertices;
 }
 
 e_ModelType Model::GetModelType() const

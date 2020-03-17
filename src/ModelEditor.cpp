@@ -458,6 +458,7 @@ ModelData* ModelEditor::AddModel(const char* a_textureName, const char* a_name, 
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, a_indexCount * sizeof(unsigned int), a_indices, GL_STATIC_DRAW);
 
     model->SetIndicesCount(a_indexCount);
+    model->SetVertexCount(a_vertexCount);
 
     const char* name = modelData->ModelName->GetName();
 

@@ -5,7 +5,7 @@
 class RenderTexture : public DepthRenderTexture
 {
 private:
-    const Texture* m_texture;
+    Texture* m_texture;
 
 protected:
 
@@ -15,7 +15,7 @@ public:
     RenderTexture(Texture* a_texture);
     virtual ~RenderTexture();
 
-    const Texture* GetTexture() const;
+    Texture* GetTexture() const;
 
     void Bind() const;
 };

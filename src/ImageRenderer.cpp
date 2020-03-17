@@ -6,7 +6,6 @@
 #include "DataStore.h"
 #include "FileUtils.h"
 #include "imgui.h"
-#include "Material.h"
 #include "Models/Model.h"
 #include "Object.h"
 #include "Renderers/ImageDisplay.h"

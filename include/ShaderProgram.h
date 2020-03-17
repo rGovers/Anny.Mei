@@ -9,6 +9,7 @@ protected:
 public:
     ShaderProgram() = delete;
     ShaderProgram(int a_pixelShader, int a_vertexShader);
+    ShaderProgram(int a_pixelShader, int a_geometryShader, int a_vertexShader);
     ~ShaderProgram();
 
     unsigned int GetHandle() const;

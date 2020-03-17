@@ -22,7 +22,7 @@ RenderTexture::~RenderTexture()
     delete m_texture;
 }
 
-const Texture* RenderTexture::GetTexture() const
+Texture* RenderTexture::GetTexture() const
 {
     return m_texture;
 }

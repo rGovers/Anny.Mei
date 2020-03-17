@@ -28,6 +28,7 @@ private:
     unsigned int   m_vao;
  
     unsigned int   m_indices;
+    unsigned int   m_vertices;
 
 protected:
     Model(const Model& a_model);
@@ -42,6 +43,9 @@ public:
 
     void SetIndicesCount(unsigned int a_indicies);
     unsigned int GetIndicesCount() const;
+
+    void SetVertexCount(unsigned int a_vertices);
+    unsigned int GetVerticesCount() const;
 
     virtual e_ModelType GetModelType() const;
 };

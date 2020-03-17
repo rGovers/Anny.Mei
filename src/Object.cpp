@@ -131,12 +131,14 @@ void Object::LoadComponent(PropertyFileProperty* a_property)
 {
     Component* comp = nullptr;
 
-    ISCREATECOMPONENT(comp, this, a_property->GetName(), ImageMask, m_animControl)
-    else ISCREATECOMPONENT(comp, this, a_property->GetName(), ImageRenderer, m_animControl)
-    else ISCREATECOMPONENT(comp, this, a_property->GetName(), MorphPlaneMask, m_animControl)
-    else ISCREATECOMPONENT(comp, this, a_property->GetName(), MorphPlaneRenderer, m_animControl)
-    else ISCREATECOMPONENT(comp, this, a_property->GetName(), MorphTargetMask, m_animControl)
-    else ISCREATECOMPONENT(comp, this, a_property->GetName(), MorphTargetRenderer, m_animControl)
+    const char* propName = a_property->GetName();
+
+    ISCREATECOMPONENT(comp, this, propName, ImageMask, m_animControl)
+    else ISCREATECOMPONENT(comp, this, propName, ImageRenderer, m_animControl)
+    else ISCREATECOMPONENT(comp, this, propName, MorphPlaneMask, m_animControl)
+    else ISCREATECOMPONENT(comp, this, propName, MorphPlaneRenderer, m_animControl)
+    else ISCREATECOMPONENT(comp, this, propName, MorphTargetMask, m_animControl)
+    else ISCREATECOMPONENT(comp, this, propName, MorphTargetRenderer, m_animControl)
 
     if (comp != nullptr)
     {
@@ -227,7 +229,7 @@ void Object::UpdateComponentUI()
         {
             component = new MorphTargetRenderer(this, m_animControl);
         }
-        
+
         if (component != nullptr)
         {
             component->Init();
