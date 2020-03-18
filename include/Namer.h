@@ -2,6 +2,7 @@
 
 #include <list>
 #include <map>
+#include <string>
 
 class Name;
 

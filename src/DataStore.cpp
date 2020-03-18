@@ -8,9 +8,7 @@
 
 DataStore* DataStore::Instance = nullptr;
 
-DataStore::DataStore()  :
-    m_textures(),
-    m_models()
+DataStore::DataStore()
 {
     if (Instance == nullptr)
     {

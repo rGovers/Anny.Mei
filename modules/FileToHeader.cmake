@@ -10,7 +10,8 @@ function(FILETOHEADER)
     string(MAKE_C_IDENTIFIER "${FILETOHEADER_VARIABLE_NAME}" FILETOHEADER_VARIABLE_NAME)
     string(TOUPPER "${FILETOHEADER_VARIABLE_NAME}" FILETOHEADER_VARIABLE_NAME)
 
-    set(DEFINITION "const inline char* ${FILETOHEADER_VARIABLE_NAME} = \"${FILESTRING}\";")
+    #I have decided to not mess around and it will always be a string so I am just gonna do a define
+    set(DEFINITION "#define ${FILETOHEADER_VARIABLE_NAME} \"${FILESTRING}\"")
 
     file(WRITE ${FILETOHEADER_HEADER_FILE} "#pragma once \n\n${DEFINITION}")
 endfunction()

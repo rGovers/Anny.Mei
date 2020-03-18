@@ -31,16 +31,6 @@ Name::~Name()
 
 void Name::SetTrueName(const char* a_name)
 {
-    if (m_trueName != nullptr && a_name != nullptr && strcmp(a_name, m_trueName) == 0)
-    {
-        return;
-    }
-    else if (m_trueName == nullptr && a_name == nullptr)
-    {
-        return;
-    }
-
-
     if (m_trueName != nullptr)
     {
         m_namer->RemoveName(*this);
@@ -55,7 +45,7 @@ void Name::SetTrueName(const char* a_name)
 
         if (len > 0)
         {
-            m_trueName = new char[len];
+            m_trueName = new char[len + 1];
             strcpy(m_trueName, a_name);
         
             m_namer->SetUniqueName(*this);
@@ -71,11 +61,6 @@ void Name::SetName(const char* a_name, bool a_inc)
 {
     if (m_name != nullptr)
     {
-        if (strcmp(a_name, m_name) == 0)
-        {
-            return;
-        }
-
         m_namer->RemoveUniqueName(m_name);
 
         delete[] m_name;
@@ -86,7 +71,7 @@ void Name::SetName(const char* a_name, bool a_inc)
     {
         const size_t len = strlen(a_name); 
 
-        m_name = new char[len];
+        m_name = new char[len + 1];
 
         strcpy(m_name, a_name);
 

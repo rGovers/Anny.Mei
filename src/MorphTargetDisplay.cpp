@@ -27,14 +27,18 @@ MorphTargetDisplay::MorphTargetDisplay()
 {
     m_modelName = nullptr;
 
+	const char* str;
+
     if (BaseShaderProgram == nullptr)
     {
         const unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
-        glShaderSource(vertexShader, 1, &MORPHTARGETVERTEX, 0);
+		str = MORPHTARGETVERTEX;
+        glShaderSource(vertexShader, 1, &str, 0);
         glCompileShader(vertexShader);
 
+		str = STANDARDPIXEL;
         const unsigned int pixelShader = glCreateShader(GL_FRAGMENT_SHADER);
-        glShaderSource(pixelShader, 1, &STANDARDPIXEL, 0);
+        glShaderSource(pixelShader, 1, &str, 0);
         glCompileShader(pixelShader);
 
         BaseShaderProgram = new ShaderProgram(pixelShader, vertexShader);
@@ -44,13 +48,15 @@ MorphTargetDisplay::MorphTargetDisplay()
     }
 
     if (MaskShaderProgram == nullptr)
-    {
+    {	
         const unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
-        glShaderSource(vertexShader, 1, &MORPHTARGETVERTEX, 0);
+		str = MORPHTARGETVERTEX;
+        glShaderSource(vertexShader, 1, &str, 0);
         glCompileShader(vertexShader);
 
+		str = MASKEDPIXEL;
         const unsigned int maskPixelShader = glCreateShader(GL_FRAGMENT_SHADER);
-        glShaderSource(maskPixelShader, 1, &MASKEDPIXEL, 0);
+        glShaderSource(maskPixelShader, 1, &str, 0);
         glCompileShader(maskPixelShader);
 
         MaskShaderProgram = new ShaderProgram(maskPixelShader, vertexShader);
@@ -62,11 +68,13 @@ MorphTargetDisplay::MorphTargetDisplay()
     if (WireShaderProgram == nullptr)
     {
         const unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
-        glShaderSource(vertexShader, 1, &MORPHTARGETVERTEX, 0);
+		str = MORPHTARGETVERTEX;
+        glShaderSource(vertexShader, 1, &str, 0);
         glCompileShader(vertexShader);
 
         const unsigned int solidPixelShader = glCreateShader(GL_FRAGMENT_SHADER);
-        glShaderSource(solidPixelShader, 1, &SOLIDPIXEL, 0);
+		str = SOLIDPIXEL;
+        glShaderSource(solidPixelShader, 1, &str, 0);
         glCompileShader(solidPixelShader);
 
         WireShaderProgram = new ShaderProgram(solidPixelShader, vertexShader);
@@ -78,11 +86,13 @@ MorphTargetDisplay::MorphTargetDisplay()
     if (Point9ShaderProgram == nullptr)
     {
         const unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
-        glShaderSource(vertexShader, 1, &MORPHTARGET9POINTVERTEX, 0);
+		str = MORPHTARGET9POINTVERTEX;
+		glShaderSource(vertexShader, 1, &str, 0);
         glCompileShader(vertexShader);
 
         const unsigned int pixelShader = glCreateShader(GL_FRAGMENT_SHADER);
-        glShaderSource(pixelShader, 1, &STANDARDPIXEL, 0);
+		str = STANDARDPIXEL;
+        glShaderSource(pixelShader, 1, &str, 0);
         glCompileShader(pixelShader);
 
         Point9ShaderProgram = new ShaderProgram(pixelShader, vertexShader);
@@ -94,11 +104,13 @@ MorphTargetDisplay::MorphTargetDisplay()
     if (Point9MaskShaderProgram == nullptr)
     {
         const unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
-        glShaderSource(vertexShader, 1, &MORPHTARGET9POINTVERTEX, 0);
+		str = MORPHTARGET9POINTVERTEX;
+        glShaderSource(vertexShader, 1, &str, 0);
         glCompileShader(vertexShader);
 
         const unsigned int maskedPixelShader = glCreateShader(GL_FRAGMENT_SHADER);
-        glShaderSource(maskedPixelShader, 1, &MASKEDPIXEL, 0);
+		str = MASKEDPIXEL;
+        glShaderSource(maskedPixelShader, 1, &str, 0);
         glCompileShader(maskedPixelShader);
 
         Point9MaskShaderProgram = new ShaderProgram(maskedPixelShader, vertexShader);
@@ -110,11 +122,13 @@ MorphTargetDisplay::MorphTargetDisplay()
     if (Point9WireShaderProgram == nullptr)
     {
         const unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
-        glShaderSource(vertexShader, 1, &MORPHTARGET9POINTVERTEX, 0);
+		str = MORPHTARGET9POINTVERTEX;
+        glShaderSource(vertexShader, 1, &str, 0);
         glCompileShader(vertexShader);
 
         const unsigned int solidPixelShader = glCreateShader(GL_FRAGMENT_SHADER);
-        glShaderSource(solidPixelShader, 1, &SOLIDPIXEL, 0);
+		str = SOLIDPIXEL;
+        glShaderSource(solidPixelShader, 1, &str, 0);
         glCompileShader(solidPixelShader);
 
         Point9WireShaderProgram = new ShaderProgram(solidPixelShader, vertexShader);

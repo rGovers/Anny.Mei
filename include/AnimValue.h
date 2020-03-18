@@ -14,15 +14,15 @@ class AnimControl;
 class AValue
 {
 private:
-    struct KeyFrame
-    {
-        double Time;
-        KeyValue* Value;
-    };
-
     AnimControl*  m_animControl;
 
 protected:
+	struct KeyFrame
+	{
+		double Time;
+		KeyValue* Value;
+	};
+
     char*               m_name;
 
     bool                m_display;

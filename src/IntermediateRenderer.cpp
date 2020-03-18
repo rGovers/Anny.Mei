@@ -1,14 +1,21 @@
 #include "IntermediateRenderer.h"
 
+#define _USE_MATH_DEFINES
+
 #include <glad/glad.h>
+#include <math.h>
 #include <string.h>
 
 #include "ShaderProgram.h"
 #include "Shaders/SolidPixelColor.h"
 #include "Shaders/ViewVertex.h"
 
+const static float PI2 = (M_PI * 2);
+
 IntermediateRenderer::IntermediateRenderer()
 {
+	const char* str;
+
     glGenBuffers(1, &m_vbo);
     glGenBuffers(1, &m_ibo);
     glGenVertexArrays(1, &m_vao);
@@ -25,11 +32,13 @@ IntermediateRenderer::IntermediateRenderer()
     glVertexAttribPointer(1, 4, GL_FLOAT, false, vertexSize, (void*)offsetof(Vertex, Color));
 
     const int vertexS = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertexS, 1, &VIEWVERTEX, nullptr);
+	str = VIEWVERTEX;
+    glShaderSource(vertexS, 1, &str, nullptr);
     glCompileShader(vertexS);
 
     const int pixelS = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(pixelS, 1, &SOLIDPIXELCOLOR, nullptr);
+	str = SOLIDPIXELCOLOR;
+    glShaderSource(pixelS, 1, &str, nullptr);
     glCompileShader(pixelS);
 
     m_program = new ShaderProgram(pixelS, vertexS);
@@ -95,8 +104,6 @@ void IntermediateRenderer::DrawLine(const glm::vec3& a_start, const glm::vec3& a
 
 void IntermediateRenderer::DrawCircle(const glm::vec3& a_pos, int a_iteration, float a_radius, float a_width, const glm::vec4& a_color, float a_widthScale, float a_heightScale)
 {
-    const static float PI2 = (M_PI * 2);
-
     for (int i = 0; i < a_iteration; ++i)
     {
         const float angleA = (i / (float)a_iteration) * PI2;
@@ -113,8 +120,6 @@ void IntermediateRenderer::DrawCircle(const glm::vec3& a_pos, int a_iteration, f
 }
 void IntermediateRenderer::DrawSolidCircle(const glm::vec3& a_pos, int a_iteration, float a_radius, const glm::vec4& a_color, float a_widthScale, float a_heightScale)
 {
-    const static float PI2 = (M_PI * 2);
-
     const size_t startInd = m_vertices.size();
 
     int prevIndex = startInd + 1;

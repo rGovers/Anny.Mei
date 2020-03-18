@@ -17,6 +17,10 @@
 #include "Texture.h"
 #include "Transform.h"
 
+#ifdef WIN32
+#undef GetObject
+#endif
+
 const static int BUFFER_SIZE = 1024;
 const char* MorphPlaneRenderer::COMPONENT_NAME = "MorphPlaneRenderer";
 

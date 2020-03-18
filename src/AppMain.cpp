@@ -78,8 +78,10 @@ AppMain::AppMain(int a_width, int a_height) :
 
     m_filePath = nullptr;
 
+	m_dataStore = nullptr;
+
     glEnable(GL_DEBUG_OUTPUT);
-    glDebugMessageCallback(MessageCallback, 0);
+    // glDebugMessageCallback(MessageCallback, 0);
 
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -92,8 +94,14 @@ AppMain::AppMain(int a_width, int a_height) :
     ImGui::StyleColorsDark();
     GUIStyle();
 
-    ImGui_ImplGlfw_InitForOpenGL(GetWindow(), true);
-    ImGui_ImplOpenGL3_Init("#version 130");
+	if (!ImGui_ImplGlfw_InitForOpenGL(GetWindow(), true))
+	{
+		assert(0);
+	}
+	if (!ImGui_ImplOpenGL3_Init("#version 130"))
+	{
+		assert(0);
+	}
 
     FileDialog::Create();
 
@@ -282,13 +290,15 @@ void AppMain::ResetDockedWindows()
     ImGui::DockBuilderAddNode(id, ImGuiDockNodeFlags_CentralNode | ImGuiDockNodeFlags_NoResize);
 
     ImGui::DockBuilderSetNodePos(id, { 0, 18 });
-    ImGui::DockBuilderSetNodeSize(id, { GetWidth(), GetHeight() - 20});
+    ImGui::DockBuilderSetNodeSize(id, { (float)GetWidth(), (float)GetHeight() - 20});
+
+    const float sideScale = GetWidth() > 3000 ? 0.1f : 0.2f;
 
     ImGuiID dockMainID = id;
-    ImGuiID dockBottom = ImGui::DockBuilderSplitNode(dockMainID, ImGuiDir_Down, 0.2f, nullptr, &dockMainID);
-    ImGuiID dockRight = ImGui::DockBuilderSplitNode(dockMainID, ImGuiDir_Right, 0.1f, nullptr, &dockMainID);
-    ImGuiID dockTop = ImGui::DockBuilderSplitNode(dockMainID, ImGuiDir_Up, 0.05f, nullptr, &dockMainID);
-    ImGuiID dockLeft = ImGui::DockBuilderSplitNode(dockMainID, ImGuiDir_Left, 0.1f, nullptr, &dockMainID);
+    const ImGuiID dockBottom = ImGui::DockBuilderSplitNode(dockMainID, ImGuiDir_Down, 0.2f, nullptr, &dockMainID);
+    const ImGuiID dockRight = ImGui::DockBuilderSplitNode(dockMainID, ImGuiDir_Right, sideScale, nullptr, &dockMainID);
+    const ImGuiID dockTop = ImGui::DockBuilderSplitNode(dockMainID, ImGuiDir_Up, 0.05f, nullptr, &dockMainID);
+    const ImGuiID dockLeft = ImGui::DockBuilderSplitNode(dockMainID, ImGuiDir_Left, sideScale, nullptr, &dockMainID);
 
     ImGui::DockBuilderDockWindow("Preview", dockMainID);
     ImGui::DockBuilderDockWindow("Editor", dockMainID);

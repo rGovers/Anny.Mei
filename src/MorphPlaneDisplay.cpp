@@ -24,14 +24,18 @@ MorphPlaneDisplay::MorphPlaneDisplay()
     m_modelName = nullptr;
     m_morphPlaneName = nullptr;
 
+	const char* str;
+
     if (BaseShaderProgram == nullptr)
     {
         const unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
-        glShaderSource(vertexShader, 1, &MORPHPLANEVERTEX, 0);
+		str = MORPHPLANEVERTEX;
+        glShaderSource(vertexShader, 1, &str, 0);
         glCompileShader(vertexShader);
 
         const unsigned int pixelShader = glCreateShader(GL_FRAGMENT_SHADER);
-        glShaderSource(pixelShader, 1, &STANDARDPIXEL, 0);
+		str = STANDARDPIXEL;
+        glShaderSource(pixelShader, 1, &str, 0);
         glCompileShader(pixelShader);
 
         BaseShaderProgram = new ShaderProgram(pixelShader, vertexShader);
@@ -43,11 +47,13 @@ MorphPlaneDisplay::MorphPlaneDisplay()
     if (MaskShaderProgram == nullptr)
     {
         const unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
-        glShaderSource(vertexShader, 1, &MORPHPLANEVERTEX, 0);
+		str = MORPHPLANEVERTEX;
+        glShaderSource(vertexShader, 1, &str, 0);
         glCompileShader(vertexShader);
 
         const unsigned int maskedPixelShader = glCreateShader(GL_FRAGMENT_SHADER);
-        glShaderSource(maskedPixelShader, 1, &MASKEDPIXEL, 0);
+		str = MASKEDPIXEL;
+        glShaderSource(maskedPixelShader, 1, &str, 0);
         glCompileShader(maskedPixelShader);
 
         MaskShaderProgram = new ShaderProgram(maskedPixelShader, vertexShader);
@@ -59,11 +65,13 @@ MorphPlaneDisplay::MorphPlaneDisplay()
     if (WireShaderProgram == nullptr)
     {
         const unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
-        glShaderSource(vertexShader, 1, &MORPHPLANEVERTEX, 0);
+		str = MORPHPLANEVERTEX;
+        glShaderSource(vertexShader, 1, &str, 0);
         glCompileShader(vertexShader);
 
         const unsigned int solidPixelShader = glCreateShader(GL_FRAGMENT_SHADER);
-        glShaderSource(solidPixelShader, 1, &SOLIDPIXEL, 0);
+		str = SOLIDPIXEL;
+        glShaderSource(solidPixelShader, 1, &str, 0);
         glCompileShader(solidPixelShader);
 
         WireShaderProgram = new ShaderProgram(solidPixelShader, vertexShader);

@@ -54,6 +54,8 @@ SkeletonEditor::~SkeletonEditor()
 
     delete m_animControl;
 
+	delete m_namer;
+
     delete m_window;
 }
 

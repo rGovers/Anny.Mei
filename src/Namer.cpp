@@ -1,5 +1,6 @@
 #include "Namer.h"
 
+#include <string>
 #include <string.h>
 
 #include "Name.h"
@@ -105,7 +106,7 @@ void Namer::RemoveUniqueName(const char* a_name)
         {
             m_nameList->erase(iter);
 
-            break;
+			return;
         }
     }
 }

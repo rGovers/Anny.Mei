@@ -22,14 +22,18 @@ ImageDisplay::ImageDisplay()
 {
     m_modelName = nullptr;
 
+	const char* str;
+
     if (BaseShaderProgram == nullptr)
     {
         const unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
-        glShaderSource(vertexShader, 1, &MODELVERTEX, 0);
+		str = MODELVERTEX;
+        glShaderSource(vertexShader, 1, &str, 0);
         glCompileShader(vertexShader);
 
         const unsigned int pixelShader = glCreateShader(GL_FRAGMENT_SHADER);
-        glShaderSource(pixelShader, 1, &STANDARDPIXEL, 0);
+		str = STANDARDPIXEL;
+        glShaderSource(pixelShader, 1, &str, 0);
         glCompileShader(pixelShader);
 
         BaseShaderProgram = new ShaderProgram(pixelShader, vertexShader);
@@ -41,11 +45,13 @@ ImageDisplay::ImageDisplay()
     if (MaskShaderProgram == nullptr)
     {
         const unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
-        glShaderSource(vertexShader, 1, &MODELVERTEX, 0);
+		str = MODELVERTEX;
+        glShaderSource(vertexShader, 1, &str, 0);
         glCompileShader(vertexShader);
 
         const unsigned int maskPixelShader = glCreateShader(GL_FRAGMENT_SHADER);
-        glShaderSource(maskPixelShader, 1, &MASKEDPIXEL, 0);
+		str = MASKEDPIXEL;
+        glShaderSource(maskPixelShader, 1, &str, 0);
         glCompileShader(maskPixelShader);
 
         MaskShaderProgram = new ShaderProgram(maskPixelShader, vertexShader);
@@ -57,11 +63,13 @@ ImageDisplay::ImageDisplay()
     if (WireShaderProgram == nullptr)
     {
         const unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
-        glShaderSource(vertexShader, 1, &MODELVERTEX, 0);
+		str = MODELVERTEX;
+        glShaderSource(vertexShader, 1, &str, 0);
         glCompileShader(vertexShader);
 
         const unsigned int solidPixelShader = glCreateShader(GL_FRAGMENT_SHADER);
-        glShaderSource(solidPixelShader, 1, &SOLIDPIXEL, 0);
+		str = SOLIDPIXEL;
+        glShaderSource(solidPixelShader, 1, &str, 0);
         glCompileShader(solidPixelShader);
 
         WireShaderProgram = new ShaderProgram(solidPixelShader, vertexShader);

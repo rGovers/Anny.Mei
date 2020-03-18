@@ -50,7 +50,7 @@ void AValue::SelectKeyFrame(double a_time)
 }
 void AValue::UpdateAnimValue(double a_time)
 {
-    double endTime;
+    double endTime = 0.0f;
 
     auto prevIter = m_keyFrames.end();
     for (auto iter = m_keyFrames.begin(); iter != m_keyFrames.end(); ++iter)
