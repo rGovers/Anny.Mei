@@ -51,7 +51,7 @@ V4L2VirtualCamera::~V4L2VirtualCamera()
     printf("Closed Camera \n");
 }
 
-V4L2VirtualCamera::CreateCamera(unsigned int a_width, unsigned int a_height, unsigned int a_pixelFormat)
+V4L2VirtualCamera* V4L2VirtualCamera::CreateCamera(unsigned int a_width, unsigned int a_height, unsigned int a_pixelFormat)
 {
     V4L2VirtualCamera* camera = new V4L2VirtualCamera();
 
@@ -76,7 +76,7 @@ V4L2VirtualCamera::CreateCamera(unsigned int a_width, unsigned int a_height, uns
 
     videoFormat.type = V4L2_BUF_TYPE_VIDEO_OUTPUT;
 
-    ioctl(m_driver, VIDIOC_G_FMT, &videoFormat);
+    ioctl(camera->m_driver, VIDIOC_G_FMT, &videoFormat);
     videoFormat.fmt.pix.width = a_width;
     videoFormat.fmt.pix.height = a_height;
     videoFormat.fmt.pix.bytesperline = lineWidth;
@@ -87,7 +87,7 @@ V4L2VirtualCamera::CreateCamera(unsigned int a_width, unsigned int a_height, uns
 
     camera->m_videoBuffer = new unsigned char[camera->m_frameSize];
 
-    returnCode = ioctl(m_driver, VIDIOC_S_FMT, &videoFormat);
+    returnCode = ioctl(camera->m_driver, VIDIOC_S_FMT, &videoFormat);
 
     if (returnCode == -1)
     {

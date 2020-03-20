@@ -5,7 +5,7 @@
 #ifndef WIN32
 #include <stddef.h>
 
-class V4L2VirtualCamera
+class V4L2VirtualCamera : public VirtualCamera
 {
 private:
     int             m_driver;
@@ -18,7 +18,7 @@ protected:
 public:
     ~V4L2VirtualCamera();
     
-    V4L2VirtualCamera* CreateCamera(unsigned int a_width, unsigned int a_height, unsigned int a_pixelFormat);
+    static V4L2VirtualCamera* CreateCamera(unsigned int a_width, unsigned int a_height, unsigned int a_pixelFormat);
 
     virtual unsigned int GetFrameSize() const;
     virtual unsigned char* GetVideoBuffer() const;

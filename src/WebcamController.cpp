@@ -11,7 +11,7 @@
 
 #include "PBOTexture.h"
 #include "RenderTexture.h"
-#include "VirtualCameras/DirectShowVirtualCamera.h"
+// #include "VirtualCameras/DirectShowVirtualCamera.h"
 #include "VirtualCameras/V4L2VirtualCamera.h"
 
 WebcamController::WebcamController()
@@ -28,7 +28,7 @@ WebcamController::WebcamController(int a_width, int a_height)
 	m_virtCam = nullptr;
 
 #ifndef WIN32
-	m_virtCam = V4L2VirtualCamera::Create(a_width, a_height, V4L2_PIX_FMT_BGR24);
+	m_virtCam = V4L2VirtualCamera::CreateCamera(a_width, a_height, V4L2_PIX_FMT_BGR24);
 #else
 
 #endif // !WIN32
