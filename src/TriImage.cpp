@@ -34,6 +34,7 @@ void TriImage::WindTriangle(unsigned int& a_a, unsigned int& a_b, unsigned int& 
         angleB = angleC;
         angleC = tempAngle;
     }
+
     if (angleA > angleB)
     {
         if (angleA > angleC)
@@ -121,6 +122,138 @@ void TriImage::WindQuad(unsigned int& a_a, unsigned int& a_b, unsigned int& a_c,
         a_b = tmp;
     }
 }
+void TriImage::WindPent(unsigned int& a_a, unsigned int& a_b, unsigned int& a_c, unsigned int& a_d, unsigned int& a_e) const
+{
+    const glm::vec2 posA = m_verts[a_a].Position;
+    const glm::vec2 posB = m_verts[a_b].Position;
+    const glm::vec2 posC = m_verts[a_c].Position;
+    const glm::vec2 posD = m_verts[a_d].Position;
+    const glm::vec2 posE = m_verts[a_e].Position;
+
+    const glm::vec2 mid = (posA + posB + posC + posD + posE) * 0.20f;
+
+    const glm::vec2 normA = glm::normalize(posA - mid);
+    const glm::vec2 normB = glm::normalize(posB - mid);
+    const glm::vec2 normC = glm::normalize(posC - mid);
+    const glm::vec2 normD = glm::normalize(posD - mid);
+    const glm::vec2 normE = glm::normalize(posE - mid);
+
+    float angleA = atan2(normA.x, normA.y);
+    float angleB = atan2(normB.x, normB.y);
+    float angleC = atan2(normC.x, normC.y);
+    float angleD = atan2(normD.x, normD.y);
+    float angleE = atan2(normE.x, normE.y);
+
+    if (angleD > angleE)
+    {
+        const unsigned int tmp = a_d;
+        a_d = a_e;
+        a_e = tmp;
+
+        const float tmpAngle = angleD;
+        angleD = angleE;
+        angleE = tmpAngle;
+    }
+
+    if (angleC > angleD)
+    {
+        if (angleC > angleE)
+        {
+            const unsigned int tmp = a_c;
+            a_c = a_e;
+            a_e = tmp;
+
+            const float tmpAngle = angleC;
+            angleC = angleE;
+            angleE = tmpAngle;
+        }
+
+        const unsigned int tmp = a_c;
+        a_c = a_d;
+        a_d = tmp;
+
+        const float tmpAngle = angleC;
+        angleC = angleD;
+        angleD = tmpAngle;
+    }
+
+    if (angleB > angleC)
+    {
+        if (angleB > angleD)
+        {
+            if (angleB > angleE)
+            {
+                const unsigned int tmp = a_b;
+                a_b = a_e;
+                a_e = tmp;
+
+                const float tmpAngle = angleB;
+                angleB = angleE;
+                angleE = tmpAngle;
+            }
+
+            const unsigned int tmp = a_b;
+            a_b = a_d;
+            a_d = tmp;
+
+            const float tmpAngle = angleB;
+            angleB = angleD;
+            angleD = tmpAngle;
+        }
+
+        const unsigned int tmp = a_b;
+        a_b = a_c;
+        a_c = tmp;
+
+        const float tmpAngle = angleB;
+        angleB = angleC;
+        angleC = tmpAngle;
+    }
+
+    if (angleA > angleB)
+    {
+        if (angleA > angleC)
+        {
+            if (angleA > angleD)
+            {
+                if (angleA > angleE)
+                {
+                    const unsigned int tmp = a_a;
+                    a_a = a_e;
+                    a_e = tmp;
+
+                    const float tmpAngle = angleA;
+                    angleA = angleE;
+                    angleE = tmpAngle;
+                }
+
+                const unsigned int tmp = a_a;
+                a_a = a_d;
+                a_d = tmp;
+
+                const float tmpAngle = angleA;
+                angleA = angleD;
+                angleD = tmpAngle;
+            }
+
+            const unsigned int tmp = a_a;
+            a_a = a_c;
+            a_c = tmp;
+
+            const float tmpAngle = angleA;
+            angleA = angleC;
+            angleC = tmpAngle;
+        }
+
+        const unsigned int tmp = a_a;
+        a_a = a_b;
+        a_b = tmp;
+
+        const float tmpAngle = angleA;
+        angleA = angleB;
+        angleB = tmpAngle;
+    }
+}
 
 void TriImage::VoronoiTriangulation(int a_vWidth, int a_vHeight)
 {
@@ -169,7 +302,9 @@ void TriImage::VoronoiTriangulation(int a_vWidth, int a_vHeight)
 
             const size_t count = altIndex.size();
 
-            if (count == 3)
+            switch (count)
+            {
+            case 3:
             {
                 TriImageTriangle tri = 
                 {
@@ -190,23 +325,32 @@ void TriImage::VoronoiTriangulation(int a_vWidth, int a_vHeight)
                 {
                     triangles.emplace_back(tri);
                 }
+
+                break;
             }
-            else if (count == 4)
+            case 4:
             {
                 unsigned int indA = altIndex[0];
                 unsigned int indB = altIndex[1];
                 unsigned int indC = altIndex[2];
                 unsigned int indD = altIndex[3];
 
+                if (indA == indB || indA == indC || indA == indD ||
+                    indB == indC || indB == indD ||
+                    indC == indD)
+                {
+                    continue;    
+                }
+
                 WindQuad(indA, indB, indC, indD);
 
-                TriImageTriangle triA = 
+                const TriImageTriangle triA = 
                 {
                     indA,
                     indB,
                     indC
                 };
-                TriImageTriangle triB = 
+                const TriImageTriangle triB = 
                 {
                     indA,
                     indC,
@@ -225,6 +369,71 @@ void TriImage::VoronoiTriangulation(int a_vWidth, int a_vHeight)
                 {
                     triangles.emplace_back(triB);
                 }
+
+                break;
+            }
+            // Very rare but apparently can occur 
+            // Need to look out for situations that more can occur
+            case 5:
+            {
+                unsigned int indA = altIndex[0];
+                unsigned int indB = altIndex[1];
+                unsigned int indC = altIndex[2];
+                unsigned int indD = altIndex[3];
+                unsigned int indE = altIndex[4];
+
+                if (indA == indB || indA == indC || indA == indD || indA == indE ||
+                    indB == indC || indB == indD || indB == indE || 
+                    indC == indD || indC == indE ||
+                    indD == indE)
+                {
+                    continue;    
+                }
+
+                WindPent(indA, indB, indC, indD, indE);
+
+                const TriImageTriangle triA = 
+                {
+                    indA,
+                    indD,
+                    indE
+                };
+
+                const TriImageTriangle triB = 
+                {
+                    indA,
+                    indC,
+                    indD
+                };
+
+                const TriImageTriangle triC = 
+                {
+                    indA,
+                    indB,
+                    indC
+                };
+
+                std::list<TriImageTriangle>::iterator iter;
+                iter = std::find(triangles.begin(), triangles.end(), triA);
+                if (iter == triangles.end())
+                {
+                    triangles.emplace_back(triA);
+                }
+
+                iter = std::find(triangles.begin(), triangles.end(), triB);
+                if (iter == triangles.end())
+                {
+                    triangles.emplace_back(triB);
+                }
+
+                iter = std::find(triangles.begin(), triangles.end(), triC);
+                if (iter == triangles.end())
+                {
+                    triangles.emplace_back(triC);
+                }
+
+                break;
+            }
             }
         }
     }
@@ -255,6 +464,9 @@ TriImage::TriImage(const unsigned char* a_textureData, const LayerMeta* a_meta)
 
     m_imageSize.x = a_meta->ImageWidth;
     m_imageSize.y = a_meta->ImageHeight;
+
+    m_min = glm::vec2(std::numeric_limits<float>::infinity());
+    m_max = glm::vec2(-std::numeric_limits<float>::infinity());
 }
 TriImage::~TriImage()
 {
@@ -262,7 +474,7 @@ TriImage::~TriImage()
     delete[] m_indicies;
 }
 
-bool TriImage::PlaceAlphaVertex(std::list<ModelVertex>* a_verts, int a_x, int a_y, int a_texXStep, int a_texYStep, float a_alpha) const
+bool TriImage::PlaceAlphaVertex(std::list<ModelVertex>* a_verts, int a_x, int a_y, int a_texXStep, int a_texYStep, float a_alpha)
 {
     const int index = (a_x + a_y * m_size.x) * 4 + 3;
 
@@ -303,18 +515,31 @@ bool TriImage::PlaceAlphaVertex(std::list<ModelVertex>* a_verts, int a_x, int a_
 
         if (blankNum > 3)
         {
-            if (dir.x != 0 || dir.y != 0)
+            if (dir.x == 0 && dir.y == 0)
             {
-                dir = glm::normalize(dir);
+                return false;
             }
 
-            const glm::vec2 shiftPos = glm::vec2((dir.x * a_texXStep) / m_size.x, (dir.y * a_texYStep) / m_size.y);
+            dir = glm::normalize(dir);
+
+            const glm::vec2 shift = glm::vec2(dir.x * (a_texXStep - 1), dir.y * (a_texYStep - 1));
+
+            const glm::vec2 shiftPos = glm::vec2(shift.x / m_imageSize.x, shift.y / m_imageSize.y);
+            const glm::vec2 shiftTex = glm::vec2(shift.x / m_size.x, shift.y / m_size.y);
 
             const glm::vec2 offPos = (glm::vec2)m_offset + glm::vec2(a_x, a_y);
 
-            ModelVertex vert;
-            vert.Position = glm::vec4(offPos.x / m_imageSize.x, offPos.y / m_imageSize.y, 0, 1) + glm::vec4(shiftPos, 0, 0);
-            vert.TexCoord = glm::vec2(a_x / (float)m_size.x, a_y / (float)m_size.y) + shiftPos;
+            const ModelVertex vert = 
+            {
+                glm::vec4(offPos.x / m_imageSize.x, offPos.y / m_imageSize.y, 0, 1) + glm::vec4(shiftPos, 0, 0),
+                glm::vec2(a_x / (float)m_size.x, a_y / (float)m_size.y) + shiftTex
+            };
+
+            m_min.x = glm::min(vert.Position.x - 0.00001f, m_min.x);
+            m_min.y = glm::min(vert.Position.y - 0.00001f, m_min.y);
+
+            m_max.x = glm::max(vert.Position.x + 0.00001f, m_max.x);
+            m_max.y = glm::max(vert.Position.y + 0.00001f, m_max.y);
 
             a_verts->emplace_back(vert);
 
@@ -461,6 +686,15 @@ void TriImage::OutlineTriangulation(float a_channelDiff, int a_texXStep, int a_t
     std::copy(verticies.begin(), verticies.end(), m_verts);
 
     VoronoiTriangulation(a_vWidth, a_vHeight);   
+}
+
+glm::vec2 TriImage::GetMinConstraint() const
+{
+    return m_min;
+}
+glm::vec2 TriImage::GetMaxConstraint() const
+{
+    return m_max;
 }
 
 unsigned int TriImage::GetIndexCount() const

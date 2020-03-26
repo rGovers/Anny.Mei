@@ -203,7 +203,7 @@ void MorphPlaneDisplay::Draw(const MorphPlane* a_morphPlane, const glm::mat4& a_
         const unsigned int sSize = dim * dim;
         const float scale = 1.0f / (dim + 1);
 
-        const glm::mat4 finalTran = a_transform * glm::scale(glm::mat4(1), glm::vec3(1 - scale));
+        const glm::mat4 finalTran = a_transform;
 
         if (a_wireframe)
         {
@@ -303,7 +303,7 @@ void MorphPlaneDisplay::DrawMasked(const MorphPlane* a_morphPlane, const glm::ma
         const unsigned int sSize = dim * dim;
         const float scale = 1.0f / (dim + 1);
 
-        const glm::mat4 finalTran = a_transform * glm::scale(glm::mat4(1), glm::vec3(1 - scale));
+        const glm::mat4 finalTran = a_transform;
 
         const int baseHandle = MaskShaderProgram->GetHandle();
         glUseProgram(baseHandle);

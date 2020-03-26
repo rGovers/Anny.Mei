@@ -1,5 +1,6 @@
 #include "Components/MorphTargetRenderer.h"
 
+#include <glad/glad.h>
 #include <glm/gtc/matrix_transform.hpp>
 
 #include "AnimControl.h"
@@ -44,6 +45,7 @@ void MorphTargetRenderer::MorphTargetDraw(bool a_preview, double a_delta, Camera
     glm::mat4 transformMat;
     glm::vec3 anchor;
     const char* modelName = nullptr;
+    bool depthTest;
     const char* useMask = nullptr;
 
     glm::vec2 lerp = glm::vec2(0);
@@ -58,6 +60,7 @@ void MorphTargetRenderer::MorphTargetDraw(bool a_preview, double a_delta, Camera
 
         anchor = -GetBaseAnchor();
         modelName = GetBaseModelName();
+        depthTest = GetBaseDepthTest();
         useMask = GetBaseMaskName();
 
         Vec2KeyValue* lerpValue = m_lerp->GetValue();
@@ -83,6 +86,7 @@ void MorphTargetRenderer::MorphTargetDraw(bool a_preview, double a_delta, Camera
         
         anchor = -GetAnchor();  
         modelName = GetModelName();
+        depthTest = GetDepthTest();
         useMask = GetMaskName();
 
         Vec2KeyValue* lerpValue = m_lerp->GetAnimValue();
@@ -117,6 +121,15 @@ void MorphTargetRenderer::MorphTargetDraw(bool a_preview, double a_delta, Camera
     }
 
     const glm::mat4 finalTransform = view * proj * shift;
+
+    if (depthTest)
+    {
+        glEnable(GL_DEPTH_TEST);
+    }
+    else
+    {
+        glDisable(GL_DEPTH_TEST);
+    }
 
     switch (renderMode)
     {

@@ -187,7 +187,7 @@ void ModelEditor::DrawModelList()
                 memcpy(vertices, (*iter)->Vertices, vertexCount * sizeof(ModelVertex));
                 memcpy(indices, (*iter)->Indices, indexCount * sizeof(unsigned int));
 
-                AddModel((*iter)->TextureName, vertices, vertexCount, indices, indexCount);
+                AddModel((*iter)->TextureName, vertices, vertexCount, indices, indexCount, (*iter)->MinConstraint, (*iter)->MaxConstraint);
             }
 
             ImGui::EndPopup();
@@ -223,8 +223,14 @@ void ModelEditor::DeleteModelData(ModelData* a_modelData)
     delete a_modelData->ModelName;
 
     delete a_modelData->BaseModel;
-    delete a_modelData->PlaneModel;
-    delete a_modelData->TargetModel;
+    if (a_modelData->PlaneModel != nullptr)
+    {
+        delete a_modelData->PlaneModel;
+    }
+    if (a_modelData->TargetModel != nullptr)
+    {
+        delete a_modelData->TargetModel;
+    }
 
     delete[] a_modelData->Vertices;
     delete[] a_modelData->Indices;
@@ -306,6 +312,9 @@ void ModelEditor::GetModelData(PropertyFileProperty& a_property, mz_zip_archive&
     int indexCount = -1;
     int modelType = (int)e_ModelType::Base;
 
+    glm::vec2 min = glm::vec2(0);
+    glm::vec2 max = glm::vec2(1);
+
     const std::list<PropertyFileValue> values = a_property.Values();
     for (auto iter = values.begin(); iter != values.end(); ++iter)
     {
@@ -314,6 +323,8 @@ void ModelEditor::GetModelData(PropertyFileProperty& a_property, mz_zip_archive&
         else IFSETTOATTVALCPY("texname", iter->Name, texName, iter->Value)
         else IFSETTOATTVALI("vertices", iter->Name, vertexCount, iter->Value)
         else IFSETTOATTVALI("indices", iter->Name, indexCount, iter->Value)
+        else IFSETTOATTVALV2("min", iter->Name, min, iter->Value)
+        else IFSETTOATTVALV2("max", iter->Name, max, iter->Value)
     }
 
     if (name != nullptr && trueName != nullptr && vertexCount > 0 && indexCount > 0)
@@ -324,7 +335,7 @@ void ModelEditor::GetModelData(PropertyFileProperty& a_property, mz_zip_archive&
         unsigned int* indicies = (unsigned int*)ExtractFileFromArchive(indexFileName.c_str(), a_archive);
         ModelVertex* vertices = (ModelVertex*)ExtractFileFromArchive(vertexFileName.c_str(), a_archive);
 
-        ModelData* modelData = AddModel(texName, name, trueName, vertices, vertexCount, indicies, indexCount, (e_ModelType)modelType);
+        ModelData* modelData = AddModel(texName, name, trueName, vertices, vertexCount, indicies, indexCount, (e_ModelType)modelType, min, max);
 
         LoadMorphTargetData(name, "North", 0, modelData, a_archive);
         LoadMorphTargetData(name, "South", 1, modelData, a_archive);
@@ -398,7 +409,7 @@ void ModelEditor::GetModelData(PropertyFileProperty& a_property, mz_zip_archive&
     }
 }
 
-ModelData* ModelEditor::AddModel(const char* a_textureName, const char* a_name, const char* a_trueName, ModelVertex* a_vertices, unsigned int a_vertexCount, unsigned int* a_indices, unsigned int a_indexCount, e_ModelType a_modelType) const
+ModelData* ModelEditor::AddModel(const char* a_textureName, const char* a_name, const char* a_trueName, ModelVertex* a_vertices, unsigned int a_vertexCount, unsigned int* a_indices, unsigned int a_indexCount, e_ModelType a_modelType, const glm::vec2& a_min, const glm::vec2& a_max) const
 {
     if (a_vertexCount <= 0 || a_indexCount <= 0 || a_trueName == nullptr)
     {
@@ -442,6 +453,8 @@ ModelData* ModelEditor::AddModel(const char* a_textureName, const char* a_name, 
     modelData->Indices = a_indices;
     modelData->MorphPlaneSize = 10;
     modelData->MorphTargetData = nullptr;
+    modelData->MinConstraint = a_min;
+    modelData->MaxConstraint = a_max;
 
     if (a_name != nullptr)
     {
@@ -480,33 +493,38 @@ void ModelEditor::GenerateMorphVertexData(ModelData* a_model) const
 
     const unsigned int planeSize = a_model->MorphPlaneSize;
     const unsigned int morphPlaneSize = planeSize + 1;
-    const float scale = 1.0f / planeSize; 
+    const glm::vec2 planeScale = a_model->MaxConstraint - a_model->MinConstraint;
+    const double scale = 1.0 / planeSize; 
 
     for (unsigned int i = 0; i < vertexCount; ++i)
     {
         const glm::vec4 pos = modelVerts[i].Position;
 
-        const glm::vec2 pos2 = { pos.x, pos.y };
-        const glm::vec2 posScale = pos2 * (float)planeSize;
+        const glm::vec2 pos2 = glm::vec2(pos.x, pos.y) - a_model->MinConstraint;
+        const glm::vec<2, double> posScale = glm::vec<2, double>((pos2.x * (double)planeSize) / planeScale.x, (pos2.y * (double)planeSize) / planeScale.y);
 
-        const glm::vec2 min = glm::vec2(glm::floor(posScale.x), glm::floor(posScale.y));
-        const glm::vec2 max = glm::vec2(glm::ceil(posScale.x), glm::ceil(posScale.y));
+        const glm::vec<2, double> min = glm::vec<2, double>(glm::floor(posScale.x), glm::floor(posScale.y));
+        const glm::vec<2, double> max = glm::vec2(min.x + 1, min.y + 1);
 
-        float len = glm::length(glm::vec2(min) - posScale);
+        glm::vec<2, double> diff = min - posScale;
+        double len = glm::length(diff);
         verts[i].MorphPlaneWeights[0].r = min.x + min.y * morphPlaneSize;
-        verts[i].MorphPlaneWeights[0].g = glm::clamp((1 - len - scale) / planeSize, 0.0f, 1.0f);
+        verts[i].MorphPlaneWeights[0].g = (float)glm::clamp((1 - len), 0.0, 1.0);
 
-        len = glm::length(glm::vec2(min.x, max.y) - posScale);
+        diff = glm::vec<2, double>(min.x, max.y) - posScale;
+        len = glm::length(diff);
         verts[i].MorphPlaneWeights[1].r = min.x + max.y * morphPlaneSize;
-        verts[i].MorphPlaneWeights[1].g = glm::clamp((1 - len - scale) / planeSize, 0.0f, 1.0f);
+        verts[i].MorphPlaneWeights[1].g = (float)glm::clamp((1 - len), 0.0, 1.0);
         
-        len = glm::length(glm::vec2(max.x, min.y) - posScale);
+        diff = glm::vec<2, double>(max.x, min.y) - posScale;
+        len = glm::length(diff);
         verts[i].MorphPlaneWeights[2].r = max.x + min.y * morphPlaneSize;
-        verts[i].MorphPlaneWeights[2].g = glm::clamp((1 - len - scale) / planeSize, 0.0f, 1.0f);
-        
-        len = glm::length(glm::vec2(max) - posScale);
+        verts[i].MorphPlaneWeights[2].g = (float)glm::clamp((1 - len), 0.0, 1.0);
+
+        diff = max - posScale;
+        len = glm::length(diff);
         verts[i].MorphPlaneWeights[3].r = max.x + max.y * morphPlaneSize;
-        verts[i].MorphPlaneWeights[3].g = glm::clamp((1 - len - scale) / planeSize, 0.0f, 1.0f);
+        verts[i].MorphPlaneWeights[3].g = (float)glm::clamp((1 - len), 0.0, 1.0);
     }
 
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
@@ -621,6 +639,8 @@ void ModelEditor::Save(mz_zip_archive& a_archive) const
             property->EmplaceValue("texname", (*iter)->TextureName);
             property->EmplaceValue("indices", std::to_string(indexCount).c_str());
             property->EmplaceValue("vertices", std::to_string(vertexCount).c_str());
+            property->EmplaceValue("min", ("{ " + std::to_string((*iter)->MinConstraint.x) + ", " + std::to_string((*iter)->MinConstraint.y) + " }").c_str());
+            property->EmplaceValue("max", ("{ " + std::to_string((*iter)->MaxConstraint.x) + ", " + std::to_string((*iter)->MaxConstraint.y) + " }").c_str());
             
             const unsigned int morphPlaneSize = (*iter)->MorphPlaneSize;
             const unsigned int scaledSize = morphPlaneSize + 1;
@@ -678,9 +698,9 @@ void ModelEditor::Save(mz_zip_archive& a_archive) const
     }
 }
 
-void ModelEditor::AddModel(const char* a_textureName, ModelVertex* a_vertices, unsigned int a_vertexCount, unsigned int* a_indices, unsigned int a_indexCount)
+void ModelEditor::AddModel(const char* a_textureName, ModelVertex* a_vertices, unsigned int a_vertexCount, unsigned int* a_indices, unsigned int a_indexCount, const glm::vec2& a_min, const glm::vec2& a_max)
 {
-    ModelData* modelData = AddModel(a_textureName, nullptr, a_textureName, a_vertices, a_vertexCount, a_indices, a_indexCount, e_ModelType::Base);    
+    ModelData* modelData = AddModel(a_textureName, nullptr, a_textureName, a_vertices, a_vertexCount, a_indices, a_indexCount, e_ModelType::Base, a_min, a_max);    
 
     if (modelData != nullptr)
     {
@@ -721,6 +741,8 @@ const Texture* ModelEditor::DrawEditor()
 
     glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
     glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+
+    glEnable(GL_DEPTH_TEST);
 
     const ImVec2 winSize = ImGui::GetWindowSize();
     const glm::vec2 scaledWinSize = { winSize.x - 20, winSize.y - 60 };
@@ -875,7 +897,7 @@ void ModelEditor::ResizeMorphPlane(int a_newSize)
     {
         const char* name = (*iter)->MorphPlaneName->GetName();
 
-        MorphPlane* newMorphPlane = new MorphPlane(a_newSize);
+        MorphPlane* newMorphPlane = new MorphPlane(m_selectedModelData->MinConstraint, m_selectedModelData->MaxConstraint, a_newSize);
 
         store->RemoveMorphPlane(name);
 
@@ -904,7 +926,7 @@ void ModelEditor::AddMorphPlaneClicked()
     MorphPlaneData* morphData = new MorphPlaneData
     {
         new Name("Morph Plane", m_morphPlaneNamer),
-        new MorphPlane(m_selectedModelData->MorphPlaneSize)
+        new MorphPlane(m_selectedModelData->MinConstraint, m_selectedModelData->MaxConstraint, m_selectedModelData->MorphPlaneSize)
     };
 
     m_selectedModelData->MorphPlanes.emplace_back(morphData);
@@ -1041,7 +1063,7 @@ void ModelEditor::SelectMouseUp(const glm::vec2& a_startPos, const glm::vec2& a_
             const glm::vec2 nearPoint = glm::vec2(glm::clamp(morphPosition.x, bMin.x, bMax.x), glm::clamp(morphPosition.y, bMin.y, bMax.y));
             const glm::vec2 diff = nearPoint - morphPosition;
 
-            if ((diff.x == 0 && diff.y == 0) || glm::length(diff) <= 0.025f)
+            if ((diff.x == 0 && diff.y == 0) || glm::length(diff) <= 0.01f)
             {
                 auto iter = std::find(m_selectedIndices.begin(), m_selectedIndices.end(), i);
 

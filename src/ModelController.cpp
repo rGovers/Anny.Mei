@@ -92,6 +92,7 @@ ModelController* ModelController::Load(mz_zip_archive& a_archive)
                     IFSETTOATTVALF("r", valIter->Name, backgroundColor.x, valIter->Value)
                     else IFSETTOATTVALF("g", valIter->Name, backgroundColor.y, valIter->Value)
                     else IFSETTOATTVALF("b", valIter->Name, backgroundColor.z, valIter->Value)
+                    else IFSETTOATTVALV3("value", valIter->Name, backgroundColor, valIter->Value)
                 }
 
                 if (backgroundColor.x != std::numeric_limits<float>::infinity() && backgroundColor.y != std::numeric_limits<float>::infinity() && backgroundColor.z != std::numeric_limits<float>::infinity())
@@ -118,9 +119,7 @@ void ModelController::Save(mz_zip_archive& a_archive) const
     prop->SetName("backcolor");
     const glm::vec3 backgroundColor = m_window->GetBackgroundColor();
 
-    prop->EmplaceValue("r", std::to_string(backgroundColor.x).c_str());
-    prop->EmplaceValue("g", std::to_string(backgroundColor.y).c_str());
-    prop->EmplaceValue("b", std::to_string(backgroundColor.z).c_str());
+    prop->EmplaceValue("value", ("{ " + std::to_string(backgroundColor.x) + ", " + std::to_string(backgroundColor.y) + ", " + std::to_string(backgroundColor.z) + " }").c_str());
 
     char* data = propertyFile->ToString();
 

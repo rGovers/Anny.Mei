@@ -18,6 +18,7 @@ Renderer::~Renderer()
 {
     delete m_modelName;
     delete m_anchor;
+    delete m_depthTest;
     delete m_useMask;
 }
 
@@ -30,10 +31,14 @@ void Renderer::InitValues()
 
     m_modelName = new AnimValue<StringKeyValue>((baseName + "Model Name").c_str(), animControl);
     m_anchor = new AnimValue<Vec3KeyValue>((baseName + "Anchor").c_str(), animControl);
+    m_depthTest = new AnimValue<BoolKeyValue>((baseName + "Depth Test").c_str(), animControl);
     m_useMask = new AnimValue<StringKeyValue>((baseName + "Use Mask").c_str(), animControl);
 
     m_anchor->SelectKeyFrame(0);
     m_anchor->GetValue()->SetBaseValue({ 0.5f, 0.5f, 0.0f });
+
+    m_depthTest->SelectKeyFrame(0);
+    m_depthTest->GetValue()->SetBoolean(true);
 }
 void Renderer::RenameValues()
 {
@@ -43,6 +48,7 @@ void Renderer::RenameValues()
 
     m_modelName->Rename((baseName + "Model Name").c_str());
     m_anchor->Rename((baseName + "Anchor").c_str());
+    m_depthTest->Rename((baseName + "Depth Test").c_str());
     m_useMask->Rename((baseName + "Use Mask").c_str());
 }
 
@@ -51,6 +57,8 @@ void Renderer::DisplayRendererValues(bool a_value)
     m_anchor->SetDisplayState(a_value);
     
     m_modelName->SetDisplayState(a_value);
+
+    m_depthTest->SetDisplayState(a_value);
 
     m_useMask->SetDisplayState(a_value);
 }
@@ -99,6 +107,16 @@ void Renderer::UpdateRendererGUI()
         ImGui::InputFloat3("Anchor Position", (float*)&anchor);
 
         anchorValue->SetBaseValue(anchor);
+    }
+
+    BoolKeyValue* depthTestValue = m_depthTest->GetValue();
+    if (depthTestValue != nullptr)
+    {
+        bool value = depthTestValue->GetBaseBoolean();
+
+        ImGui::Checkbox("Depth Test", &value);
+
+        depthTestValue->SetBoolean(value);
     }
 
     StringKeyValue* maskValue = m_useMask->GetValue();
@@ -184,6 +202,30 @@ glm::vec3 Renderer::GetBaseAnchor() const
     }
 
     return glm::vec3(0.5f, 0.5f, 0.0f);
+}
+
+bool Renderer::GetDepthTest() const
+{
+    BoolKeyValue* value = m_depthTest->GetAnimValue();
+
+    if (value != nullptr)
+    {
+        return value->GetBoolean();
+    }
+
+    return true;
+}
+
+bool Renderer::GetBaseDepthTest() const
+{
+    BoolKeyValue* value = m_depthTest->GetValue();
+
+    if (value != nullptr)
+    {
+        return value->GetBaseBoolean();
+    }
+
+    return true;
 }
 
 const char* Renderer::GetMaskName() const

@@ -54,6 +54,8 @@ struct ModelData
     ModelVertex* Vertices;  
     unsigned int IndexCount;
     unsigned int* Indices;
+    glm::vec2 MinConstraint;
+    glm::vec2 MaxConstraint;
 
     MorphPlaneModel* PlaneModel;
     int MorphPlaneSize;
@@ -99,7 +101,7 @@ private:
 
     void GetModelData(PropertyFileProperty& a_property, mz_zip_archive& a_archive);
 
-    ModelData* AddModel(const char* a_textureName, const char* a_name, const char* a_trueName, ModelVertex* a_vertices, unsigned int a_vertexCount, unsigned int* a_indices, unsigned int a_indexCount, e_ModelType a_modelType) const;
+    ModelData* AddModel(const char* a_textureName, const char* a_name, const char* a_trueName, ModelVertex* a_vertices, unsigned int a_vertexCount, unsigned int* a_indices, unsigned int a_indexCount, e_ModelType a_modelType, const glm::vec2& a_min, const glm::vec2& a_max) const;
 
     void SetSelectTool();
     void SetMoveTool();
@@ -124,7 +126,7 @@ public:
     static ModelEditor* Load(mz_zip_archive& a_archive, Workspace* a_workspace);
     void Save(mz_zip_archive& a_archive) const;
 
-    void AddModel(const char* a_textureName, ModelVertex* a_vertices, unsigned int a_vertexCount, unsigned int* a_indices, unsigned int a_indexCount);
+    void AddModel(const char* a_textureName, ModelVertex* a_vertices, unsigned int a_vertexCount, unsigned int* a_indices, unsigned int a_indexCount, const glm::vec2& a_min, const glm::vec2& a_max);
 
     virtual void DrawPropertiesWindow();
     virtual void DrawEditorWindow();

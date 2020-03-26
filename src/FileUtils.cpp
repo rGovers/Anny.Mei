@@ -1,6 +1,6 @@
 #include "FileUtils.h"
 
-char* ExtractFileFromArchive(const char* a_fileName, mz_zip_archive& a_archive)
+char* ExtractFileFromArchive(const char* a_fileName, mz_zip_archive& a_archive, bool a_term)
 {
     int index = mz_zip_reader_locate_file(&a_archive, a_fileName, "", 0);
 
@@ -15,6 +15,14 @@ char* ExtractFileFromArchive(const char* a_fileName, mz_zip_archive& a_archive)
 
         size_t uncompressedSize;
         char* data = (char*)mz_zip_reader_extract_file_to_heap(&a_archive, a_fileName, &uncompressedSize, 0);
+
+        // For some reason the null terminator is missing on rare occasions
+        // I am not sure what causes it but this seems to fix it
+        // Supprised it took months for it to start causing issues
+        if (a_term)
+        {
+            data[uncompressedSize - 1] = 0;
+        }
 
         if (data == nullptr)
         {

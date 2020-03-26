@@ -1,5 +1,7 @@
 #pragma once
 
+#include <glm/glm.hpp>
+
 #include "miniz.h"
 
 class EditorController;
@@ -39,5 +41,5 @@ public:
 
     void LoadTexture(const char* a_filepath);
 
-    void AddModel(const char* a_name, ModelVertex* a_vertices, unsigned int a_vertexCount, unsigned int* a_indices, unsigned int a_indexCount);
+    void AddModel(const char* a_name, ModelVertex* a_vertices, unsigned int a_vertexCount, unsigned int* a_indices, unsigned int a_indexCount, const glm::vec2& a_min, const glm::vec2& a_max);
 };

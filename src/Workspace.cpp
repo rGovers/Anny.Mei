@@ -129,7 +129,7 @@ void Workspace::LoadTexture(const char* a_filepath)
 {
     m_textureEditor->LoadTexture(a_filepath);
 }
-void Workspace::AddModel(const char* a_name, ModelVertex* a_vertices, unsigned int a_vertexCount, unsigned int* a_indices, unsigned int a_indexCount)
+void Workspace::AddModel(const char* a_name, ModelVertex* a_vertices, unsigned int a_vertexCount, unsigned int* a_indices, unsigned int a_indexCount, const glm::vec2& a_min, const glm::vec2& a_max)
 {
-    m_modelEditor->AddModel(a_name, a_vertices, a_vertexCount, a_indices, a_indexCount);
+    m_modelEditor->AddModel(a_name, a_vertices, a_vertexCount, a_indices, a_indexCount, a_min, a_max);
 }

@@ -57,7 +57,7 @@ char* Vec3KeyValue::ToString() const
 {
     std::string str;
 
-    str += " { ";
+    str += "{ ";
     str += std::to_string(m_baseValue.x) + ", ";
     str += std::to_string(m_baseValue.y) + ", ";
     str += std::to_string(m_baseValue.z) + " }";

@@ -10,7 +10,12 @@ MorphPlane::MorphPlane()
     m_dimensions = 0;
     m_morphPos = nullptr;
 }
-MorphPlane::MorphPlane(unsigned int a_dimensions)
+MorphPlane::MorphPlane(unsigned int a_dimensions) :
+    MorphPlane(glm::vec2(0), glm::vec2(1), a_dimensions)
+{
+    
+}
+MorphPlane::MorphPlane(const glm::vec2& a_min, const glm::vec2& a_max, unsigned int a_dimensions)
 {
     m_dimensions = a_dimensions + 1;
 
@@ -18,13 +23,15 @@ MorphPlane::MorphPlane(unsigned int a_dimensions)
 
     m_morphPos = new glm::vec2[size];
 
+    const glm::vec2 scale = a_max - a_min;
+
     for (unsigned int x = 0; x < m_dimensions; ++x)
     {
         for (unsigned int y = 0; y < m_dimensions; ++y)
         {
             const unsigned int index = x + y * m_dimensions;
 
-            m_morphPos[index] = { x / (float)a_dimensions, y / (float)a_dimensions };
+            m_morphPos[index] = a_min + glm::vec2((x / (float)a_dimensions) * scale.x, (y / (float)a_dimensions) * scale.y);
         }
     }
 }

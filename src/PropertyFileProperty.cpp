@@ -46,7 +46,7 @@ void PropertyFileProperty::SetName(const char* a_name)
 
     const size_t len = strlen(a_name);
 
-    m_name = new char[len];
+    m_name = new char[len + 1];
 
     strcpy(m_name, a_name);
 }
@@ -63,8 +63,8 @@ void PropertyFileProperty::EmplaceValue(const char* a_name, const char* a_value)
     const size_t nameLen = strlen(a_name);
     const size_t valLen = strlen(a_value);
 
-    value.Name = new char[nameLen];
-    value.Value = new char[valLen];
+    value.Name = new char[nameLen + 1];
+    value.Value = new char[valLen + 1];
 
     strcpy(value.Name, a_name);
     strcpy(value.Value, a_value);

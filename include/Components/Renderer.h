@@ -2,6 +2,7 @@
 
 #include "AnimValue.h"
 #include "Component.h"
+#include "KeyValues/BoolKeyValue.h"
 #include "KeyValues/StringKeyValue.h"
 #include "KeyValues/Vec3KeyValue.h"
 
@@ -24,6 +25,8 @@ private:
 
     AnimValue<Vec3KeyValue>*   m_anchor;
 
+    AnimValue<BoolKeyValue>*   m_depthTest;
+
     AnimValue<StringKeyValue>* m_useMask;
 protected:
     void UpdateRendererGUI();
@@ -35,6 +38,9 @@ protected:
 
     glm::vec3 GetAnchor() const;
     glm::vec3 GetBaseAnchor() const;
+
+    bool GetDepthTest() const;
+    bool GetBaseDepthTest() const;
 
     const char* GetMaskName() const;
     const char* GetBaseMaskName() const;

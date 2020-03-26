@@ -127,6 +127,41 @@ void Object::DisplayValues(bool a_state)
     }
 }
 
+void Object::MoveChildUp(Object* a_child)
+{
+    for (auto iter = m_children.begin(); iter != m_children.end(); ++iter)
+    {
+        if (*iter == a_child)
+        {
+            auto curItem = iter;
+
+            --iter;
+
+            m_children.erase(curItem);
+            m_children.emplace(iter, a_child);
+
+            return;
+        }
+    }
+}
+void Object::MoveChildDown(Object* a_child)
+{
+    for (auto iter = m_children.begin(); iter != m_children.end(); ++iter)
+    {
+        if (*iter == a_child)
+        {
+            auto curItem = iter;
+
+            ++++iter;
+
+            m_children.erase(curItem);
+            m_children.emplace(iter, a_child);
+
+            return;
+        }
+    }
+}
+
 void Object::LoadComponent(PropertyFileProperty* a_property)
 {
     Component* comp = nullptr;

@@ -25,7 +25,7 @@ char* Namer::CreateName(ID& a_id, const char* a_trueName)
 
     size_t cLen = len + sLen;
 
-    char* name = new char[cLen];
+    char* name = new char[cLen + 1];
     strcpy(name, a_trueName);
     strcpy(name + len, str.c_str());
  
@@ -88,7 +88,7 @@ void Namer::SetUniqueName(Name& a_name)
     {
         const size_t len = strlen(trueName);
 
-        name = new char[len];
+        name = new char[len + 1];
         strcpy(name, trueName);
 
         m_objectNames->emplace(trueName, ID { 1, 1 });

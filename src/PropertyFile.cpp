@@ -221,9 +221,11 @@ char* PropertyFile::ToString() const
         }
     }
 
-    char* dataC = new char[data.length() + 1];
-    memset(dataC, 0, data.length() + 1);
+
+    const size_t len = data.length();
+    char* dataC = new char[len + 1];
     strcpy(dataC, data.c_str());
+    dataC[len] = 0;
 
     return dataC;
 }

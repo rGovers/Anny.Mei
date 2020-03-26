@@ -17,6 +17,7 @@ protected:
 
 public:
     MorphPlane(unsigned int a_dimensions);
+    MorphPlane(const glm::vec2& a_min, const glm::vec2& a_max, unsigned int a_dimensions);
     ~MorphPlane();
 
     glm::vec2 GetMorphPosition(unsigned int a_x, unsigned int a_y) const;

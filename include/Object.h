@@ -50,6 +50,9 @@ public:
 
     void DisplayValues(bool a_state);
 
+    void MoveChildUp(Object* a_child);
+    void MoveChildDown(Object* a_child);
+
     void LoadComponent(PropertyFileProperty* a_propertyFile);
     void SaveComponents(PropertyFile* a_propertyFile, PropertyFileProperty* a_parent) const;
 

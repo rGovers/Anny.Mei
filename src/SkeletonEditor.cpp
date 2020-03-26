@@ -138,6 +138,28 @@ void SkeletonEditor::ListObjects(Object* a_object, int& a_node)
 
                 return;
             }
+
+            Object* parent = a_object->GetParent();
+
+            if (parent != nullptr)
+            {
+                const std::list<Object*> children = parent->GetChildren();
+
+                if (children.size() > 1)
+                {
+                    ImGui::Separator();
+
+                    if (a_object != *children.begin() && ImGui::MenuItem("Move Up"))
+                    {
+                        parent->MoveChildUp(a_object);
+                    }
+
+                    if (a_object != *--children.end() && ImGui::MenuItem("Move Down"))
+                    {
+                        parent->MoveChildDown(a_object);
+                    }
+                }
+            }
         }
         
         ImGui::EndPopup();
@@ -249,6 +271,8 @@ const Texture* SkeletonEditor::DrawEditor()
 
     glClearColor(0.1, 0.1, 0.1, 1);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);    
+
+    glEnable(GL_DEPTH_TEST);
 
     m_imRenderer->Draw();
             

@@ -435,6 +435,7 @@ void MorphPlaneRenderer::MorphPlaneDraw(bool a_preview, double a_delta, Camera* 
 
     glm::mat4 transformMat;
     glm::vec3 anchor;
+    bool depthTest;
     const char* modelName = nullptr;
 
     glm::vec2 lerp;
@@ -461,6 +462,7 @@ void MorphPlaneRenderer::MorphPlaneDraw(bool a_preview, double a_delta, Camera* 
 
         anchor = -GetBaseAnchor();
         modelName = GetBaseModelName();
+        depthTest = GetBaseDepthTest();
         useMask = GetBaseMaskName();
 
         if (useMask != nullptr)
@@ -534,6 +536,7 @@ void MorphPlaneRenderer::MorphPlaneDraw(bool a_preview, double a_delta, Camera* 
         
         anchor = -GetAnchor();  
         modelName = GetModelName();
+        depthTest = GetDepthTest();
         useMask = GetMaskName();
 
         if (useMask != nullptr)
@@ -617,6 +620,15 @@ void MorphPlaneRenderer::MorphPlaneDraw(bool a_preview, double a_delta, Camera* 
 
     m_morphPlaneDisplay->SetModelName(modelName);
     m_morphPlaneDisplay->SetMorphPlaneName(morphPlaneName);
+
+    if (depthTest)
+    {
+        glEnable(GL_DEPTH_TEST);
+    }
+    else
+    {
+        glDisable(GL_DEPTH_TEST);
+    }
 
     switch (renderMode)
     {

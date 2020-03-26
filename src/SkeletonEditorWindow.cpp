@@ -122,7 +122,7 @@ void SkeletonEditorWindow::UpdateEditorWindow()
         const glm::vec2 halfSize = useSize * 0.5f;
         const glm::vec2 trueSize = { useSize.x / IMAGE_SIZE, useSize.y / IMAGE_SIZE };
 
-        m_camera->SetProjection(glm::orthoRH(0.0f, trueSize.x * m_zoom * 5, 0.0f, trueSize.y * m_zoom * 5, -1.0f, 1.0f));
+        m_camera->SetProjection(glm::orthoRH(0.0f, trueSize.x * m_zoom, 0.0f, trueSize.y * m_zoom, -1.0f, 1.0f));
 
         StaticTransform* transform = m_camera->GetTransform();
 

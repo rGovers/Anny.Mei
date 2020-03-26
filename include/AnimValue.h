@@ -200,7 +200,7 @@ public:
 
     virtual void LoadValues(mz_zip_archive& a_archive)
     {
-        char* data = ExtractFileFromArchive((std::string("anim/") + m_name + ".prop").c_str(), a_archive);
+        char* data = ExtractFileFromArchive((std::string("anim/") + m_name + ".prop").c_str(), a_archive, true);
 
         if (data != nullptr)
         {

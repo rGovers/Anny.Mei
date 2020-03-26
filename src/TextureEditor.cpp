@@ -112,7 +112,7 @@ void TextureEditor::TriangulateClicked()
         ModelVertex* modelVerticies = new ModelVertex[vertexSize];
         memcpy(modelVerticies, triImage->GetVertices(), vertexSize);
 
-        m_workspace->AddModel(layerTexture.Meta->Name, modelVerticies, vertexCount, indicies, indexCount);
+        m_workspace->AddModel(layerTexture.Meta->Name, modelVerticies, vertexCount, indicies, indexCount, triImage->GetMinConstraint(), triImage->GetMaxConstraint());
     }
 
     delete triImage;
