@@ -522,7 +522,7 @@ bool TriImage::PlaceAlphaVertex(std::list<ModelVertex>* a_verts, int a_x, int a_
 
             dir = glm::normalize(dir);
 
-            const glm::vec2 shift = glm::vec2(dir.x * (a_texXStep - 1), dir.y * (a_texYStep - 1));
+            const glm::vec2 shift = glm::vec2(dir.x * (a_texXStep + 1), dir.y * (a_texYStep + 1));
 
             const glm::vec2 shiftPos = glm::vec2(shift.x / m_imageSize.x, shift.y / m_imageSize.y);
             const glm::vec2 shiftTex = glm::vec2(shift.x / m_size.x, shift.y / m_size.y);

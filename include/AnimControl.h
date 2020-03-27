@@ -30,7 +30,10 @@ public:
     AnimControl();
     ~AnimControl();
 
+    void ResetTime();
     void Update(double a_delta);
+
+    float GetMaxTime() const;
 
     const Texture* DrawTimeline(int& a_height);
 

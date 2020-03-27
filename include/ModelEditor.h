@@ -138,10 +138,12 @@ public:
 
     void ResizeMorphPlane(int a_newSize);
     void AddMorphPlaneClicked();
+    void RemoveMorphPlane(MorphPlaneData* a_morphPlane);
     bool IsMorphPlaneSelected(const MorphPlaneData* a_morphPlane) const;
     void MorphPlaneSelected(MorphPlaneData* a_morphPlane);
 
     void AddMorphTargetsClicked();
+    void RemoveMorphTargets();
     bool IsMorphTargetSelected(const glm::vec4* a_morphTarget) const;
     void MorphTargetSelected(glm::vec4* a_morphTarget);
 

@@ -428,8 +428,12 @@ ModelData* ModelEditor::AddModel(const char* a_textureName, const char* a_name, 
     {
         const size_t strLen = strlen(a_textureName);
 
-        modelData->TextureName = new char[strLen];
+        modelData->TextureName = new char[strLen + 1];
         strcpy(modelData->TextureName, a_textureName);
+    }
+    else
+    {
+        modelData->TextureName = nullptr;
     }
     
     size_t vertexSize = sizeof(ModelVertex);
@@ -872,9 +876,12 @@ void ModelEditor::SetTextureName(const char* a_name)
 
     store->SetModelTextureName(m_selectedModelData->ModelName->GetName(), a_name);
 
-    delete[] m_selectedModelData->TextureName;
-    m_selectedModelData->TextureName = nullptr;
-
+    if (m_selectedModelData->TextureName != nullptr)
+    {
+        delete[] m_selectedModelData->TextureName;
+        m_selectedModelData->TextureName = nullptr;
+    }
+    
     if (a_name != nullptr)
     {
         const size_t len = strlen(a_name);
@@ -932,6 +939,38 @@ void ModelEditor::AddMorphPlaneClicked()
     m_selectedModelData->MorphPlanes.emplace_back(morphData);
     store->AddMorphPlane(morphData->MorphPlaneName->GetName(), morphData->Plane);
 }
+void ModelEditor::RemoveMorphPlane(MorphPlaneData* a_morphPlane)
+{
+    DataStore* store = DataStore::GetInstance();
+
+    if (a_morphPlane == m_selectedMorphPlane)
+    {
+        m_selectedMorphPlane = nullptr;
+    }
+
+    store->RemoveMorphPlane(a_morphPlane->MorphPlaneName->GetName());
+
+    for (auto iter = m_selectedModelData->MorphPlanes.begin(); iter != m_selectedModelData->MorphPlanes.end(); ++iter)
+    {
+        if (*iter == a_morphPlane)
+        {
+            m_selectedModelData->MorphPlanes.erase(iter);
+
+            break;
+        }
+    }
+
+    if (m_selectedModelData->MorphPlanes.size() <= 0)
+    {
+        store->RemoveModel(m_selectedModelData->ModelName->GetName(), e_ModelType::MorphPlane);
+
+        delete m_selectedModelData->PlaneModel;
+        m_selectedModelData->PlaneModel = nullptr;
+    }
+
+    delete a_morphPlane->Plane;
+    delete a_morphPlane->MorphPlaneName;
+}
 bool ModelEditor::IsMorphPlaneSelected(const MorphPlaneData* a_morphPlane) const
 {
     return m_selectedMorphPlane == a_morphPlane;
@@ -979,7 +1018,31 @@ void ModelEditor::AddMorphTargetsClicked()
         store->AddModel(m_selectedModelData->ModelName->GetName(), m_selectedModelData->TargetModel);
     }
 }
+void ModelEditor::RemoveMorphTargets()
+{
+    DataStore* store = DataStore::GetInstance();
 
+    if (m_selectedModelData->TargetModel != nullptr)
+    {
+        store->RemoveModel(m_selectedModelData->ModelName->GetName(), e_ModelType::MorphTarget);
+
+        delete m_selectedModelData->TargetModel;
+        m_selectedModelData->TargetModel = nullptr;
+
+        if (m_selectedModelData->MorphTargetData != nullptr)
+        {
+            for (int i = 0; i < 8; ++i)
+            {
+                delete[] m_selectedModelData->MorphTargetData[i];
+            }
+
+            delete[] m_selectedModelData->MorphTargetData;
+            m_selectedModelData->MorphTargetData = nullptr;
+        }
+    }
+
+    m_selectedMorphTarget = nullptr;
+}
 void ModelEditor::MorphTargetSelected(glm::vec4* a_morphTarget)
 {
     m_selectedMorphPlane = nullptr;
@@ -1044,6 +1107,11 @@ void ModelEditor::SelectMouseUp(const glm::vec2& a_startPos, const glm::vec2& a_
     const glm::vec2 bMin = glm::vec2(glm::min(a_endPos.x, a_startPos.x), glm::min(a_endPos.y, a_startPos.y));
     const glm::vec2 bMax = glm::vec2(glm::max(a_endPos.x, a_startPos.x), glm::max(a_endPos.y, a_startPos.y)); 
 
+    const float zoom = m_window->GetZoom();
+    const float maxZoom = m_window->GetMaxZoom();
+
+    const float scalar = zoom / maxZoom;
+
     if (m_selectedMorphPlane != nullptr)
     {
         if (!io.KeyShift && !io.KeyCtrl)
@@ -1063,7 +1131,7 @@ void ModelEditor::SelectMouseUp(const glm::vec2& a_startPos, const glm::vec2& a_
             const glm::vec2 nearPoint = glm::vec2(glm::clamp(morphPosition.x, bMin.x, bMax.x), glm::clamp(morphPosition.y, bMin.y, bMax.y));
             const glm::vec2 diff = nearPoint - morphPosition;
 
-            if ((diff.x == 0 && diff.y == 0) || glm::length(diff) <= 0.01f)
+            if ((diff.x == 0 && diff.y == 0) || glm::length(diff) <= scalar * 0.01f)
             {
                 auto iter = std::find(m_selectedIndices.begin(), m_selectedIndices.end(), i);
 
@@ -1093,7 +1161,7 @@ void ModelEditor::SelectMouseUp(const glm::vec2& a_startPos, const glm::vec2& a_
             const glm::vec2 nearPoint = glm::vec2(glm::clamp(morphPosition.x, bMin.x, bMax.x), glm::clamp(morphPosition.y, bMin.y, bMax.y));
             const glm::vec2 diff = nearPoint - morphPosition;
 
-            if ((diff.x == 0 && diff.y == 0) || glm::length(diff) <= 0.01f)
+            if ((diff.x == 0 && diff.y == 0) || glm::length(diff) <= scalar * 0.01f)
             {
                 auto iter = std::find(m_selectedIndices.begin(), m_selectedIndices.end(), i);
 

@@ -1,5 +1,6 @@
 #include "Components/ImageRenderer.h"
 
+#include <glad/glad.h>
 #include <glm/glm.hpp>
 
 #include "Camera.h"
@@ -36,6 +37,7 @@ void ImageRenderer::ImageDraw(bool a_preview, Camera* a_camera)
     glm::mat4 transformMat;
     glm::vec3 anchor;
     const char* modelName = nullptr;
+    bool depthTest;
     const char* useMask = nullptr;
 
     DepthRenderTexture* mask = nullptr;
@@ -46,6 +48,7 @@ void ImageRenderer::ImageDraw(bool a_preview, Camera* a_camera)
 
         anchor = -GetBaseAnchor();
         modelName = GetBaseModelName();
+        depthTest = GetBaseDepthTest();
         useMask = GetBaseMaskName();
 
         if (useMask != nullptr)
@@ -59,6 +62,7 @@ void ImageRenderer::ImageDraw(bool a_preview, Camera* a_camera)
         
         anchor = -GetAnchor();  
         modelName = GetModelName();
+        depthTest = GetDepthTest();
         useMask = GetMaskName();
 
         if (useMask != nullptr)
@@ -82,6 +86,15 @@ void ImageRenderer::ImageDraw(bool a_preview, Camera* a_camera)
     }
 
     const glm::mat4 finalTransform = view * proj * shift;
+
+    if (depthTest)
+    {
+        glDepthFunc(GL_LESS);
+    }
+    else
+    {
+        glDepthFunc(GL_ALWAYS);
+    }
 
     if (useMask == nullptr || useMask[0] == 0)
     {

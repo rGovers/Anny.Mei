@@ -623,11 +623,11 @@ void MorphPlaneRenderer::MorphPlaneDraw(bool a_preview, double a_delta, Camera* 
 
     if (depthTest)
     {
-        glEnable(GL_DEPTH_TEST);
+        glDepthFunc(GL_LESS);
     }
     else
     {
-        glDisable(GL_DEPTH_TEST);
+        glDepthFunc(GL_ALWAYS);
     }
 
     switch (renderMode)

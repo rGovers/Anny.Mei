@@ -11,7 +11,6 @@
 #include "FileUtils.h"
 #include "imgui.h"
 #include "IntermediateRenderer.h"
-#include "MemoryStream.h"
 #include "Models/Model.h"
 #include "Namer.h"
 #include "Object.h"
@@ -59,6 +58,10 @@ SkeletonEditor::~SkeletonEditor()
     delete m_window;
 }
 
+AnimControl* SkeletonEditor::GetAnimControl() const
+{
+    return m_animControl;
+}
 Object* SkeletonEditor::GetBaseObject() const
 {
     return m_baseObject;
@@ -289,7 +292,7 @@ SkeletonEditor* SkeletonEditor::Load(mz_zip_archive& a_archive, Workspace* a_wor
 {
     SkeletonEditor* skeletonController = new SkeletonEditor(a_workspace);
 
-    char* data = ExtractFileFromArchive("skeleton.prop", a_archive);
+    char* data = ExtractFileFromArchive("skeleton.prop", a_archive, true);
     if (data != nullptr)
     {
         PropertyFile* propertyFile = new PropertyFile(data);

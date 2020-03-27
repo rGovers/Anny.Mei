@@ -4,6 +4,7 @@
 
 #include "miniz.h"
 
+class AnimControl;
 class EditorController;
 class ModelEditor;
 struct ModelVertex;
@@ -38,6 +39,7 @@ public:
     void SelectWorkspace(EditorController* a_editorController);
 
     Object* GetBaseObject() const;
+    AnimControl* GetAnimControl() const;
 
     void LoadTexture(const char* a_filepath);
 

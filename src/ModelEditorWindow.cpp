@@ -28,6 +28,10 @@ ModelEditorWindow::ModelEditorWindow(ModelEditor* a_modelEditor)
 
     m_camera = new Camera();
 
+    StaticTransform* transform = m_camera->GetTransform();
+
+    transform->SetTranslation({ 0.5f, 0.5f, 0.0f });
+
     m_zoom = 1;
 
     m_solid = true;
@@ -97,6 +101,15 @@ e_Axis ModelEditorWindow::GetAxis() const
     return m_axis;
 }
 
+float ModelEditorWindow::GetZoom() const
+{
+    return m_zoom;
+}
+float ModelEditorWindow::GetMaxZoom() const
+{
+    return MAX_ZOOM;
+}
+
 bool ModelEditorWindow::GetAlphaMode() const
 {
     return m_alpha;
@@ -142,7 +155,7 @@ void ModelEditorWindow::UpdatePropertiesWindow(const ModelData* a_modelData)
 
         size_t len = strlen(name);
 
-        char* buff = new char[len + 2];
+        char* buff = new char[len + 3];
         strcpy(buff, name);
 
         ImGui::InputText("Model Name", buff, BUFFER_SIZE);
@@ -158,7 +171,7 @@ void ModelEditorWindow::UpdatePropertiesWindow(const ModelData* a_modelData)
 
         len = strlen(name);
 
-        buff = new char[len + 2];
+        buff = new char[len + 3];
         strcpy(buff, name);
 
         ImGui::InputText("Texture Name", buff, BUFFER_SIZE);
@@ -205,6 +218,20 @@ void ModelEditorWindow::UpdatePropertiesWindow(const ModelData* a_modelData)
                     {
                         ImGui::SetItemDefaultFocus();
                     }
+
+                    if (ImGui::BeginPopupContextItem())
+                    {
+                        if (ImGui::Selectable("Delete Morph Plane"))
+                        {
+                            const auto cur = iter;
+
+                            --iter;
+
+                            m_modelEditor->RemoveMorphPlane(*cur);
+                        }
+
+                        ImGui::EndPopup();
+                    }
                 }
             }
 
@@ -217,17 +244,46 @@ void ModelEditorWindow::UpdatePropertiesWindow(const ModelData* a_modelData)
         {
             if (ImGui::TreeNode("Morph Targets"))
             {
-                MorphTargetDisplay("North Morph Target", a_modelData->MorphTargetData[0]);
-                MorphTargetDisplay("South Morph Target", a_modelData->MorphTargetData[1]);
-                MorphTargetDisplay("East Morph Target", a_modelData->MorphTargetData[2]);
-                MorphTargetDisplay("West Morph Target", a_modelData->MorphTargetData[3]);
+                bool skip = false;
 
-                MorphTargetDisplay("North East Morph Target", a_modelData->MorphTargetData[4]);
-                MorphTargetDisplay("South East Morph Target", a_modelData->MorphTargetData[5]);
-                MorphTargetDisplay("South West Morph Target", a_modelData->MorphTargetData[6]);
-                MorphTargetDisplay("North West Morph Target", a_modelData->MorphTargetData[7]);
+                if (ImGui::BeginPopupContextItem())
+                {
+                    if (ImGui::Selectable("Delete Morph Targets"))
+                    {
+                        skip = true;
+
+                        m_modelEditor->RemoveMorphTargets();
+                    }
+
+                    ImGui::EndPopup();
+                }   
+
+                if (!skip)
+                {
+                    MorphTargetDisplay("North Morph Target", a_modelData->MorphTargetData[0]);
+                    MorphTargetDisplay("South Morph Target", a_modelData->MorphTargetData[1]);
+                    MorphTargetDisplay("East Morph Target", a_modelData->MorphTargetData[2]);
+                    MorphTargetDisplay("West Morph Target", a_modelData->MorphTargetData[3]);
+
+                    MorphTargetDisplay("North East Morph Target", a_modelData->MorphTargetData[4]);
+                    MorphTargetDisplay("South East Morph Target", a_modelData->MorphTargetData[5]);
+                    MorphTargetDisplay("South West Morph Target", a_modelData->MorphTargetData[6]);
+                    MorphTargetDisplay("North West Morph Target", a_modelData->MorphTargetData[7]);
+                }
 
                 ImGui::TreePop();   
+            }
+            else
+            {
+                if (ImGui::BeginPopupContextItem())
+                {
+                    if (ImGui::Selectable("Delete Morph Targets"))
+                    {
+                        m_modelEditor->RemoveMorphTargets();
+                    }
+
+                    ImGui::EndPopup();
+                }   
             }
         }
         else
@@ -257,13 +313,17 @@ void ModelEditorWindow::UpdateEditorWindow()
 
     const ImVec2 size = ImGui::GetWindowSize();
     const glm::vec2 useSize = { size.x - 20, size.y - 60 };
+
+    const glm::vec2 halfSize = useSize * 0.5f;
+    const glm::vec2 trueSize = { useSize.x / IMAGE_SIZE, useSize.y / IMAGE_SIZE };
+    const glm::vec2 halfTrue = trueSize * 0.5f;
+
+    const float scalar = m_zoom / MAX_ZOOM;
+
+    m_camera->SetProjection(glm::orthoRH(-halfTrue.x * m_zoom, halfTrue.x * m_zoom, -halfTrue.y * m_zoom, halfTrue.y * m_zoom, -1.0f, 1.0f));
+
     if (ImGui::IsWindowFocused())
     {
-        const glm::vec2 halfSize = useSize * 0.5f;
-        const glm::vec2 trueSize = { useSize.x / IMAGE_SIZE, useSize.y / IMAGE_SIZE };
-
-        m_camera->SetProjection(glm::orthoRH(0.0f, trueSize.x * m_zoom * 5, 0.0f, trueSize.y * m_zoom * 5, -1.0f, 1.0f));
-
         StaticTransform* transform = m_camera->GetTransform();
 
         glm::vec3 translation = transform->GetTranslation();
@@ -280,7 +340,7 @@ void ModelEditorWindow::UpdateEditorWindow()
             if (m_lastMousePos.x >= 0 && m_lastMousePos.y >= 0)
             {
                 glm::vec2 mov = m_lastMousePos - mousePos;
-                translation += glm::vec3(mov.x, mov.y, 0.0f) * MOUSE_SENSITIVITY;
+                translation += glm::vec3(mov.x, mov.y, 0.0f) * MOUSE_SENSITIVITY * scalar;
             }
 
             m_lastMousePos = mousePos;
@@ -345,11 +405,11 @@ void ModelEditorWindow::UpdateEditorWindow()
                         const glm::vec2 diff = m_selectionPoint - world2;
                         const glm::vec2 aDiff = { glm::abs(diff.x), glm::abs(diff.y) };
 
-                        if (aDiff.x <= 0.01f && aDiff.y <= 0.5f)
+                        if (aDiff.x <= scalar * 0.01f && aDiff.y <= scalar * 0.5f)
                         {
                             m_axis = e_Axis::Y;
                         }
-                        else if (aDiff.x <= 0.5f && aDiff.y <= 0.01f)
+                        else if (aDiff.x <= scalar * 0.5f && aDiff.y <= scalar * 0.01f)
                         {
                             m_axis = e_Axis::X;
                         }

@@ -124,6 +124,10 @@ Object* Workspace::GetBaseObject() const
 {
     return m_skeletonEditor->GetBaseObject();
 }
+AnimControl* Workspace::GetAnimControl() const
+{
+    return m_skeletonEditor->GetAnimControl();
+}
 
 void Workspace::LoadTexture(const char* a_filepath)
 {

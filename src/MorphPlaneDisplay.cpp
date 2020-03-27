@@ -192,7 +192,6 @@ void MorphPlaneDisplay::Draw(const MorphPlane* a_morphPlane, const glm::mat4& a_
         if (a_alpha)
         {
             glEnable(GL_BLEND);
-            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);     
         }
 
         glBindVertexArray(model->GetVAO());
@@ -292,8 +291,7 @@ void MorphPlaneDisplay::DrawMasked(const MorphPlane* a_morphPlane, const glm::ma
 
         glGetFloatv(GL_VIEWPORT, (float*)&view);
 
-        glEnable(GL_BLEND);
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);     
+        glEnable(GL_BLEND);  
 
         glBindVertexArray(model->GetVAO());
 

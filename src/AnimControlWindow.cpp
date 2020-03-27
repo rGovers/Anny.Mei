@@ -42,6 +42,10 @@ float AnimControlWindow::GetMaxTimeValue() const
 {
     return m_maxValue;
 }
+void AnimControlWindow::SetMaxTimeValue(float a_value) 
+{
+    m_maxValue = a_value;
+}
 
 float AnimControlWindow::GetSelectedTime() const
 {

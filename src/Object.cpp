@@ -256,7 +256,7 @@ void Object::UpdateComponentUI()
         {
             component = new MorphPlaneRenderer(this, m_animControl);
         }
-        if (createMorphPlaneMask && ImGui::Selectable(MorphTargetMask::COMPONENT_NAME))
+        if (cerateMorphTargetMask && ImGui::Selectable(MorphTargetMask::COMPONENT_NAME))
         {
             component = new MorphTargetMask(this, m_animControl);
         }

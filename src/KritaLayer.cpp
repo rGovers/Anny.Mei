@@ -155,6 +155,8 @@ void KritaLayer::SetFilename(const char* a_name)
     }
 }
 
+// Grabbed function directly from Krita source
+// KisAbstractComression::delinearizeColors
 void KritaLayer::DelinearizeColors(char* a_input, char* a_output, unsigned int a_size, unsigned int a_pixelSize)
 {
     char* outByte = a_output;
@@ -186,7 +188,6 @@ void KritaLayer::DelinearizeColors(char* a_input, char* a_output, unsigned int a
 //  KisTiledDataManager::processTilesHeader
 //  KisTileCompressor2::readTile
 //  KisTileCompressor2::decompressTileData
-
 void KritaLayer::LoadData(mz_zip_archive& a_archive)
 {
     std::string filename = std::string(m_image->GetName()) + "/layers/" + m_filename; 
@@ -414,8 +415,8 @@ void KritaLayer::LoadData(mz_zip_archive& a_archive)
             m_width = diff.x * tileWidth + tileWidth;
             m_height = diff.y * tileWidth + tileWidth;
 
-            m_xOffset = min.x * tileWidth + m_xOffset * tileWidth;
-            m_yOffset = min.y * tileHeight + m_yOffset * tileHeight;
+            m_xOffset += min.x * tileWidth;
+            m_yOffset += min.y * tileHeight;
 
             const unsigned int imageSize = m_width * m_height * 4;
 

@@ -4,21 +4,43 @@
 #include <string.h>
 
 PBOTexture::PBOTexture(int a_width, int a_height, int a_pixelFormat) : 
-    Texture(a_width, a_height, a_pixelFormat), 
-    m_pixelFormat(a_pixelFormat),
-    m_pbo(new unsigned int[2]), 
-    m_readIndex(0)
+    Texture(a_width, a_height, a_pixelFormat)
 {
+    m_pixelFormat = a_pixelFormat;
+
+    m_pbo = new unsigned int[2];
+    m_readIndex = 0;
+
+    if (a_pixelFormat == GL_RGBA)
+    {
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, a_width, a_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
+
+    }
+
     const unsigned int size = a_width * a_height;
     const unsigned int handle = GetHandle();
     
     glGenBuffers(2, m_pbo);
     
     glBindBuffer(GL_PIXEL_PACK_BUFFER, m_pbo[0]);
-    glBufferData(GL_PIXEL_PACK_BUFFER, size * 3, 0, GL_STREAM_READ);
+    if (a_pixelFormat == GL_RGBA)
+    {
+        glBufferData(GL_PIXEL_PACK_BUFFER, size * 4, 0, GL_STREAM_READ);
+    }
+    else
+    {
+        glBufferData(GL_PIXEL_PACK_BUFFER, size * 3, 0, GL_STREAM_READ);
+    }
 
     glBindBuffer(GL_PIXEL_PACK_BUFFER, m_pbo[1]);
-    glBufferData(GL_PIXEL_PACK_BUFFER, size * 3, 0, GL_STREAM_READ);
+    if (a_pixelFormat == GL_RGBA)
+    {
+        glBufferData(GL_PIXEL_PACK_BUFFER, size * 4, 0, GL_STREAM_READ);
+    }
+    else
+    {
+        glBufferData(GL_PIXEL_PACK_BUFFER, size * 3, 0, GL_STREAM_READ);
+    }
 
     glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
 }

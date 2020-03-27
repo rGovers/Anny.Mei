@@ -9,7 +9,7 @@ ModelControllerWindow::ModelControllerWindow(ModelController* a_modelController)
 {
     m_modelController = a_modelController;
 
-    m_backgroundColor = glm::vec3(0, 1, 0);
+    m_backgroundColor = glm::vec4(0, 1, 0, 1);
 }
 ModelControllerWindow::~ModelControllerWindow()
 {
@@ -51,16 +51,16 @@ void ModelControllerWindow::Update()
     ImGui::SetNextWindowSize({ 200, 300 }, ImGuiCond_Appearing);
     if (ImGui::Begin("Options"))
     {
-        ImGui::ColorPicker3("Background Color", (float*)&m_backgroundColor);
+        ImGui::ColorPicker4("Background Color", (float*)&m_backgroundColor);
     }
     ImGui::End();
 }
 
-glm::vec3 ModelControllerWindow::GetBackgroundColor() const
+glm::vec4 ModelControllerWindow::GetBackgroundColor() const
 {
     return m_backgroundColor;
 }
-void ModelControllerWindow::SetBackgroundColor(const glm::vec3& a_color)
+void ModelControllerWindow::SetBackgroundColor(const glm::vec4& a_color)
 {
     m_backgroundColor = a_color;
 }

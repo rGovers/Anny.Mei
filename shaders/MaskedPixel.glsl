@@ -20,4 +20,9 @@ void main()
     }
 
     color = texture2D(MainTex, vTexCoord.xy);
+
+    if (color.a == 0)
+    {
+        discard;
+    }
 }

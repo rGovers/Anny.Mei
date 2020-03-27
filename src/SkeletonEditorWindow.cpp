@@ -13,7 +13,7 @@ static const int BUFFER_SIZE = 1024;
 const static int IMAGE_SIZE = 4096;
 
 const static float MAX_ZOOM = 2.5f;
-const static float MOUSE_SENSITIVITY = 0.001f;
+const static float MOUSE_SENSITIVITY = 0.005f;
 const static float MOUSE_WHEEL_SENSITIVITY = 0.1f;
 
 SkeletonEditorWindow::SkeletonEditorWindow(SkeletonEditor* a_skeletonEditor)
@@ -117,12 +117,16 @@ void SkeletonEditorWindow::UpdateEditorWindow()
 {
     const ImVec2 size = ImGui::GetWindowSize();
     const glm::vec2 useSize = { size.x - 20, size.y - 60 };
+
+    const float scalar = m_zoom / MAX_ZOOM;
+
     if (ImGui::IsWindowFocused())
     {
         const glm::vec2 halfSize = useSize * 0.5f;
         const glm::vec2 trueSize = { useSize.x / IMAGE_SIZE, useSize.y / IMAGE_SIZE };
+        const glm::vec2 halfTrue = trueSize * 0.5f;
 
-        m_camera->SetProjection(glm::orthoRH(0.0f, trueSize.x * m_zoom, 0.0f, trueSize.y * m_zoom, -1.0f, 1.0f));
+        m_camera->SetProjection(glm::orthoRH(-halfTrue.x * m_zoom, halfTrue.x * m_zoom, -halfTrue.y * m_zoom, halfTrue.y * m_zoom, -1.0f, 1.0f));
 
         StaticTransform* transform = m_camera->GetTransform();
 
@@ -140,7 +144,7 @@ void SkeletonEditorWindow::UpdateEditorWindow()
             if (m_lastMousePos.x >= 0 && m_lastMousePos.y >= 0)
             {
                 glm::vec2 mov = m_lastMousePos - mousePos;
-                translation += glm::vec3(mov.x, mov.y, 0.0f) * MOUSE_SENSITIVITY;
+                translation += glm::vec3(mov.x, mov.y, 0.0f) * MOUSE_SENSITIVITY * scalar;
             }
 
             m_lastMousePos = mousePos;

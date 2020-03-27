@@ -5,6 +5,7 @@
 
 #include "AnimValue.h"
 #include "ColorTheme.h"
+#include "FileLoaders/PropertyFile.h"
 #include "imgui.h"
 #include "IntermediateRenderer.h"
 #include "Object.h"
@@ -28,6 +29,10 @@ AnimControl::~AnimControl()
     delete m_imRenderer;
 }
 
+void AnimControl::ResetTime()
+{
+    m_timer = 0.0;
+}
 void AnimControl::Update(double a_delta)
 {
     const float selectedTime = m_window->GetSelectedTime();
@@ -46,6 +51,11 @@ void AnimControl::Update(double a_delta)
         (*iter)->SelectKeyFrame(selectedTime);
         (*iter)->UpdateAnimValue(m_timer);
     }
+}
+
+float AnimControl::GetMaxTime() const
+{
+    return m_window->GetMaxTimeValue();
 }
 
 const Texture* AnimControl::DrawTimeline(int& a_height)
@@ -173,6 +183,33 @@ void AnimControl::LoadValues(mz_zip_archive& a_archive)
     {
         (*iter)->LoadValues(a_archive);
     }
+
+    char* data = ExtractFileFromArchive("animation.prop", a_archive, true);
+
+    if (data != nullptr)
+    {
+        PropertyFile* propertyFile = new PropertyFile(data);
+
+        const std::list<PropertyFileProperty*> properties = propertyFile->GetBaseProperties();
+
+        for (auto iter = properties.begin(); iter != properties.end(); ++iter)
+        {
+            if (strcmp((*iter)->GetName(), "maxtime") == 0)
+            {
+                const std::list<PropertyFileValue> values = (*iter)->Values();
+
+                for (auto iIter = values.begin(); iIter != values.end(); ++iIter)
+                {
+                    if (strcmp(iIter->Name, "value") == 0)
+                    {
+                        m_window->SetMaxTimeValue(std::stof(iIter->Value));
+                    }
+                }
+            }
+        }
+
+        mz_free(data);
+    }
 }
 void AnimControl::SaveValues(mz_zip_archive& a_archive) const
 {
@@ -180,4 +217,15 @@ void AnimControl::SaveValues(mz_zip_archive& a_archive) const
     {
         (*iter)->SaveValues(a_archive);
     }
+
+    PropertyFile* propertyFile = new PropertyFile();
+    PropertyFileProperty* property = propertyFile->InsertProperty();
+    property->SetName("maxtime");
+    property->EmplaceValue("value", std::to_string(m_window->GetMaxTimeValue()).c_str());
+
+    const char* data = propertyFile->ToString();
+
+    mz_zip_writer_add_mem(&a_archive, "animation.prop", data, strlen(data), MZ_DEFAULT_COMPRESSION);
+
+    delete[] data;
 }

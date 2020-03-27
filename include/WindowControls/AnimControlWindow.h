@@ -18,6 +18,7 @@ public:
     void Update();
 
     float GetMaxTimeValue() const;
+    void SetMaxTimeValue(float a_value);
 
     float GetSelectedTime() const;
 };

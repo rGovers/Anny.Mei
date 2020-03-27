@@ -49,3 +49,7 @@ const char* FileDialog::OpenFile(const char* a_title, const char* const* const a
 {
     return tinyfd_openFileDialog(a_title, "", a_filterNum, a_filters, NULL, 0);
 }
+const char* FileDialog::SelectFolder(const char* a_title)
+{
+    return tinyfd_selectFolderDialog(a_title, "");
+}

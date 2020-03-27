@@ -3,6 +3,7 @@
 #include "Application.h"
 
 class DataStore;
+class ImageSetExporter;
 class ModelController;
 class WebcamController;
 class Workspace;
@@ -17,6 +18,8 @@ private:
     ModelController*      m_modelController;
 
     Workspace*            m_workspace;
+
+    ImageSetExporter*     m_imageExporter;
     
     char*                 m_filePath;
 

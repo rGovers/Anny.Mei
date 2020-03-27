@@ -6,6 +6,7 @@
 
 #include "ColorTheme.h"
 #include "DataStore.h"
+#include "Exporters/ImageSetExporter.h"
 #include "FileDialog.h"
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
@@ -80,6 +81,8 @@ AppMain::AppMain(int a_width, int a_height) :
 
 	m_dataStore = nullptr;
 
+    m_imageExporter = nullptr;
+
     glEnable(GL_DEBUG_OUTPUT);
     // glDebugMessageCallback(MessageCallback, 0);
 
@@ -123,6 +126,12 @@ AppMain::~AppMain()
 
     delete m_workspace;
 
+    if (m_imageExporter != nullptr)
+    {
+        delete m_imageExporter; 
+        m_imageExporter = nullptr;
+    }
+
     if (m_filePath != nullptr)
     {
         delete[] m_filePath;
@@ -148,6 +157,12 @@ void AppMain::New()
 
     m_dataStore = new DataStore();
 
+    if (m_imageExporter != nullptr)
+    {
+        delete m_imageExporter; 
+        m_imageExporter = nullptr;
+    }
+
     m_workspace->Init();
 
     m_modelController = new ModelController();
@@ -167,6 +182,12 @@ void AppMain::Open()
     {
         if (path[0] != 0)
         {
+            if (m_imageExporter != nullptr)
+            {
+                delete m_imageExporter; 
+                m_imageExporter = nullptr;
+            }
+
             if (m_dataStore != nullptr)
             {
                 delete m_dataStore;
@@ -347,7 +368,21 @@ void AppMain::Update(double a_delta)
 
     m_windowUpdateTimer += a_delta;
     
+    if (m_imageExporter != nullptr)
+    {
+        if (!m_imageExporter->IsFinished())
+        {
+            m_imageExporter->Update();
+        }
+        else
+        {
+            delete m_imageExporter;
+            m_imageExporter = nullptr;
+        }
+    }
+
     m_webcamController->Bind();
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     if (m_modelController != nullptr)
     {
@@ -401,6 +436,21 @@ void AppMain::Update(double a_delta)
                 {
                     m_workspace->LoadTexture(filePath);
                 }
+            }
+
+            if (ImGui::BeginMenu("Export", enabledModel && m_filePath != nullptr))
+            {
+                if (ImGui::MenuItem("Image Set"))
+                {
+                    const char* filePath = FileDialog::SelectFolder("Export Folder");
+
+                    if (filePath != nullptr && filePath[0] != 0)
+                    {
+                        m_imageExporter = new ImageSetExporter(filePath, m_modelController, m_workspace);
+                    }
+                }
+
+                ImGui::EndMenu();
             }
 
             ImGui::Separator();

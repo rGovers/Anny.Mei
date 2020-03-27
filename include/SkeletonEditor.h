@@ -48,6 +48,7 @@ public:
 
     void ListObjects(Object* a_object, int& a_node);
 
+    AnimControl* GetAnimControl() const;
     Object* GetBaseObject() const;
 
     void DrawObjectDetail(Object* a_object) const;

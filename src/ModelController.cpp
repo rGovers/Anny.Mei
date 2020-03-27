@@ -8,7 +8,6 @@
 #include "Camera.h"
 #include "FileLoaders/PropertyFile.h"
 #include "FileUtils.h"
-#include "MemoryStream.h"
 #include "Object.h"
 #include "Texture.h"
 #include "WebcamController.h"
@@ -49,9 +48,9 @@ void DrawObjects(Object* a_object, Camera* a_camera, double a_delta)
 
 void ModelController::DrawModel(const Workspace* a_workspace, double a_delta)
 {
-    const glm::vec3 backColor = m_window->GetBackgroundColor();
+    const glm::vec4 backColor = m_window->GetBackgroundColor();
 
-    glClearColor(backColor.x, backColor.y, backColor.z, 1);
+    glClearColor(backColor.x, backColor.y, backColor.z, backColor.w);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     Object* baseObject = a_workspace->GetBaseObject();
@@ -85,17 +84,17 @@ ModelController* ModelController::Load(mz_zip_archive& a_archive)
 
             if (strcmp("backcolor", name) == 0)
             {
-                glm::vec3 backgroundColor = glm::vec3(std::numeric_limits<float>::infinity());
+                glm::vec4 backgroundColor = glm::vec4(std::numeric_limits<float>::infinity());
 
                 for (auto valIter = prop->Values().begin(); valIter != prop->Values().end(); ++valIter)
                 {
                     IFSETTOATTVALF("r", valIter->Name, backgroundColor.x, valIter->Value)
                     else IFSETTOATTVALF("g", valIter->Name, backgroundColor.y, valIter->Value)
                     else IFSETTOATTVALF("b", valIter->Name, backgroundColor.z, valIter->Value)
-                    else IFSETTOATTVALV3("value", valIter->Name, backgroundColor, valIter->Value)
+                    else IFSETTOATTVALV4("value", valIter->Name, backgroundColor, valIter->Value)
                 }
 
-                if (backgroundColor.x != std::numeric_limits<float>::infinity() && backgroundColor.y != std::numeric_limits<float>::infinity() && backgroundColor.z != std::numeric_limits<float>::infinity())
+                if (backgroundColor.x != std::numeric_limits<float>::infinity() && backgroundColor.y != std::numeric_limits<float>::infinity() && backgroundColor.z != std::numeric_limits<float>::infinity() && backgroundColor.w != std::numeric_limits<float>::infinity())
                 {
                     modelController->m_window->SetBackgroundColor(backgroundColor);
                 }
@@ -117,9 +116,9 @@ void ModelController::Save(mz_zip_archive& a_archive) const
     PropertyFileProperty* prop = propertyFile->InsertProperty();
 
     prop->SetName("backcolor");
-    const glm::vec3 backgroundColor = m_window->GetBackgroundColor();
+    const glm::vec4 backgroundColor = m_window->GetBackgroundColor();
 
-    prop->EmplaceValue("value", ("{ " + std::to_string(backgroundColor.x) + ", " + std::to_string(backgroundColor.y) + ", " + std::to_string(backgroundColor.z) + " }").c_str());
+    prop->EmplaceValue("value", ("{ " + std::to_string(backgroundColor.x) + ", " + std::to_string(backgroundColor.y) + ", " + std::to_string(backgroundColor.z) + ", " + std::to_string(backgroundColor.w) + " }").c_str());
 
     char* data = propertyFile->ToString();
 

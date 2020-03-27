@@ -212,8 +212,7 @@ void MorphTargetDisplay::Draw(const glm::mat4& a_transform, const glm::vec2& a_l
     {
         if (a_alpha)
         {
-            glEnable(GL_BLEND);
-            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);     
+            glEnable(GL_BLEND); 
         }
 
         glBindVertexArray(model->GetVAO());
@@ -278,8 +277,7 @@ void MorphTargetDisplay::DrawMasked(const glm::mat4& a_transform, const DepthRen
 
     if (model != nullptr && tex != nullptr && a_mask != nullptr)
     {
-        glEnable(GL_BLEND);
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);     
+        glEnable(GL_BLEND);   
 
         glBindVertexArray(model->GetVAO());
 
@@ -341,7 +339,6 @@ void MorphTargetDisplay::Draw9Point(const glm::mat4& a_transform, const glm::vec
         if (a_alpha)
         {
             glEnable(GL_BLEND);
-            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);     
         }
 
         glBindVertexArray(model->GetVAO());
@@ -407,7 +404,6 @@ void MorphTargetDisplay::Draw9PointMasked(const glm::mat4& a_transform, const De
     if (model != nullptr && tex != nullptr && a_mask != nullptr)
     {
         glEnable(GL_BLEND);
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);     
 
         glBindVertexArray(model->GetVAO());
 

@@ -149,7 +149,6 @@ void ImageDisplay::Draw(const glm::mat4& a_transform, bool a_alpha, bool a_solid
         if (a_alpha)
         {
             glEnable(GL_BLEND);
-            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);     
         }
 
         glBindVertexArray(model->GetVAO());
@@ -209,7 +208,6 @@ void ImageDisplay::DrawMasked(const glm::mat4& a_transform, const DepthRenderTex
     if (model != nullptr && tex != nullptr && a_mask != nullptr)
     {
         glEnable(GL_BLEND);
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); 
 
         glBindVertexArray(model->GetVAO());
 

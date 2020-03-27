@@ -57,6 +57,9 @@ public:
     e_ToolMode GetToolMode() const;
     e_Axis GetAxis() const;
 
+    float GetZoom() const;
+    float GetMaxZoom() const;
+
     bool GetAlphaMode() const;
     bool GetSolidMode() const;
     bool GetWireFrameMode() const;

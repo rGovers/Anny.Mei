@@ -9,7 +9,7 @@ class ModelControllerWindow
 private:
     ModelController* m_modelController;
 
-    glm::vec3        m_backgroundColor;
+    glm::vec4        m_backgroundColor;
 protected:
 
 public:
@@ -18,6 +18,6 @@ public:
 
     void Update();
     
-    glm::vec3 GetBackgroundColor() const;
-    void SetBackgroundColor(const glm::vec3& a_color);
+    glm::vec4 GetBackgroundColor() const;
+    void SetBackgroundColor(const glm::vec4& a_color);
 };
