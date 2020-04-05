@@ -21,44 +21,9 @@
 #undef GetObject
 #endif
 
-const static int BUFFER_SIZE = 1024;
 const char* MorphPlaneRenderer::COMPONENT_NAME = "MorphPlaneRenderer";
 
 const char* MorphPlaneRenderer::ITEMS[] = { "Null", "Lerp", "5 Point", "9 Point" };
-
-void DisplayStringValue(StringKeyValue* a_value, const char* a_name)
-{
-    const char* nameVal = a_value->GetBaseString();
-    char* buff;
-
-    if (nameVal != nullptr)
-    {
-        const size_t len = strlen(nameVal);
-
-        buff = new char[len + 2];
-        strcpy(buff, nameVal);
-    }
-    else
-    {
-        buff = new char[3] { 0 };
-    }
-
-    ImGui::InputText(a_name, buff, BUFFER_SIZE);
-
-    if (nameVal != nullptr)
-    {
-        if (strcmp(buff, nameVal) != 0)
-        {
-            a_value->SetString(buff);
-        }
-    }
-    else
-    {
-        a_value->SetString(buff);
-    }
-
-    delete[] buff;
-}
 
 MorphPlaneRenderer::MorphPlaneRenderer(Object* a_object, AnimControl* a_animControl) : 
     Renderer(a_object, a_animControl)
@@ -101,7 +66,7 @@ void MorphPlaneRenderer::MorphPlaneInit()
 
     m_morphPlaneName = new AnimValue<StringKeyValue>((baseName + "Morph Plane Name").c_str(), animControl);
 
-    m_renderMode = new AnimValue<SetIntKeyValue>((baseName + "Morph Mode").c_str(), animControl);
+    m_renderMode = new AnimValue<IntKeyValue>((baseName + "Morph Mode").c_str(), animControl);
 
     m_lerp = new AnimValue<Vec2KeyValue>((baseName + "Lerp").c_str(), animControl);
 
@@ -151,10 +116,10 @@ void MorphPlaneRenderer::MorphPlaneDisplayValues(bool a_value)
 
     e_MorphRenderMode renderMode = e_MorphRenderMode::Null;
 
-    SetIntKeyValue* renderModeKeyValue = m_renderMode->GetValue();
+    IntKeyValue* renderModeKeyValue = m_renderMode->GetValue();
     if (renderModeKeyValue != nullptr)
     {
-        renderMode = (e_MorphRenderMode)renderModeKeyValue->GetBaseInt();
+        renderMode = (e_MorphRenderMode)renderModeKeyValue->GetBaseValue();
     }
 
     switch (renderMode)
@@ -234,15 +199,17 @@ void MorphPlaneRenderer::MorphPlaneUpdateGUI()
 
     if (value != nullptr)
     {
-        DisplayStringValue(value, "Morph Plane Name");
+        value->UpdateGUI("Morph Plane Name");
 
         ImGui::Spacing();
 
-        SetIntKeyValue* renderModeValue = m_renderMode->GetValue();
+        IntKeyValue* renderModeValue = m_renderMode->GetValue();
 
         if (renderModeValue != nullptr)
         {
-            m_selectedMode = ITEMS[renderModeValue->GetBaseInt()];
+            renderModeValue->SetLerpMode(e_LerpMode::Set);
+
+            m_selectedMode = ITEMS[renderModeValue->GetBaseValue()];
             if (ImGui::BeginCombo("Morph Mode", m_selectedMode))
             {
                 for (int i = 0; i < IM_ARRAYSIZE(ITEMS); ++i)
@@ -263,88 +230,84 @@ void MorphPlaneRenderer::MorphPlaneUpdateGUI()
         
             if (strcmp(m_selectedMode, "Lerp") == 0)
             {
-                renderModeValue->SetInt((int)e_MorphRenderMode::Point3);
+                renderModeValue->SetBaseValue((int)e_MorphRenderMode::Point3);
             }
             else if (strcmp(m_selectedMode, "5 Point") == 0)
             {
-                renderModeValue->SetInt((int)e_MorphRenderMode::Point5);
+                renderModeValue->SetBaseValue((int)e_MorphRenderMode::Point5);
             }
             else if (strcmp(m_selectedMode, "9 Point") == 0)
             {
-                renderModeValue->SetInt((int)e_MorphRenderMode::Point9);
+                renderModeValue->SetBaseValue((int)e_MorphRenderMode::Point9);
             }
             else
             {
-                renderModeValue->SetInt((int)e_MorphRenderMode::Null);
+                renderModeValue->SetBaseValue((int)e_MorphRenderMode::Null);
             }
 
             ImGui::Spacing();
 
             DisplayValues(m_animValuesDisplayed);
 
-            switch ((e_MorphRenderMode)renderModeValue->GetBaseInt())
+            switch ((e_MorphRenderMode)renderModeValue->GetBaseValue())
             {
             case e_MorphRenderMode::Point9:
             {
                 Vec2KeyValue* vecValue = m_lerp->GetValue();
                 if (vecValue != nullptr)
                 {
-                    glm::vec2 val = vecValue->GetBaseValue();
+                    vecValue->SetMinValue(glm::vec2(-1.0f));
+                    vecValue->SetMaxValue(glm::vec2(1.0f));
 
-                    ImGui::DragFloat2("Lerp", (float*)&val, 0.01f);
-
-                    val.x = glm::clamp(val.x, -1.0f, 1.0f);
-                    val.y = glm::clamp(val.y, -1.0f, 1.0f);
-
-                    vecValue->SetBaseValue(val);
+                    vecValue->UpdateGUI("Lerp");
                 }
 
                 StringKeyValue* northPlaneValue = m_northPlaneName->GetValue();
                 if (northPlaneValue != nullptr)
                 {
-                    DisplayStringValue(northPlaneValue, "North Morph Plane");
+                    northPlaneValue->UpdateGUI("North Morph Plane");
                 }
 
                 StringKeyValue* southPlaneValue = m_southPlaneName->GetValue();
                 if (southPlaneValue != nullptr)
                 {
-                    DisplayStringValue(southPlaneValue, "South Morph Plane");
+                    southPlaneValue->UpdateGUI("South Morph Plane");
                 }
 
                 StringKeyValue* eastPlaneValue = m_eastPlaneName->GetValue();
                 if (eastPlaneValue != nullptr)
                 {
-                    DisplayStringValue(eastPlaneValue, "East Morph Plane");
+                    eastPlaneValue->UpdateGUI("East Morph Plane");
                 }
 
                 StringKeyValue* westPlaneValue = m_westPlaneName->GetValue();
                 if (westPlaneValue != nullptr)
                 {
-                    DisplayStringValue(westPlaneValue, "West Morph Plane");
+                    westPlaneValue->UpdateGUI("West Morph Plane");
                 }
 
                 StringKeyValue* northEastPlaneValue = m_northEastPlaneName->GetValue();
                 if (northEastPlaneValue != nullptr)
                 {
-                    DisplayStringValue(northEastPlaneValue, "North East Morph Plane");
+                    northEastPlaneValue->UpdateGUI("North East Morph Plane");
                 }
 
                 StringKeyValue* southEastPlaneValue = m_southEastPlaneName->GetValue();
                 if (southEastPlaneValue != nullptr)
                 {
-                    DisplayStringValue(southEastPlaneValue, "South East Morph Plane");
+                    southEastPlaneValue->UpdateGUI("South East Morph Plane");
                 }
 
                 StringKeyValue* southWestPlaneValue = m_southWestPlaneName->GetValue();
                 if (southWestPlaneValue != nullptr)
                 {
-                    DisplayStringValue(southWestPlaneValue, "South West Morph Plane");
+                    southWestPlaneValue->UpdateGUI("South West Morph Plane");
                 }
 
                 StringKeyValue* northWestPlaneValue = m_northWestPlaneName->GetValue();
                 if (northWestPlaneValue != nullptr)
                 {
-                    DisplayStringValue(northWestPlaneValue, "North West Morph Plane");
+                    northWestPlaneValue->UpdateGUI("North West Morph Plane");
                 }
 
                 break;
@@ -354,38 +317,34 @@ void MorphPlaneRenderer::MorphPlaneUpdateGUI()
                 Vec2KeyValue* vecValue = m_lerp->GetValue();
                 if (vecValue != nullptr)
                 {
-                    glm::vec2 val = vecValue->GetBaseValue();
+                    vecValue->SetMinValue(glm::vec2(-1.0f));
+                    vecValue->SetMaxValue(glm::vec2(1.0f));
 
-                    ImGui::DragFloat2("Lerp", (float*)&val, 0.01f);
-
-                    val.x = glm::clamp(val.x, -1.0f, 1.0f);
-                    val.y = glm::clamp(val.y, -1.0f, 1.0f);
-
-                    vecValue->SetBaseValue(val);
+                    vecValue->UpdateGUI("Lerp");
                 }
 
                 StringKeyValue* northPlaneValue = m_northPlaneName->GetValue();
                 if (northPlaneValue != nullptr)
                 {
-                    DisplayStringValue(northPlaneValue, "North Morph Plane");
+                    northPlaneValue->UpdateGUI("North Morph Plane");
                 }
 
                 StringKeyValue* southPlaneValue = m_southPlaneName->GetValue();
                 if (southPlaneValue != nullptr)
                 {
-                    DisplayStringValue(southPlaneValue, "South Morph Plane");
+                    southPlaneValue->UpdateGUI("South Morph Plane");
                 }
 
                 StringKeyValue* eastPlaneValue = m_eastPlaneName->GetValue();
                 if (eastPlaneValue != nullptr)
                 {
-                    DisplayStringValue(eastPlaneValue, "East Morph Plane");
+                    eastPlaneValue->UpdateGUI("East Morph Plane");
                 }
 
                 StringKeyValue* westPlaneValue = m_westPlaneName->GetValue();
                 if (westPlaneValue != nullptr)
                 {
-                    DisplayStringValue(westPlaneValue, "West Morph Plane");
+                    westPlaneValue->UpdateGUI("West Morph Plane");
                 }
 
                 break;
@@ -398,6 +357,8 @@ void MorphPlaneRenderer::MorphPlaneUpdateGUI()
                     glm::vec2 val = vecValue->GetBaseValue();
 
                     ImGui::DragFloat("Lerp", &val.x, 0.01f);
+                    ImGui::SameLine();
+                    vecValue->UpdateLerpGUI();
 
                     val.x = glm::clamp(val.x, -1.0f, 1.0f);
 
@@ -407,13 +368,13 @@ void MorphPlaneRenderer::MorphPlaneUpdateGUI()
                 StringKeyValue* eastPlaneValue = m_eastPlaneName->GetValue();
                 if (eastPlaneValue != nullptr)
                 {
-                    DisplayStringValue(eastPlaneValue, "East Morph Plane");
+                    eastPlaneValue->UpdateGUI("East Morph Plane");
                 }
 
                 StringKeyValue* westPlaneValue = m_westPlaneName->GetValue();
                 if (westPlaneValue != nullptr)
                 {
-                    DisplayStringValue(westPlaneValue, "West Morph Plane");
+                    westPlaneValue->UpdateGUI("West Morph Plane");
                 }
 
                 break;
@@ -524,10 +485,10 @@ void MorphPlaneRenderer::MorphPlaneDraw(bool a_preview, double a_delta, Camera* 
             northWestPlaneName = northWestValue->GetBaseString();
         }
 
-        const SetIntKeyValue* renderModeValue = m_renderMode->GetValue();
+        const IntKeyValue* renderModeValue = m_renderMode->GetValue();
         if (renderModeValue != nullptr)
         {
-            renderMode = (e_MorphRenderMode)renderModeValue->GetBaseInt(); 
+            renderMode = (e_MorphRenderMode)renderModeValue->GetBaseValue(); 
         }
     }
     else
@@ -598,10 +559,10 @@ void MorphPlaneRenderer::MorphPlaneDraw(bool a_preview, double a_delta, Camera* 
             northWestPlaneName = northWestValue->GetString();
         }
 
-        const SetIntKeyValue* renderModeValue = m_renderMode->GetAnimValue();
+        const IntKeyValue* renderModeValue = m_renderMode->GetAnimValue();
         if (renderModeValue != nullptr)
         {
-            renderMode = (e_MorphRenderMode)renderModeValue->GetInt(); 
+            renderMode = (e_MorphRenderMode)renderModeValue->GetValue(); 
         }
     }
     

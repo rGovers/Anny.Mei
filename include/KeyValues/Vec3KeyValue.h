@@ -10,6 +10,9 @@ private:
     glm::vec3 m_baseValue;
     glm::vec3 m_value;
 
+    glm::vec3 m_min;
+    glm::vec3 m_max;
+
 protected:
 
 public:
@@ -24,6 +27,14 @@ public:
     void SetBaseValue(const glm::vec3& a_value);
 
     virtual void UpdateValue(double a_shift);
+
+    void SetMinValue(const glm::vec3& a_value);
+    glm::vec3 GetMinValue() const;
+
+    void SetMaxValue(const glm::vec3& a_value);
+    glm::vec3 GetMaxValue() const;
+
+    virtual void UpdateGUI(const char* a_label, bool a_showLerpMode = true);
 
     virtual char* ToString() const;
     virtual void Parse(const char* a_data);

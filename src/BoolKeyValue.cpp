@@ -2,6 +2,8 @@
 
 #include <string.h>
 
+#include "imgui.h"
+
 BoolKeyValue::BoolKeyValue() :
     KeyValue()
 {
@@ -47,6 +49,11 @@ void BoolKeyValue::SetBoolean(bool a_value)
 void BoolKeyValue::UpdateValue(double a_shift)
 {
 
+}
+
+void BoolKeyValue::UpdateGUI(const char* a_label, bool a_showLerpMode)
+{
+    ImGui::Checkbox(a_label, &m_value);
 }
 
 char* BoolKeyValue::ToString() const

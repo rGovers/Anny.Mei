@@ -8,8 +8,6 @@
 #include "imgui/imgui.h"
 #include "Object.h"
 
-const static int BUFFER_SIZE = 1024;
-
 Renderer::Renderer(Object* a_object, AnimControl* a_animControl) :
     Component(a_object, a_animControl)
 {
@@ -73,79 +71,25 @@ void Renderer::UpdateRendererGUI()
     StringKeyValue* nameValue = m_modelName->GetValue();
     if (nameValue != nullptr)
     {
-        const char* str = nameValue->GetBaseString();
-
-        char* buff;
-        if (str != nullptr)
-        {
-            const size_t len = strlen(str);
-
-            buff = new char[len + 2] { 0 };
-
-            strcpy(buff, str);
-        }
-        else
-        {
-            buff = new char[3] { 0 };
-        }
-
-        ImGui::InputText("Model Name", buff, BUFFER_SIZE);
-
-        if (str == nullptr || strcmp(buff, str) != 0)
-        {
-            nameValue->SetString(buff);
-        }
-
-        delete[] buff;
+        nameValue->UpdateGUI("Model Name");
     }
 
     Vec3KeyValue* anchorValue = m_anchor->GetValue();
     if (anchorValue != nullptr)
     {
-        glm::vec3 anchor = anchorValue->GetBaseValue();
-
-        ImGui::InputFloat3("Anchor Position", (float*)&anchor);
-
-        anchorValue->SetBaseValue(anchor);
+        anchorValue->UpdateGUI("Anchor");
     }
 
     BoolKeyValue* depthTestValue = m_depthTest->GetValue();
     if (depthTestValue != nullptr)
     {
-        bool value = depthTestValue->GetBaseBoolean();
-
-        ImGui::Checkbox("Depth Test", &value);
-
-        depthTestValue->SetBoolean(value);
+        depthTestValue->UpdateGUI("Depth Test");
     }
 
     StringKeyValue* maskValue = m_useMask->GetValue();
     if (nameValue != nullptr)
     {
-        const char* str = maskValue->GetBaseString();
-
-        char* buff;
-        if (str != nullptr)
-        {
-            const size_t len = strlen(str);
-
-            buff = new char[len + 2] { 0 };
-
-            strcpy(buff, str);
-        }
-        else
-        {
-            buff = new char[3] { 0 };
-        }
-
-        ImGui::InputText("Use Mask", buff, BUFFER_SIZE);
-
-        if (str == nullptr || strcmp(buff, str) != 0)
-        {
-            maskValue->SetString(buff);
-        }
-
-        delete[] buff;
+        maskValue->UpdateGUI("Use Mask");
     }
 }
 

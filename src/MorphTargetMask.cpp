@@ -11,6 +11,7 @@
 const char* MorphTargetMask::COMPONENT_NAME = "MorphTargetMask";
 
 const static int BUFFER_SIZE = 1024;
+static char* BUFFER = new char[BUFFER_SIZE];
 
 MorphTargetMask::MorphTargetMask(Object* a_object, AnimControl* a_animControl) :
     MorphTargetRenderer(a_object, a_animControl)
@@ -72,33 +73,26 @@ void MorphTargetMask::UpdateGUI()
 {
     DataStore* store = DataStore::GetInstance();
 
-    char* buff;
+    strcpy(BUFFER, m_maskName);
 
-    const size_t len = strlen(m_maskName);
+    ImGui::InputText("Mask Name", BUFFER, BUFFER_SIZE);
 
-    buff = new char[len + 2];
-    strcpy(buff, m_maskName);
-
-    ImGui::InputText("Mask Name", buff, BUFFER_SIZE);
-
-    if (strcmp(buff, m_maskName) != 0)
+    if (strcmp(BUFFER, m_maskName) != 0)
     {
         store->RemoveMask(m_maskName, m_renderTexture);
         store->RemovePreviewMask(m_maskName, m_previewRenderTexture);
 
         delete[] m_maskName;
 
-        m_maskName = buff;
+        const size_t len = strlen(BUFFER);
+        m_maskName = new char[len + 1];
+        strcpy(m_maskName, BUFFER);
 
-        if (buff[0] != 0)
+        if (BUFFER[0] != 0)
         {
-            store->AddMask(buff, m_renderTexture);
-            store->AddPreviewMask(buff, m_previewRenderTexture);
+            store->AddMask(BUFFER, m_renderTexture);
+            store->AddPreviewMask(BUFFER, m_previewRenderTexture);
         }
-    }
-    else
-    {
-        delete[] buff;
     }
 
     MorphTargetUpdateGUI();

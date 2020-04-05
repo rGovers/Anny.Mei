@@ -208,6 +208,8 @@ public:
 
             const std::list<PropertyFileProperty*> properties = propertyFile->GetBaseProperties();
 
+            int lerpMode = 0;
+
             for (auto iter = properties.begin(); iter != properties.end(); ++iter)
             {
                 KeyFrame frame;
@@ -217,6 +219,7 @@ public:
                 for (auto valIter = (*iter)->Values().begin(); valIter != (*iter)->Values().end(); ++valIter)
                 {
                     IFSETTOATTVALD(valIter->Name, "time", frame.Time, valIter->Value)
+                    IFSETTOATTVALI(valIter->Name, "lerpmode", lerpMode, valIter->Value)
                     else if (strcmp(valIter->Name, "value") == 0)
                     {
                         if (frame.Value == nullptr)
@@ -229,6 +232,8 @@ public:
 
                 if (frame.Value != nullptr)
                 {
+                    frame.Value->SetLerpMode((e_LerpMode)lerpMode);
+
                     if (frame.Time != -1)
                     {
                         bool found = false;

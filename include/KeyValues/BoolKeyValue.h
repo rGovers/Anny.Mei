@@ -23,6 +23,8 @@ public:
 
     virtual void UpdateValue(double a_shift);
 
+    virtual void UpdateGUI(const char* a_label, bool a_showLerpMode = true);
+
     virtual char* ToString() const;
     virtual void Parse(const char* a_data);
 };

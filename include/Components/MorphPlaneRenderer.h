@@ -2,7 +2,7 @@
 
 #include "Renderer.h"
 
-#include "KeyValues/SetIntKeyValue.h"
+#include "KeyValues/IntKeyValue.h"
 #include "KeyValues/Vec2KeyValue.h"
 
 class MorphPlaneDisplay;
@@ -19,7 +19,7 @@ private:
     AnimValue<StringKeyValue>* m_morphPlaneName;
 
     const char*                m_selectedMode;
-    AnimValue<SetIntKeyValue>* m_renderMode;
+    AnimValue<IntKeyValue>*    m_renderMode;
 
     AnimValue<Vec2KeyValue>*   m_lerp;
 

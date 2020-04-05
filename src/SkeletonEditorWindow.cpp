@@ -9,6 +9,7 @@
 #include "Transform.h"
 
 static const int BUFFER_SIZE = 1024;
+static char* BUFFER = new char[BUFFER_SIZE];
 
 const static int IMAGE_SIZE = 4096;
 
@@ -54,59 +55,45 @@ void SkeletonEditorWindow::UpdatePropertiesWindow(Object* a_selectedObject)
 {
     if (a_selectedObject != nullptr)
     {
+        KeyValue::ResetGUI();
+
         const Object* baseObject = m_skeletonEditor->GetBaseObject();
 
         const char* name = a_selectedObject->GetTrueName();
 
-        char* buffer;
         if (name != nullptr)
         {
             const size_t strLen = strlen(name);
 
-            buffer = new char[strLen + 2];
-
-            strcpy(buffer, name);
+            strcpy(BUFFER, name);
         }
         else
         {
-            buffer = new char[3] { 0 };
+            memset(BUFFER, 0, BUFFER_SIZE - 1);
         }
 
         if (a_selectedObject != baseObject)
         {
-            ImGui::InputText("Name", buffer, BUFFER_SIZE);
+            ImGui::InputText("Name", BUFFER, BUFFER_SIZE);
 
             ImGui::Separator();
         }
 
         Transform* transform = a_selectedObject->GetTransform();
 
-        glm::vec3 translation = transform->GetBaseTranslation();
-        ImGui::InputFloat3("Translation", (float*)&translation, 4);
-        transform->SetTranslation(translation);
+        transform->UpdateGUI();
 
-        // Need to a some point implement euler angles for easy user control
-        glm::fquat quat = transform->GetBaseRotation();
-        ImGui::InputFloat4("Rotation", (float*)&quat, 4);
-        transform->SetRotation(glm::normalize(quat));
-
-        glm::vec3 scale = transform->GetBaseScale();
-        ImGui::InputFloat3("Scale", (float*)&scale, 4);
-        transform->SetScale(scale);
-
-        if (strcmp(buffer, name) != 0)
+        if (strcmp(BUFFER, name) != 0)
         {
-            if (buffer[0] != 0)
+            if (BUFFER[0] != 0)
             {
-                a_selectedObject->SetTrueName(buffer);
+                a_selectedObject->SetTrueName(BUFFER);
             }
             else
             {
                 a_selectedObject->SetTrueName("NULL");
             }
         }
-
-        delete[] buffer;
 
         ImGui::Separator();
 

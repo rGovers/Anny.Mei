@@ -12,6 +12,7 @@
 #include "Texture.h"
 
 const static int BUFFER_SIZE = 1024;
+static char* BUFFER = new char[BUFFER_SIZE];
 
 const static int IMAGE_SIZE = 4096;
 
@@ -152,35 +153,24 @@ void ModelEditorWindow::UpdatePropertiesWindow(const ModelData* a_modelData)
     if (a_modelData != nullptr)
     {
         const char* name = a_modelData->ModelName->GetTrueName();
+        strcpy(BUFFER, name);
 
-        size_t len = strlen(name);
+        ImGui::InputText("Model Name", BUFFER, BUFFER_SIZE);
 
-        char* buff = new char[len + 3];
-        strcpy(buff, name);
-
-        ImGui::InputText("Model Name", buff, BUFFER_SIZE);
-
-        if (strcmp(name, buff) != 0)
+        if (strcmp(name, BUFFER) != 0)
         {
-            m_modelEditor->RenameModel(buff);
+            m_modelEditor->RenameModel(BUFFER);
         }
-
-        delete[] buff;
 
         name = a_modelData->TextureName;
+        strcpy(BUFFER, name);
 
-        len = strlen(name);
+        ImGui::InputText("Texture Name", BUFFER, BUFFER_SIZE);
 
-        buff = new char[len + 3];
-        strcpy(buff, name);
-
-        ImGui::InputText("Texture Name", buff, BUFFER_SIZE);
-
-        if (strcmp(name, buff) != 0)
+        if (strcmp(name, BUFFER) != 0)
         {
-            m_modelEditor->SetTextureName(buff);
+            m_modelEditor->SetTextureName(BUFFER);
         }
-        delete[] buff;
 
         ImGui::Separator();
 

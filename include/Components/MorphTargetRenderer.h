@@ -2,7 +2,7 @@
 
 #include "Renderer.h"
 
-#include "KeyValues/SetIntKeyValue.h"
+#include "KeyValues/IntKeyValue.h"
 #include "KeyValues/Vec2KeyValue.h"
 
 class MorphTargetDisplay;
@@ -12,14 +12,14 @@ class MorphTargetRenderer : public Renderer
 private:
     const static char* ITEMS[];
 
-    MorphTargetDisplay*        m_morphTargetDisplay;
+    MorphTargetDisplay*      m_morphTargetDisplay;
 
-    bool                       m_animValuesDisplayed;
+    bool                     m_animValuesDisplayed;
 
-    const char*                m_selectedMode;
-    AnimValue<SetIntKeyValue>* m_renderMode;
+    const char*              m_selectedMode;
+    AnimValue<IntKeyValue>*  m_renderMode;
 
-    AnimValue<Vec2KeyValue>*   m_lerp;
+    AnimValue<Vec2KeyValue>* m_lerp;
 
 protected:
     void MorphTargetDraw(bool a_preview, double a_delta, Camera* a_camera);

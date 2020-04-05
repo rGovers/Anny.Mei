@@ -12,7 +12,6 @@
 #include "StaticTransform.h"
 #include "Transform.h"
 
-const static int BUFFER_SIZE = 1024;
 const char* MorphTargetRenderer::COMPONENT_NAME = "MorphTargetRenderer";
 
 const char* MorphTargetRenderer::ITEMS[] = { "Null", "Lerp", "5 Point", "9 Point" };
@@ -69,10 +68,10 @@ void MorphTargetRenderer::MorphTargetDraw(bool a_preview, double a_delta, Camera
             lerp = lerpValue->GetBaseValue();
         }
 
-        SetIntKeyValue* renderValue = m_renderMode->GetValue();
+        IntKeyValue* renderValue = m_renderMode->GetValue();
         if (renderValue != nullptr)
         {
-            renderMode = (e_MorphRenderMode)renderValue->GetBaseInt();
+            renderMode = (e_MorphRenderMode)renderValue->GetBaseValue();
         }
 
         if (useMask != nullptr)
@@ -95,10 +94,10 @@ void MorphTargetRenderer::MorphTargetDraw(bool a_preview, double a_delta, Camera
             lerp = lerpValue->GetValue();
         }
 
-        SetIntKeyValue* renderValue = m_renderMode->GetAnimValue();
+        IntKeyValue* renderValue = m_renderMode->GetAnimValue();
         if (renderValue != nullptr)
         {
-            renderMode = (e_MorphRenderMode)renderValue->GetInt();
+            renderMode = (e_MorphRenderMode)renderValue->GetValue();
         }
 
         if (useMask != nullptr)
@@ -193,11 +192,13 @@ void MorphTargetRenderer::MorphTargetUpdateGUI()
 
     ImGui::Spacing();
 
-    SetIntKeyValue* renderModeValue = m_renderMode->GetValue();
+    IntKeyValue* renderModeValue = m_renderMode->GetValue();
     
     if (renderModeValue != nullptr)
     {
-        m_selectedMode = ITEMS[renderModeValue->GetBaseInt()];
+        renderModeValue->SetLerpMode(e_LerpMode::Set);
+        
+        m_selectedMode = ITEMS[renderModeValue->GetBaseValue()];
         if (ImGui::BeginCombo("Morph Mode", m_selectedMode))
         {
             for (int i = 0; i < IM_ARRAYSIZE(ITEMS); ++i)
@@ -218,24 +219,24 @@ void MorphTargetRenderer::MorphTargetUpdateGUI()
 
         if (strcmp(m_selectedMode, "Lerp") == 0)
         {
-            renderModeValue->SetInt((int)e_MorphRenderMode::Point3);
+            renderModeValue->SetBaseValue((int)e_MorphRenderMode::Point3);
         }
         else if (strcmp(m_selectedMode, "5 Point") == 0)
         {
-            renderModeValue->SetInt((int)e_MorphRenderMode::Point5);
+            renderModeValue->SetBaseValue((int)e_MorphRenderMode::Point5);
         }
         else if (strcmp(m_selectedMode, "9 Point") == 0)
         {
-            renderModeValue->SetInt((int)e_MorphRenderMode::Point9);
+            renderModeValue->SetBaseValue((int)e_MorphRenderMode::Point9);
         }
         else
         {
-            renderModeValue->SetInt((int)e_MorphRenderMode::Null);
+            renderModeValue->SetBaseValue((int)e_MorphRenderMode::Null);
         }
 
         DisplayValues(m_animValuesDisplayed);
 
-        switch ((e_MorphRenderMode)renderModeValue->GetBaseInt())
+        switch ((e_MorphRenderMode)renderModeValue->GetBaseValue())
         {
         case e_MorphRenderMode::Point3:
         {
@@ -245,6 +246,8 @@ void MorphTargetRenderer::MorphTargetUpdateGUI()
                 glm::vec2 val = vecValue->GetBaseValue();
 
                 ImGui::DragFloat("Lerp", &val.x, 0.01f);
+                ImGui::SameLine();
+                vecValue->UpdateLerpGUI();
 
                 val.x = glm::clamp(val.x, -1.0f, 1.0f);
 
@@ -259,14 +262,10 @@ void MorphTargetRenderer::MorphTargetUpdateGUI()
             Vec2KeyValue* vecValue = m_lerp->GetValue();
             if (vecValue != nullptr)
             {
-                glm::vec2 val = vecValue->GetBaseValue();
+                vecValue->SetMinValue(glm::vec2(-1));
+                vecValue->SetMaxValue(glm::vec2(1));
 
-                ImGui::DragFloat2("Lerp", (float*)&val, 0.01f);
-
-                val.x = glm::clamp(val.x, -1.0f, 1.0f);
-                val.y = glm::clamp(val.y, -1.0f, 1.0f);
-
-                vecValue->SetBaseValue(val);
+                vecValue->UpdateGUI("Lerp");
             }
 
             break;
@@ -286,7 +285,7 @@ void MorphTargetRenderer::Init()
 
     m_lerp = new AnimValue<Vec2KeyValue>((baseName + "Lerp").c_str(), animControl);
 
-    m_renderMode = new AnimValue<SetIntKeyValue>((baseName + "Render Mode").c_str(), animControl);
+    m_renderMode = new AnimValue<IntKeyValue>((baseName + "Render Mode").c_str(), animControl);
 }
 
 void MorphTargetRenderer::Update(double a_delta, Camera* a_camera)
@@ -330,10 +329,10 @@ void MorphTargetRenderer::DisplayValues(bool a_value)
 
     e_MorphRenderMode renderMode = e_MorphRenderMode::Null;
 
-    SetIntKeyValue* renderModeKeyValue = m_renderMode->GetValue();
+    IntKeyValue* renderModeKeyValue = m_renderMode->GetValue();
     if (renderModeKeyValue != nullptr)
     {
-        renderMode = (e_MorphRenderMode)renderModeKeyValue->GetBaseInt();
+        renderMode = (e_MorphRenderMode)renderModeKeyValue->GetBaseValue();
     }
 
     switch (renderMode)

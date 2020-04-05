@@ -302,6 +302,27 @@ glm::mat4 Transform::GetBaseWorldMatrix() const
     return ToBaseMatrix();
 }
 
+void Transform::UpdateGUI()
+{
+    Vec3KeyValue* translationValue = m_translation->GetValue();
+    if (translationValue != nullptr)
+    {
+        translationValue->UpdateGUI("Translation");
+    }
+
+    QuatKeyValue* rotationValue = m_rotation->GetValue();
+    if (rotationValue != nullptr)
+    {
+        rotationValue->UpdateGUI("Rotation");
+    }
+
+    Vec3KeyValue* scaleValue = m_scale->GetValue();
+    if (scaleValue != nullptr)
+    {
+        scaleValue->UpdateGUI("Scale");
+    }
+}
+
 void Transform::DisplayValues(bool a_state)
 {
     m_translation->SetDisplayState(a_state);

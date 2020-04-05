@@ -133,6 +133,8 @@ void AValue::SaveValues(mz_zip_archive& a_archive) const
 
         prop->EmplaceValue("value", str);
 
+        prop->EmplaceValue("lerpmode", std::to_string((int)iter->Value->GetLerpMode()).c_str());
+
         delete[] str;
     }
 

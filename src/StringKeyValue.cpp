@@ -2,6 +2,11 @@
 
 #include <string.h>
 
+#include "imgui.h"
+
+const int BUFFER_SIZE = 1024;
+static char* BUFFER = new char[BUFFER_SIZE];
+
 StringKeyValue::StringKeyValue() :
     KeyValue()
 {
@@ -81,6 +86,37 @@ void StringKeyValue::SetString(const char* a_value)
 void StringKeyValue::UpdateValue(double a_shift)
 {
 
+}
+
+void StringKeyValue::UpdateGUI(const char* a_label, bool a_showLerpMode)
+{
+    if (m_value != nullptr)
+    {
+        strcpy(BUFFER, m_value);
+    }
+    else
+    {
+        memset(BUFFER, 0, BUFFER_SIZE - 1);
+    }
+    
+    ImGui::InputText(a_label, BUFFER, BUFFER_SIZE);
+
+    if (m_value == nullptr)
+    {
+        const size_t len = strlen(BUFFER);
+
+        m_value = new char[len + 1];
+        strcpy(m_value, BUFFER);
+    }
+    else if (strcmp(BUFFER, m_value) != 0)
+    {
+        delete[] m_value;
+
+        const size_t len = strlen(BUFFER);
+
+        m_value = new char[len + 1];
+        strcpy(m_value, BUFFER);   
+    }
 }
 
 char* StringKeyValue::ToString() const
