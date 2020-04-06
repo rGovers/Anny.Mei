@@ -65,6 +65,8 @@ public:
     glm::mat4 ToBaseMatrix() const;
     glm::mat4 GetBaseWorldMatrix() const;
 
+    void RefreshValues(double a_time);
+
     void UpdateGUI();
 
     void DisplayValues(bool a_state);

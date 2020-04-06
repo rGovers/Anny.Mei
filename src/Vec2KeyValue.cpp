@@ -106,7 +106,7 @@ glm::vec2 Vec2KeyValue::GetMaxValue() const
 
 void Vec2KeyValue::UpdateGUI(const char* a_label, bool a_showLerpMode)
 {
-    ImGui::DragFloat2(a_label, (float*)&m_baseValue, 0.1f);
+    ImGui::DragFloat2(a_label, (float*)&m_baseValue, 0.1f, 0.0f, 0.0f, "%.6f");
 
     if (a_showLerpMode)
     {

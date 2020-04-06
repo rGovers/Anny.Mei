@@ -302,6 +302,13 @@ glm::mat4 Transform::GetBaseWorldMatrix() const
     return ToBaseMatrix();
 }
 
+void Transform::RefreshValues(double a_time)
+{
+    m_translation->UpdateAnimValue(a_time);
+    m_rotation->UpdateAnimValue(a_time);
+    m_scale->UpdateAnimValue(a_time);
+}
+
 void Transform::UpdateGUI()
 {
     Vec3KeyValue* translationValue = m_translation->GetValue();

@@ -10,6 +10,8 @@
 #include "Components/MorphPlaneRenderer.h"
 #include "Components/MorphTargetMask.h"
 #include "Components/MorphTargetRenderer.h"
+#include "Components/MouseScale.h"
+#include "Components/MouseTranslation.h"
 #include "FileLoaders/PropertyFile.h"
 #include "imgui.h"
 #include "Name.h"
@@ -174,6 +176,8 @@ void Object::LoadComponent(PropertyFileProperty* a_property)
     else ISCREATECOMPONENT(comp, this, propName, MorphPlaneRenderer, m_animControl)
     else ISCREATECOMPONENT(comp, this, propName, MorphTargetMask, m_animControl)
     else ISCREATECOMPONENT(comp, this, propName, MorphTargetRenderer, m_animControl)
+    else ISCREATECOMPONENT(comp, this, propName, MouseScale, m_animControl)
+    else ISCREATECOMPONENT(comp, this, propName, MouseTranslation, m_animControl)
 
     if (comp != nullptr)
     {
@@ -209,6 +213,8 @@ void Object::UpdateComponentUI()
         bool createMorphPlaneRenderer = true;
         bool cerateMorphTargetMask = true;
         bool createMorphTargetRenderer = true;
+        bool createMouseScale = true;
+        bool createMouseTranslation = true;
 
         for (auto iter = m_components.begin(); iter != m_components.end(); ++iter)
         {
@@ -238,6 +244,14 @@ void Object::UpdateComponentUI()
             {
                 createMorphTargetRenderer = false;
             }
+            else if (strcmp(componentName, MouseScale::COMPONENT_NAME) == 0)
+            {
+                createMouseScale = false;
+            }
+            else if (strcmp(componentName, MouseTranslation::COMPONENT_NAME) == 0)
+            {
+                createMouseTranslation = false;
+            }
         }
 
         if (createImageMask && ImGui::Selectable(ImageMask::COMPONENT_NAME))
@@ -263,6 +277,14 @@ void Object::UpdateComponentUI()
         if (createMorphTargetRenderer && ImGui::Selectable(MorphTargetRenderer::COMPONENT_NAME))
         {
             component = new MorphTargetRenderer(this, m_animControl);
+        }
+        if (createMouseScale && ImGui::Selectable(MouseScale::COMPONENT_NAME))
+        {
+            component = new MouseScale(this, m_animControl);
+        }
+        if (createMouseTranslation && ImGui::Selectable(MouseTranslation::COMPONENT_NAME))
+        {
+            component = new MouseTranslation(this, m_animControl);
         }
 
         if (component != nullptr)

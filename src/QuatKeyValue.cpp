@@ -88,7 +88,7 @@ void QuatKeyValue::UpdateValue(double a_shift)
 
 void QuatKeyValue::UpdateGUI(const char* a_label, bool a_showLerpMode)
 {
-    ImGui::DragFloat4(a_label, (float*)&m_baseValue, 0.1f);
+    ImGui::DragFloat4(a_label, (float*)&m_baseValue, 0.1f, 0.0f, 0.0f, "%.6f");
 
     if (a_showLerpMode)
     {

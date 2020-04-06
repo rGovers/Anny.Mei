@@ -113,7 +113,7 @@ glm::vec3 Vec3KeyValue::GetMaxValue() const
 
 void Vec3KeyValue::UpdateGUI(const char* a_label, bool a_showLerpMode)
 {
-    ImGui::DragFloat3(a_label, (float*)&m_baseValue, 0.1f);
+    ImGui::DragFloat3(a_label, (float*)&m_baseValue, 0.01f, 0.0f, 0.0f, "%.6f");
 
     if (a_showLerpMode)
     {
