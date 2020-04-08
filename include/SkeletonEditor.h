@@ -28,7 +28,6 @@ private:
     Namer*                m_namer;
 
     Object*               m_baseObject;
-    Object*               m_selectedObject;
 
     IntermediateRenderer* m_imRenderer;
     RenderTexture*        m_renderTexture;
@@ -46,7 +45,9 @@ public:
     SkeletonEditor(Workspace* a_workspace);
     ~SkeletonEditor();
 
-    void ListObjects(Object* a_object, int& a_node);
+    Workspace* GetWorkspace() const;
+
+    Namer* GetNamer() const;
 
     AnimControl* GetAnimControl() const;
     Object* GetBaseObject() const;

@@ -194,7 +194,7 @@ void Object::SaveComponents(PropertyFile* a_propertyFile, PropertyFileProperty* 
     }
 }
 
-void Object::UpdateComponentUI()
+void Object::UpdateComponentUI(Workspace* a_workspace)
 {
     if (ImGui::Button("Add Component"))
     {
@@ -322,7 +322,7 @@ void Object::UpdateComponentUI()
                 ImGui::EndPopup();
             }
 
-            (*iter)->UpdateGUI();
+            (*iter)->UpdateGUI(a_workspace);
 
             ImGui::TreePop();
         }

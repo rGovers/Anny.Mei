@@ -36,8 +36,6 @@ SkeletonEditor::SkeletonEditor(Workspace* a_workspace)
     m_baseObject = new Object(m_namer, m_animControl);
     m_baseObject->SetTrueName("Root Object");
 
-    m_selectedObject = nullptr;
-
     m_renderTexture = new RenderTexture(IMAGE_SIZE, IMAGE_SIZE, GL_RGB);
 
     m_imRenderer = new IntermediateRenderer();
@@ -58,6 +56,16 @@ SkeletonEditor::~SkeletonEditor()
     delete m_window;
 }
 
+Workspace* SkeletonEditor::GetWorkspace() const
+{
+    return m_workspace;
+}
+
+Namer* SkeletonEditor::GetNamer() const
+{
+    return m_namer;
+}
+
 AnimControl* SkeletonEditor::GetAnimControl() const
 {
     return m_animControl;
@@ -67,124 +75,12 @@ Object* SkeletonEditor::GetBaseObject() const
     return m_baseObject;
 }
 
-void SkeletonEditor::ListObjects(Object* a_object, int& a_node)
-{
-    const char* name = a_object->GetName();
-
-    if (name == nullptr || name[0] == 0)
-    {
-        name = "NULL";
-    }
-
-    const std::list<Object*> children = a_object->GetChildren();
-
-    bool open = false;
-    bool is_selected = (m_selectedObject == a_object);
-
-    if (children.size() > 0)
-    {
-        open = ImGui::TreeNode((void*)a_node, "");
-        ImGui::SameLine();
-    }
-    else
-    {
-        ImGui::SetCursorPosX(ImGui::GetCursorPosX() + ImGui::GetTreeNodeToLabelSpacing());
-    }
-    
-    if (ImGui::Selectable(name, &is_selected))
-    {
-        if (m_selectedObject != nullptr)
-        {
-            m_selectedObject->DisplayValues(false);
-        }
-
-        m_selectedObject = a_object;
-
-        if (m_selectedObject != nullptr)
-        {
-            m_selectedObject->DisplayValues(true);
-        }
-
-        m_workspace->SelectWorkspace(this);
-    }
-
-    if (is_selected)
-    {
-        ImGui::SetItemDefaultFocus();
-    }
-
-    if (ImGui::BeginPopupContextItem())
-    {
-        if (ImGui::MenuItem("Add Object"))
-        {
-            Object* object = new Object(m_namer, m_animControl);
-            object->SetParent(a_object);
-        }
-
-        if (a_object != m_baseObject)
-        {
-            if (ImGui::MenuItem("Remove Object"))
-            {
-                if (a_object == m_selectedObject)
-                {
-                    m_selectedObject = nullptr;
-                }
-
-                delete a_object;
-
-                ImGui::EndPopup();
-
-                if (open)
-                {
-                    ImGui::TreePop();
-                }
-
-                return;
-            }
-
-            Object* parent = a_object->GetParent();
-
-            if (parent != nullptr)
-            {
-                const std::list<Object*> children = parent->GetChildren();
-
-                if (children.size() > 1)
-                {
-                    ImGui::Separator();
-
-                    if (a_object != *children.begin() && ImGui::MenuItem("Move Up"))
-                    {
-                        parent->MoveChildUp(a_object);
-                    }
-
-                    if (a_object != *--children.end() && ImGui::MenuItem("Move Down"))
-                    {
-                        parent->MoveChildDown(a_object);
-                    }
-                }
-            }
-        }
-        
-        ImGui::EndPopup();
-    }
-
-    ++a_node;
-
-    if (open)
-    {
-        for (auto iter = children.begin(); iter != children.end(); ++iter)
-        {
-            ListObjects(*iter, a_node);
-        }
-
-        ImGui::TreePop();
-    }   
-}
-
 void SkeletonEditor::DrawObjectDetail(Object* a_object) const
 {
     if (a_object != nullptr)
     {
+        const Object* selectedObject = m_window->GetSelectedObject();
+
         const ImVec2 winSize = ImGui::GetWindowSize();
         const glm::vec2 scaledWinSize = { winSize.x - 20, winSize.y - 60 };
 
@@ -218,7 +114,7 @@ void SkeletonEditor::DrawObjectDetail(Object* a_object) const
 
         const glm::vec3 fPos = view * proj * posi;
 
-        if (a_object == m_selectedObject)
+        if (a_object == selectedObject)
         {
             m_imRenderer->DrawSolidCircle(fPos, 20, 0.05f, ACTIVE_COLOR, scalar.x, scalar.y);
         }
@@ -408,7 +304,7 @@ void SkeletonEditor::SaveObject(PropertyFile* a_propertyFile, PropertyFileProper
 
 void SkeletonEditor::DrawPropertiesWindow()
 {
-    m_window->UpdatePropertiesWindow(m_selectedObject);
+    m_window->UpdatePropertiesWindow(m_window->GetSelectedObject());
 }
 void SkeletonEditor::DrawEditorWindow()
 {

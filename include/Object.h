@@ -10,6 +10,7 @@ class Namer;
 class PropertyFile;
 class PropertyFileProperty;
 class Transform;
+class Workspace;
 
 class Object
 {
@@ -17,7 +18,7 @@ private:
     AnimControl*                      m_animControl;
 
     Name*                             m_name;
-
+ 
     Object*                           m_parent;
     std::list<Object*>                m_children;
 
@@ -56,6 +57,6 @@ public:
     void LoadComponent(PropertyFileProperty* a_propertyFile);
     void SaveComponents(PropertyFile* a_propertyFile, PropertyFileProperty* a_parent) const;
 
-    void UpdateComponentUI();
+    void UpdateComponentUI(Workspace* a_workspace);
     void UpdateComponents(bool a_preview, Camera* a_camera, double a_delta);
 };

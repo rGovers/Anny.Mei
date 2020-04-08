@@ -296,7 +296,7 @@ void MorphTargetRenderer::UpdatePreview(double a_delta, Camera* a_camera)
 {
     MorphTargetDraw(true, a_delta, a_camera);
 }
-void MorphTargetRenderer::UpdateGUI()
+void MorphTargetRenderer::UpdateGUI(Workspace* a_workspace)
 {
     MorphTargetUpdateGUI();
 }

@@ -114,7 +114,7 @@ void ImageRenderer::UpdatePreview(double a_delta, Camera* a_camera)
 {
     ImageDraw(true, a_camera);
 }
-void ImageRenderer::UpdateGUI()
+void ImageRenderer::UpdateGUI(Workspace* a_workspace)
 {
     UpdateRendererGUI();
 }

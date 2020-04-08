@@ -34,7 +34,7 @@ void MouseTranslation::Init()
 
     m_mouseScale = new AnimValue<Vec2KeyValue>((baseName + "Mouse Scale").c_str(), animControl);
     m_mouseScale->SelectKeyFrame(0);
-    m_mouseScale->GetValue()->SetBaseValue(glm::vec2(0.0001f));
+    m_mouseScale->GetValue()->SetBaseValue(glm::vec2(1));
 
     m_delta = new AnimValue<Vec2KeyValue>((baseName + "Delta").c_str(), animControl);
     m_delta->SelectKeyFrame(0);
@@ -81,7 +81,7 @@ void MouseTranslation::UpdateTransform(bool a_preview, double a_delta, Camera* a
 
         if (mouseScaleValue != nullptr)
         {
-            const glm::vec2 scale = mouseScaleValue->GetBaseValue();
+            const glm::vec2 scale = mouseScaleValue->GetBaseValue() * 0.0001f;
 
             pos = glm::vec2(m_previewMousePos.x * scale.x, m_previewMousePos.y * scale.y);
         }
@@ -115,7 +115,7 @@ void MouseTranslation::UpdateTransform(bool a_preview, double a_delta, Camera* a
 
         if (mouseScaleValue != nullptr)
         {
-            const glm::vec2 scale = mouseScaleValue->GetValue();
+            const glm::vec2 scale = mouseScaleValue->GetValue() * 0.0001f;
 
             pos = glm::vec2(m_mousePos.x * scale.x, m_mousePos.y * scale.y);
         }
@@ -204,7 +204,7 @@ void MouseTranslation::UpdatePreview(double a_delta, Camera* a_camera)
         UpdateTransform(true, a_delta, a_camera);
     }
 }
-void MouseTranslation::UpdateGUI()
+void MouseTranslation::UpdateGUI(Workspace* a_workspace)
 {
     Vec2KeyValue* scaleValue = m_mouseScale->GetValue();
     if (scaleValue != nullptr)

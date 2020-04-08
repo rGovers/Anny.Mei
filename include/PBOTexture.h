@@ -14,7 +14,7 @@ protected:
 
 public:
     PBOTexture() = delete;
-    PBOTexture(int a_width, int a_height, int a_pixelFormat);
+    PBOTexture(int a_width, int a_height, int a_pixelFormat, int a_samples);
     ~PBOTexture();
 
     unsigned int* GetPBOS() const;

@@ -76,7 +76,7 @@ void AValue::UpdateAnimValue(double a_time)
             const double relTime = endTime - startTime;
             const double shitedTime = a_time - startTime;
 
-            m_selectedAnimValue->UpdateValue(shitedTime / relTime);
+            m_selectedAnimValue->UpdateValue(glm::min(shitedTime / relTime, 1.0));
         }
         else
         {

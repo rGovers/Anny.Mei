@@ -129,6 +129,11 @@ AnimControl* Workspace::GetAnimControl() const
     return m_skeletonEditor->GetAnimControl();
 }
 
+ModelEditor* Workspace::GetModelEditor() const
+{
+    return m_modelEditor;
+}
+
 void Workspace::LoadTexture(const char* a_filepath)
 {
     m_textureEditor->LoadTexture(a_filepath);

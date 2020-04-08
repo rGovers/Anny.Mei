@@ -13,9 +13,13 @@ private:
 
     Camera*         m_camera;
 
+    Object*         m_selectedObject;
+
     glm::vec2       m_lastMousePos;
 
     float           m_zoom;
+
+    void ListObjects(Object* a_object, int& a_node);
 
 protected:
 
@@ -24,6 +28,8 @@ public:
     ~SkeletonEditorWindow();
 
     Camera* GetCamera() const;
+
+    Object* GetSelectedObject() const;
 
     void Update();
     void UpdatePropertiesWindow(Object* a_selectedObject);

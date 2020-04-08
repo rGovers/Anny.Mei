@@ -39,11 +39,18 @@ ModelEditorWindow::ModelEditorWindow(ModelEditor* a_modelEditor)
     m_wireframe = true;
     m_alpha = false;
 
+    m_displayOverride = false;
+
     ResetTools();
 }
 ModelEditorWindow::~ModelEditorWindow()
 {
     delete m_camera;
+}
+
+void ModelEditorWindow::ToolDisplayOverride(bool a_state)
+{
+    m_displayOverride = a_state;
 }
 
 void ModelEditorWindow::SetSelectTool()
@@ -132,7 +139,7 @@ void ModelEditorWindow::Update()
     }
     ImGui::End();
 
-    if (m_modelEditor->IsModelSelected())
+    if (m_modelEditor->IsModelSelected() || m_displayOverride)
     {
         if (ImGui::Begin("Model Tools"))
         {

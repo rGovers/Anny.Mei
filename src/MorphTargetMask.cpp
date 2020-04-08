@@ -69,7 +69,7 @@ void MorphTargetMask::UpdatePreview(double a_delta, Camera* a_camera)
 {
     Draw(true, a_delta, a_camera);
 }
-void MorphTargetMask::UpdateGUI()
+void MorphTargetMask::UpdateGUI(Workspace* a_workspace)
 {
     DataStore* store = DataStore::GetInstance();
 

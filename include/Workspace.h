@@ -41,6 +41,8 @@ public:
     Object* GetBaseObject() const;
     AnimControl* GetAnimControl() const;
 
+    ModelEditor* GetModelEditor() const;
+
     void LoadTexture(const char* a_filepath);
 
     void AddModel(const char* a_name, ModelVertex* a_vertices, unsigned int a_vertexCount, unsigned int* a_indices, unsigned int a_indexCount, const glm::vec2& a_min, const glm::vec2& a_max);

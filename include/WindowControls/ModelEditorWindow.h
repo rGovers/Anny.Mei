@@ -38,6 +38,8 @@ private:
     bool         m_wireframe;
     bool         m_alpha;
 
+    bool         m_displayOverride;
+
     void SetSelectTool();
     void SetMoveTool();
 
@@ -47,6 +49,8 @@ protected:
 public:
     ModelEditorWindow(ModelEditor* a_modelEditor);
     ~ModelEditorWindow();
+
+    void ToolDisplayOverride(bool a_state);
 
     void ResetTools();
 

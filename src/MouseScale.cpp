@@ -34,7 +34,7 @@ void MouseScale::Init()
 
     m_mouseScale = new AnimValue<Vec2KeyValue>((baseName + "Mouse Scale").c_str(), animControl);
     m_mouseScale->SelectKeyFrame(0);
-    m_mouseScale->GetValue()->SetBaseValue(glm::vec2(0.0001f));
+    m_mouseScale->GetValue()->SetBaseValue(glm::vec2(1));
 
     m_delta = new AnimValue<Vec2KeyValue>((baseName + "Delta").c_str(), animControl);
     m_delta->SelectKeyFrame(0);
@@ -81,7 +81,7 @@ void MouseScale::UpdateTransform(bool a_preview, double a_delta, Camera* a_camer
 
         if (mouseScaleValue != nullptr)
         {
-            const glm::vec2 mScale = mouseScaleValue->GetBaseValue();
+            const glm::vec2 mScale = mouseScaleValue->GetBaseValue() * 0.0001f;
 
             scale = glm::vec2(1 - glm::abs(m_previewMousePos.x * mScale.x), 1 - glm::abs(m_previewMousePos.y * mScale.y));
         }
@@ -115,7 +115,7 @@ void MouseScale::UpdateTransform(bool a_preview, double a_delta, Camera* a_camer
 
         if (mouseScaleValue != nullptr)
         {
-            const glm::vec2 mScale = mouseScaleValue->GetValue();
+            const glm::vec2 mScale = mouseScaleValue->GetValue() * 0.0001f;
 
             scale = glm::vec2(1 - glm::abs(m_mousePos.x * mScale.x), 1 - glm::abs(m_mousePos.y * mScale.y));
         }
@@ -204,7 +204,7 @@ void MouseScale::UpdatePreview(double a_delta, Camera* a_camera)
         UpdateTransform(true, a_delta, a_camera);
     }
 }
-void MouseScale::UpdateGUI()
+void MouseScale::UpdateGUI(Workspace* a_workspace)
 {
     Vec2KeyValue* scaleValue = m_mouseScale->GetValue();
     if (scaleValue != nullptr)

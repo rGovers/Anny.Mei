@@ -9,6 +9,7 @@
 #include "FileLoaders/PropertyFile.h"
 #include "FileUtils.h"
 #include "imgui.h"
+#include "ModelEditor.h"
 #include "Models/Model.h"
 #include "MorphPlane.h"
 #include "Object.h"
@@ -16,6 +17,7 @@
 #include "StaticTransform.h"
 #include "Texture.h"
 #include "Transform.h"
+#include "Workspace.h"
 
 #ifdef WIN32
 #undef GetObject
@@ -33,6 +35,8 @@ MorphPlaneRenderer::MorphPlaneRenderer(Object* a_object, AnimControl* a_animCont
     m_selectedMode = ITEMS[(int)e_MorphRenderMode::Null];
 
     m_animValuesDisplayed = false;
+
+    m_editingMorphPlane = false;
 }
 MorphPlaneRenderer::~MorphPlaneRenderer()
 {
@@ -191,8 +195,19 @@ void MorphPlaneRenderer::MorphPlaneDisplayValues(bool a_value)
     }
 }
 
-void MorphPlaneRenderer::MorphPlaneUpdateGUI()
+void MorphPlaneRenderer::UpdateMorphPlaneGUI(const char* a_label, AnimValue<StringKeyValue>* a_morphPlane)
 {
+    StringKeyValue* planeValue = a_morphPlane->GetValue();
+    if (planeValue != nullptr)
+    {
+        planeValue->UpdateGUI(a_label);
+    }
+}
+
+void MorphPlaneRenderer::MorphPlaneUpdateGUI(Workspace* a_workspace)
+{
+    DataStore* store = DataStore::GetInstance();
+
     UpdateRendererGUI();
 
     StringKeyValue* value = m_morphPlaneName->GetValue();
@@ -200,6 +215,41 @@ void MorphPlaneRenderer::MorphPlaneUpdateGUI()
     if (value != nullptr)
     {
         value->UpdateGUI("Morph Plane Name");
+
+        if (value != nullptr)
+        {
+            const char* modelName = GetBaseModelName();
+
+            if (modelName != nullptr)
+            {
+                Model* model = store->GetModel(modelName, e_ModelType::MorphPlane);
+                MorphPlane* morphPlane = store->GetMorphPlane(value->GetBaseString());
+
+                if (model != nullptr && morphPlane != nullptr)
+                {
+                    if (m_editingMorphPlane)
+                    {
+                        if (ImGui::Button("Cancel"))
+                        {
+                            m_editingMorphPlane = false;
+
+                            a_workspace->GetModelEditor()->ToolsDisplayOverride(false);
+                        }
+                    }
+                    else
+                    {
+                        if (ImGui::Button("Edit Morph Plane"))
+                        {
+                            m_editingMorphPlane = true;
+
+                            m_workSpace = a_workspace;
+
+                            a_workspace->GetModelEditor()->ToolsDisplayOverride(true);
+                        }
+                    }
+                }
+            }
+        }
 
         ImGui::Spacing();
 
@@ -262,53 +312,15 @@ void MorphPlaneRenderer::MorphPlaneUpdateGUI()
                     vecValue->UpdateGUI("Lerp");
                 }
 
-                StringKeyValue* northPlaneValue = m_northPlaneName->GetValue();
-                if (northPlaneValue != nullptr)
-                {
-                    northPlaneValue->UpdateGUI("North Morph Plane");
-                }
+                UpdateMorphPlaneGUI("North Morph Plane", m_northPlaneName);
+                UpdateMorphPlaneGUI("South Morph Plane", m_southPlaneName);
+                UpdateMorphPlaneGUI("East Morph Plane", m_eastPlaneName);
+                UpdateMorphPlaneGUI("West Morph Plane", m_westPlaneName);
 
-                StringKeyValue* southPlaneValue = m_southPlaneName->GetValue();
-                if (southPlaneValue != nullptr)
-                {
-                    southPlaneValue->UpdateGUI("South Morph Plane");
-                }
-
-                StringKeyValue* eastPlaneValue = m_eastPlaneName->GetValue();
-                if (eastPlaneValue != nullptr)
-                {
-                    eastPlaneValue->UpdateGUI("East Morph Plane");
-                }
-
-                StringKeyValue* westPlaneValue = m_westPlaneName->GetValue();
-                if (westPlaneValue != nullptr)
-                {
-                    westPlaneValue->UpdateGUI("West Morph Plane");
-                }
-
-                StringKeyValue* northEastPlaneValue = m_northEastPlaneName->GetValue();
-                if (northEastPlaneValue != nullptr)
-                {
-                    northEastPlaneValue->UpdateGUI("North East Morph Plane");
-                }
-
-                StringKeyValue* southEastPlaneValue = m_southEastPlaneName->GetValue();
-                if (southEastPlaneValue != nullptr)
-                {
-                    southEastPlaneValue->UpdateGUI("South East Morph Plane");
-                }
-
-                StringKeyValue* southWestPlaneValue = m_southWestPlaneName->GetValue();
-                if (southWestPlaneValue != nullptr)
-                {
-                    southWestPlaneValue->UpdateGUI("South West Morph Plane");
-                }
-
-                StringKeyValue* northWestPlaneValue = m_northWestPlaneName->GetValue();
-                if (northWestPlaneValue != nullptr)
-                {
-                    northWestPlaneValue->UpdateGUI("North West Morph Plane");
-                }
+                UpdateMorphPlaneGUI("North East Plane", m_northEastPlaneName);
+                UpdateMorphPlaneGUI("South East Plane", m_southEastPlaneName);
+                UpdateMorphPlaneGUI("South West Plane", m_southWestPlaneName);
+                UpdateMorphPlaneGUI("North West Plane", m_northWestPlaneName);
 
                 break;
             }
@@ -323,29 +335,10 @@ void MorphPlaneRenderer::MorphPlaneUpdateGUI()
                     vecValue->UpdateGUI("Lerp");
                 }
 
-                StringKeyValue* northPlaneValue = m_northPlaneName->GetValue();
-                if (northPlaneValue != nullptr)
-                {
-                    northPlaneValue->UpdateGUI("North Morph Plane");
-                }
-
-                StringKeyValue* southPlaneValue = m_southPlaneName->GetValue();
-                if (southPlaneValue != nullptr)
-                {
-                    southPlaneValue->UpdateGUI("South Morph Plane");
-                }
-
-                StringKeyValue* eastPlaneValue = m_eastPlaneName->GetValue();
-                if (eastPlaneValue != nullptr)
-                {
-                    eastPlaneValue->UpdateGUI("East Morph Plane");
-                }
-
-                StringKeyValue* westPlaneValue = m_westPlaneName->GetValue();
-                if (westPlaneValue != nullptr)
-                {
-                    westPlaneValue->UpdateGUI("West Morph Plane");
-                }
+                UpdateMorphPlaneGUI("North Morph Plane", m_northPlaneName);
+                UpdateMorphPlaneGUI("South Morph Plane", m_southPlaneName);
+                UpdateMorphPlaneGUI("East Morph Plane", m_eastPlaneName);
+                UpdateMorphPlaneGUI("West Morph Plane", m_westPlaneName);
 
                 break;
             }
@@ -365,17 +358,8 @@ void MorphPlaneRenderer::MorphPlaneUpdateGUI()
                     vecValue->SetBaseValue(val);
                 }
 
-                StringKeyValue* eastPlaneValue = m_eastPlaneName->GetValue();
-                if (eastPlaneValue != nullptr)
-                {
-                    eastPlaneValue->UpdateGUI("East Morph Plane");
-                }
-
-                StringKeyValue* westPlaneValue = m_westPlaneName->GetValue();
-                if (westPlaneValue != nullptr)
-                {
-                    westPlaneValue->UpdateGUI("West Morph Plane");
-                }
+                UpdateMorphPlaneGUI("East Morph Plane", m_eastPlaneName);
+                UpdateMorphPlaneGUI("West Morph Plane", m_westPlaneName);
 
                 break;
             }
@@ -703,6 +687,31 @@ void MorphPlaneRenderer::MorphPlaneDraw(bool a_preview, double a_delta, Camera* 
         break;
     }
     }
+
+    if (a_preview && m_editingMorphPlane)
+    {
+        ModelEditor* modelEditor = m_workSpace->GetModelEditor();
+
+        modelEditor->ResetIMRenderer();
+
+        const ImVec2 winSize = ImGui::GetWindowSize();
+        const glm::vec2 scaledWinSize = { winSize.x - 20, winSize.y - 60 };
+
+        glm::vec2 scalar = glm::vec2(1);
+
+        if (scaledWinSize.x > scaledWinSize.y)
+        {
+            scalar.x = scaledWinSize.y / scaledWinSize.x;
+        }
+        else
+        {
+            scalar.y = scaledWinSize.x / scaledWinSize.y;
+        }
+
+        modelEditor->DrawMorphPlaneEditor(finalTransform, modelName, morphPlaneName, finalTransform[3].z, scalar);
+
+        modelEditor->DrawIMRenderer();
+    }
 }
 
 void MorphPlaneRenderer::Init()
@@ -718,9 +727,9 @@ void MorphPlaneRenderer::UpdatePreview(double a_delta, Camera* a_camera)
 {
     MorphPlaneDraw(true, a_delta, a_camera);
 }
-void MorphPlaneRenderer::UpdateGUI()
+void MorphPlaneRenderer::UpdateGUI(Workspace* a_workspace)
 {
-    MorphPlaneUpdateGUI();
+    MorphPlaneUpdateGUI(a_workspace);
 }
 
 void MorphPlaneRenderer::ObjectRenamed()

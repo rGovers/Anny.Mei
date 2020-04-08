@@ -5,6 +5,7 @@ class Camera;
 class Object;
 class PropertyFile;
 class PropertyFileProperty;
+class Workspace;
 
 enum class e_ComponentType
 {
@@ -31,7 +32,7 @@ public:
 
     virtual void Update(double a_delta, Camera* a_camera) = 0;
     virtual void UpdatePreview(double a_delta, Camera* a_camera) = 0;
-    virtual void UpdateGUI() = 0;
+    virtual void UpdateGUI(Workspace* a_workspace) = 0;
 
     virtual void ObjectRenamed() { };
 

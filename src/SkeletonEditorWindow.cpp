@@ -7,6 +7,7 @@
 #include "StaticTransform.h"
 #include "Texture.h"
 #include "Transform.h"
+#include "Workspace.h"
 
 static const int BUFFER_SIZE = 1024;
 static char* BUFFER = new char[BUFFER_SIZE];
@@ -21,7 +22,11 @@ SkeletonEditorWindow::SkeletonEditorWindow(SkeletonEditor* a_skeletonEditor)
 {
     m_skeletonEditor = a_skeletonEditor;
 
+    m_selectedObject = nullptr;
+
     m_camera = new Camera();
+
+    m_lastMousePos = glm::vec2(0);
 
     m_zoom = 1;
 }
@@ -30,9 +35,132 @@ SkeletonEditorWindow::~SkeletonEditorWindow()
     delete m_camera;
 }
 
+void SkeletonEditorWindow::ListObjects(Object* a_object, int& a_node)
+{
+    const char* name = a_object->GetName();
+
+    if (name == nullptr || name[0] == 0)
+    {
+        name = "NULL";
+    }
+
+    const std::list<Object*> children = a_object->GetChildren();
+
+    bool open = false;
+    bool is_selected = (m_selectedObject == a_object);
+
+    if (children.size() > 0)
+    {
+        open = ImGui::TreeNode((void*)a_node, "");
+        ImGui::SameLine();
+    }
+    else
+    {
+        ImGui::SetCursorPosX(ImGui::GetCursorPosX() + ImGui::GetTreeNodeToLabelSpacing());
+    }
+    
+    if (ImGui::Selectable(name, &is_selected))
+    {
+        if (m_selectedObject != nullptr)
+        {
+            m_selectedObject->DisplayValues(false);
+        }
+
+        m_selectedObject = a_object;
+
+        if (m_selectedObject != nullptr)
+        {
+            m_selectedObject->DisplayValues(true);
+        }
+
+        m_skeletonEditor->GetWorkspace()->SelectWorkspace(m_skeletonEditor);
+    }
+
+    if (is_selected)
+    {
+        ImGui::SetItemDefaultFocus();
+    }
+
+    if (ImGui::BeginPopupContextItem())
+    {
+        Namer* namer = m_skeletonEditor->GetNamer();
+        AnimControl* animControl = m_skeletonEditor->GetAnimControl();
+        Object* baseObject = m_skeletonEditor->GetBaseObject();
+
+        if (ImGui::MenuItem("Add Object"))
+        {
+            Object* object = new Object(namer, animControl);
+            object->SetParent(a_object);
+        }
+
+        if (a_object != baseObject)
+        {
+            if (ImGui::MenuItem("Remove Object"))
+            {
+                if (a_object == m_selectedObject)
+                {
+                    m_selectedObject = nullptr;
+                }
+
+                delete a_object;
+
+                ImGui::EndPopup();
+
+                if (open)
+                {
+                    ImGui::TreePop();
+                }
+
+                return;
+            }
+
+            Object* parent = a_object->GetParent();
+
+            if (parent != nullptr)
+            {
+                const std::list<Object*> children = parent->GetChildren();
+
+                if (children.size() > 1)
+                {
+                    ImGui::Separator();
+
+                    if (a_object != *children.begin() && ImGui::MenuItem("Move Up"))
+                    {
+                        parent->MoveChildUp(a_object);
+                    }
+
+                    if (a_object != *--children.end() && ImGui::MenuItem("Move Down"))
+                    {
+                        parent->MoveChildDown(a_object);
+                    }
+                }
+            }
+        }
+        
+        ImGui::EndPopup();
+    }
+
+    ++a_node;
+
+    if (open)
+    {
+        for (auto iter = children.begin(); iter != children.end(); ++iter)
+        {
+            ListObjects(*iter, a_node);
+        }
+
+        ImGui::TreePop();
+    }   
+}
+
 Camera* SkeletonEditorWindow::GetCamera() const
 {
     return m_camera;
+}
+
+Object* SkeletonEditorWindow::GetSelectedObject() const
+{
+    return m_selectedObject;
 }
 
 void SkeletonEditorWindow::Update()
@@ -45,7 +173,7 @@ void SkeletonEditorWindow::Update()
         {
             int node = 0;
 
-            m_skeletonEditor->ListObjects(baseObject, node);
+            ListObjects(baseObject, node);
         }
         ImGui::End();
     }
@@ -97,7 +225,7 @@ void SkeletonEditorWindow::UpdatePropertiesWindow(Object* a_selectedObject)
 
         ImGui::Separator();
 
-        a_selectedObject->UpdateComponentUI();
+        a_selectedObject->UpdateComponentUI(m_skeletonEditor->GetWorkspace());
     }
 }
 void SkeletonEditorWindow::UpdateEditorWindow()

@@ -21,7 +21,7 @@ WebcamController::WebcamController()
 }
 WebcamController::WebcamController(int a_width, int a_height)
 {
-	m_pboTexture = new PBOTexture(a_width, a_height, GL_BGR);
+	m_pboTexture = new PBOTexture(a_width, a_height, GL_BGR, 16);
 
     m_renderTexture = new RenderTexture(m_pboTexture);
 

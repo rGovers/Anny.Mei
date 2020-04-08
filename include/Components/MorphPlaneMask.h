@@ -28,7 +28,7 @@ public:
 
     virtual void Update(double a_delta, Camera* a_camera);
     virtual void UpdatePreview(double a_delta, Camera* a_camera);
-    virtual void UpdateGUI();
+    virtual void UpdateGUI(Workspace* a_workspace);
 
     virtual const char* ComponentName() const;
 

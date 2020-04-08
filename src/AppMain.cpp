@@ -84,6 +84,7 @@ AppMain::AppMain(int a_width, int a_height) :
     m_imageExporter = nullptr;
 
     glEnable(GL_DEBUG_OUTPUT);
+    glEnable(GL_MULTISAMPLE);
     // glDebugMessageCallback(MessageCallback, 0);
 
     IMGUI_CHECKVERSION();

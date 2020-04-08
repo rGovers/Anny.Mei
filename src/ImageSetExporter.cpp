@@ -75,7 +75,7 @@ void ImageSetExporter::Update()
         {
             double delta = 1.0 / m_frameRate;
 
-            PBOTexture* tex = new PBOTexture(m_internalResolution.x, m_internalResolution.y, GL_RGBA);
+            PBOTexture* tex = new PBOTexture(m_internalResolution.x, m_internalResolution.y, GL_RGBA, 1);
             RenderTexture* renderTexture = new RenderTexture(tex);
 
             AnimControl* animControl = m_workspace->GetAnimControl();

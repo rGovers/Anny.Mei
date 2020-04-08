@@ -73,7 +73,7 @@ void MorphPlaneMask::UpdatePreview(double a_delta, Camera* a_camera)
 {
     Draw(true, a_delta, a_camera);
 }
-void MorphPlaneMask::UpdateGUI()
+void MorphPlaneMask::UpdateGUI(Workspace* a_workspace)
 {
     DataStore* store = DataStore::GetInstance();
 
@@ -99,7 +99,7 @@ void MorphPlaneMask::UpdateGUI()
         }
     }
         
-    MorphPlaneUpdateGUI();
+    MorphPlaneUpdateGUI(a_workspace);
 }
 
 const char* MorphPlaneMask::ComponentName() const

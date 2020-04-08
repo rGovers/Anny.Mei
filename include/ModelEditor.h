@@ -131,6 +131,13 @@ public:
     virtual void DrawPropertiesWindow();
     virtual void DrawEditorWindow();
 
+    void DrawIMRenderer();
+    void ResetIMRenderer();
+
+    void ToolsDisplayOverride(bool a_state);
+
+    void DrawMorphPlaneEditor(const glm::mat4& a_transformMatrix, const char* a_modelName, const char* a_morphPlaneName, float a_z, const glm::vec2& a_scalar = glm::vec2(1), bool a_alpha = true, bool a_solid = true, bool a_wireframe = true);
+
     const Texture* DrawEditor();
 
     void RenameModel(const char* a_newName);
@@ -148,6 +155,9 @@ public:
     void MorphTargetSelected(glm::vec4* a_morphTarget);
 
     void DrawSelectionBox(const glm::vec2& a_startPos, const glm::vec2& a_endPos);
+
+    void DragValue(const glm::vec2& a_dragMov, MorphPlane* a_morphPlane);
+    void SelectMouseUp(const glm::vec2& a_startPos, const glm::vec2& a_endPos, float a_scalar, MorphPlane* a_morphPlane);
 
     void DragValue(const glm::vec2& a_dragMov);
     void SelectMouseUp(const glm::vec2& a_startPos, const glm::vec2& a_endPos);
