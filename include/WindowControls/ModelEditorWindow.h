@@ -3,6 +3,7 @@
 #include <glm/glm.hpp>
 
 class Camera;
+class InputControl;
 struct ModelData;
 class ModelEditor;
 
@@ -12,38 +13,36 @@ enum class e_ToolMode;
 class ModelEditorWindow
 {
 private:
-    ModelEditor* m_modelEditor;
+    ModelEditor*  m_modelEditor;
+ 
+    e_ToolMode    m_toolMode;
+    e_Axis        m_axis;
 
-    e_ToolMode   m_toolMode;
-    e_Axis       m_axis;
+    InputControl* m_inputControl;
 
-    bool         m_dragging;
-
-    glm::vec2    m_startDragPos;
-    glm::vec2    m_endDragPos;
-
-    glm::vec2    m_lastMousePos;
-
-    glm::vec2    m_lastPos;
-
-    glm::vec2    m_selectionPoint;
-
-    float        m_zoom;
-    
-    Camera*      m_camera;
-
-    bool         m_mouseLastDown;
-
-    bool         m_solid;
-    bool         m_wireframe;
-    bool         m_alpha;
-
-    bool         m_displayOverride;
+    glm::vec2     m_lastMousePos;
+ 
+    glm::vec2     m_lastPos;
+ 
+    glm::vec2     m_selectionPoint;
+ 
+    float         m_zoom;
+     
+    Camera*       m_camera;
+ 
+    bool          m_solid;
+    bool          m_wireframe;
+    bool          m_alpha;
+ 
+    bool          m_displayOverride;
 
     void SetSelectTool();
     void SetMoveTool();
 
     void MorphTargetDisplay(const char* a_name, glm::vec4* a_morphTarget);
+
+    glm::vec4 ScreenToWorld(const glm::vec2& a_pos, const glm::vec2& a_halfSize, const glm::mat4& a_invProj, const glm::mat4& a_invView) const;
+
 protected:
 
 public:

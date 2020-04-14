@@ -5,12 +5,21 @@
 #include "KeyValues/IntKeyValue.h"
 #include "KeyValues/Vec2KeyValue.h"
 
+enum class e_Axis;
+
+class InputControl;
 class MorphPlaneDisplay;
 
 class MorphPlaneRenderer : public Renderer
 {
 private:
     const static char* ITEMS[];
+
+    Camera*                    m_prevCamera;
+
+    InputControl*              m_inputControl;
+
+    e_Axis                     m_axis;
 
     MorphPlaneDisplay*         m_morphPlaneDisplay;
 
@@ -27,6 +36,11 @@ private:
 
     AnimValue<Vec2KeyValue>*   m_lerp;
 
+    glm::vec2                  m_selectionStart;
+    glm::vec2                  m_selectionEnd;
+
+    glm::vec2                  m_winSize;
+
     AnimValue<StringKeyValue>* m_northPlaneName;
     AnimValue<StringKeyValue>* m_southPlaneName;
     AnimValue<StringKeyValue>* m_eastPlaneName;
@@ -39,6 +53,8 @@ private:
 
     void UpdateMorphPlaneGUI(const char* a_label, AnimValue<StringKeyValue>* a_morphPlane);
 
+    glm::vec4 ScreenToWorld(const glm::vec2& a_pos, const glm::vec2& a_halfSize, const glm::mat4& a_invProj, const glm::mat4& a_invView) const;
+
 protected:
     void MorphPlaneDraw(bool a_preview, double a_delta, Camera* a_camera);
 
@@ -48,6 +64,7 @@ protected:
     void MorphPlaneUpdateGUI(Workspace* a_workspace);
 
     void MorphPlaneDisplayValues(bool a_value);
+
 public:
     const static char* COMPONENT_NAME;
 

@@ -6,6 +6,7 @@
 #include "Camera.h"
 #include "DataStore.h"
 #include "imgui.h"
+#include "InputControl.h"
 #include "ModelEditor.h"
 #include "Name.h"
 #include "StaticTransform.h"
@@ -41,11 +42,15 @@ ModelEditorWindow::ModelEditorWindow(ModelEditor* a_modelEditor)
 
     m_displayOverride = false;
 
+    m_inputControl = new InputControl();
+
     ResetTools();
 }
 ModelEditorWindow::~ModelEditorWindow()
 {
     delete m_camera;
+
+    delete m_inputControl;
 }
 
 void ModelEditorWindow::ToolDisplayOverride(bool a_state)
@@ -83,11 +88,7 @@ void ModelEditorWindow::MorphTargetDisplay(const char* a_name, glm::vec4* a_morp
 
 void ModelEditorWindow::ResetTools()
 {
-    m_startDragPos = glm::vec2(-std::numeric_limits<float>::infinity());
-
     m_axis = e_Axis::Null;
-
-    m_dragging = false;
 }
 
 void ModelEditorWindow::SetSelectionPoint(const glm::vec2& a_point)
@@ -292,6 +293,22 @@ void ModelEditorWindow::UpdatePropertiesWindow(const ModelData* a_modelData)
         }
     }
 }
+
+glm::vec4 ModelEditorWindow::ScreenToWorld(const glm::vec2& a_pos, const glm::vec2& a_halfSize, const glm::mat4& a_invProj, const glm::mat4& a_invView) const
+{
+    const glm::vec4 scaledPos = glm::vec4((a_pos.x / a_halfSize.x) - 1.0f, (a_pos.y / a_halfSize.y) - 1.0f, 0.0f, 1.0f);
+    glm::vec4 worldPos = a_invView * a_invProj * scaledPos;
+                
+    const float delta = 1 / worldPos.w;
+
+    worldPos.x *= delta;
+    worldPos.y *= delta;
+    worldPos.z *= delta;
+    worldPos.w = 1;
+
+    return worldPos;
+}
+
 void ModelEditorWindow::UpdateEditorWindow()
 {
     if (ImGui::BeginMenuBar())
@@ -356,50 +373,30 @@ void ModelEditorWindow::UpdateEditorWindow()
 
         const glm::mat4 viewProj = projectionMatrix * viewMatirx;
 
-        const bool mouseDown = ImGui::IsMouseDown(0);
+        m_inputControl->Update();
 
-        if (mouseDown)
+        glm::vec2 startPos;
+        glm::vec2 endPos;
+        if (m_inputControl->Dragging(&startPos, &endPos))
         {
-            const ImVec2 tPos = ImGui::GetMousePos();
-            const ImVec2 tWPos = ImGui::GetWindowPos();
+            const glm::vec4 startWorldPos = ScreenToWorld(startPos, halfSize, projectionInverse, transformMatrix);
+            const glm::vec4 endWorldPos = ScreenToWorld(endPos, halfSize, projectionInverse, transformMatrix);
 
-            const glm::vec2 mousePos = { tPos.x, tPos.y };
-            const glm::vec2 winPos = { tWPos.x + 10, tWPos.y + 40 };
-            const glm::vec2 relPos = mousePos - winPos;
-
-            if (relPos.x > 0 && relPos.y > 0 && relPos.x <= useSize.x && relPos.y <= useSize.y)
+            switch (m_toolMode)
             {
-                const glm::vec4 scaledMousePos = glm::vec4((relPos.x / halfSize.x) - 1.0f, (relPos.y / halfSize.y) - 1.0f, 0.0f, 1.0f);
-                glm::vec4 worldPos = transformMatrix * projectionInverse * scaledMousePos;
-                
-                const float delta = 1 / worldPos.w;
-
-                worldPos.x *= delta;
-                worldPos.y *= delta;
-                worldPos.z *= delta;
-                worldPos.w = 1;
-
-                switch (m_toolMode)
+            case e_ToolMode::Select:
                 {
-                case e_ToolMode::Select:
-                {
-                    if (m_startDragPos.x == -std::numeric_limits<float>::infinity() || m_startDragPos.y == -std::numeric_limits<float>::infinity())
-                    {
-                        m_startDragPos = { worldPos.x, worldPos.y };
-                    }
-                    m_endDragPos = { worldPos.x, worldPos.y };
-
-                    m_modelEditor->DrawSelectionBox(m_startDragPos, m_endDragPos);
+                    m_modelEditor->DrawSelectionBox(startWorldPos, endWorldPos);
 
                     break;
                 }
-                case e_ToolMode::Move:
+            case e_ToolMode::Move:
                 {
-                    const glm::vec2 world2 = { worldPos.x, worldPos.y };
+                    const glm::vec2 world = { startWorldPos.x, startWorldPos.y };
 
-                    if (!m_dragging)
+                    if (m_inputControl->Clicked())
                     {
-                        const glm::vec2 diff = m_selectionPoint - world2;
+                        const glm::vec2 diff = m_selectionPoint - world;
                         const glm::vec2 aDiff = { glm::abs(diff.x), glm::abs(diff.y) };
 
                         if (aDiff.x <= scalar * 0.01f && aDiff.y <= scalar * 0.5f)
@@ -414,12 +411,10 @@ void ModelEditorWindow::UpdateEditorWindow()
                         {
                             m_axis = e_Axis::Null;
                         }
-
-                        m_dragging = true;
                     }
                     else
                     {
-                        const glm::vec2 mov = world2 - m_lastPos;
+                        const glm::vec2 mov = m_inputControl->DragMove() * scalar;
 
                         switch (m_axis)
                         {
@@ -436,31 +431,20 @@ void ModelEditorWindow::UpdateEditorWindow()
                             break;
                         }
                         }
-
                     }
+                    
 
-                    m_lastPos = world2;
+                    break;
                 }
-                }
-
-            }   
+            }
         }
-        else if (m_mouseLastDown)
+        else if (m_inputControl->DragEnd(&startPos, &endPos))
         {
-            switch (m_toolMode)
-            {
-            case e_ToolMode::Select:
-            {
-                m_modelEditor->SelectMouseUp(m_startDragPos, m_endDragPos);
+            const glm::vec4 startWorldPos = ScreenToWorld(startPos, halfSize, projectionInverse, transformMatrix);
+            const glm::vec4 endWorldPos = ScreenToWorld(endPos, halfSize, projectionInverse, transformMatrix);
 
-                break;
-            }
-            }
-
-            ResetTools();
+            m_modelEditor->SelectMouseUp(startWorldPos, endWorldPos);
         }
-
-        m_mouseLastDown = mouseDown;
     }
     else
     {

@@ -9,11 +9,13 @@
 #include "FileLoaders/PropertyFile.h"
 #include "FileUtils.h"
 #include "imgui.h"
+#include "InputControl.h"
 #include "ModelEditor.h"
 #include "Models/Model.h"
 #include "MorphPlane.h"
 #include "Object.h"
 #include "Renderers/MorphPlaneDisplay.h"
+#include "SkeletonEditor.h"
 #include "StaticTransform.h"
 #include "Texture.h"
 #include "Transform.h"
@@ -30,6 +32,8 @@ const char* MorphPlaneRenderer::ITEMS[] = { "Null", "Lerp", "5 Point", "9 Point"
 MorphPlaneRenderer::MorphPlaneRenderer(Object* a_object, AnimControl* a_animControl) : 
     Renderer(a_object, a_animControl)
 {
+    m_inputControl = new InputControl();
+
     m_morphPlaneDisplay = new MorphPlaneDisplay();
 
     m_selectedMode = ITEMS[(int)e_MorphRenderMode::Null];
@@ -37,9 +41,15 @@ MorphPlaneRenderer::MorphPlaneRenderer(Object* a_object, AnimControl* a_animCont
     m_animValuesDisplayed = false;
 
     m_editingMorphPlane = false;
+
+    m_axis = e_Axis::Null;
+
+    m_selectionStart = glm::vec2(-std::numeric_limits<float>::infinity());
 }
 MorphPlaneRenderer::~MorphPlaneRenderer()
 {
+    delete m_inputControl;
+
     delete m_morphPlaneDisplay;
 
     delete m_morphPlaneName;
@@ -57,6 +67,21 @@ MorphPlaneRenderer::~MorphPlaneRenderer()
     delete m_southEastPlaneName;
     delete m_southWestPlaneName;
     delete m_northWestPlaneName;
+}
+
+glm::vec4 MorphPlaneRenderer::ScreenToWorld(const glm::vec2& a_pos, const glm::vec2& a_halfSize, const glm::mat4& a_invProj, const glm::mat4& a_invView) const
+{
+    const glm::vec4 scaledPos = glm::vec4((a_pos.x / a_halfSize.x) - 1.0f, (a_pos.y / a_halfSize.y) - 1.0f, 0.0f, 1.0f);
+    glm::vec4 worldPos = a_invProj * a_invView * scaledPos;
+                
+    const float delta = 1 / worldPos.w;
+
+    worldPos.x *= delta;
+    worldPos.y *= delta;
+    worldPos.z *= delta;
+    worldPos.w = 1;
+
+    return worldPos;
 }
 
 void MorphPlaneRenderer::MorphPlaneInit()
@@ -225,15 +250,109 @@ void MorphPlaneRenderer::MorphPlaneUpdateGUI(Workspace* a_workspace)
                 Model* model = store->GetModel(modelName, e_ModelType::MorphPlane);
                 MorphPlane* morphPlane = store->GetMorphPlane(value->GetBaseString());
 
-                if (model != nullptr && morphPlane != nullptr)
+                ModelEditor* modelEditor = a_workspace->GetModelEditor();
+
+                if (model != nullptr && morphPlane != nullptr )
                 {
-                    if (m_editingMorphPlane)
+                    if (m_editingMorphPlane && m_prevCamera != nullptr)
                     {
                         if (ImGui::Button("Cancel"))
                         {
                             m_editingMorphPlane = false;
 
-                            a_workspace->GetModelEditor()->ToolsDisplayOverride(false);
+                            modelEditor->ToolsDisplayOverride(false);
+                        }
+
+                        const glm::mat4 transform = m_prevCamera->GetTransform()->ToMatrix();
+                        const glm::mat4 proj = m_prevCamera->GetProjection();
+                        const glm::mat4 projInv = glm::inverse(proj);
+                    
+                        const glm::vec2 halfSize = m_winSize * 0.5f;
+
+                        glm::vec2 startPos;
+                        glm::vec2 endPos;
+                        if (m_inputControl->Dragging(&startPos, &endPos) )
+                        {
+                            const glm::vec4 startWorldPos = ScreenToWorld(startPos, halfSize, projInv, transform);
+                            const glm::vec4 endWorldPos = ScreenToWorld(endPos, halfSize, projInv, transform);
+
+                            switch (modelEditor->GetToolMode())
+                            {
+                            case e_ToolMode::Select:
+                                {
+                                    m_selectionStart = startWorldPos;
+                                    m_selectionEnd = endWorldPos;
+
+                                    break;
+                                }
+                            case e_ToolMode::Move:
+                                {
+                                    const glm::vec2 world = { startWorldPos.x, startWorldPos.y };
+
+                                    if (m_inputControl->Clicked())
+                                    {
+                                        const glm::vec2 diff = modelEditor->GetSelectionMid() - world;
+                                        const glm::vec2 aDiff = { glm::abs(diff.x), glm::abs(diff.y) };
+
+                                        if (aDiff.x <= 0.01f && aDiff.y <= 0.5f)
+                                        {
+                                            m_axis = e_Axis::Y;
+                                        }
+                                        else if (aDiff.x <= 0.5f && aDiff.y <= 0.01f)
+                                        {
+                                            m_axis = e_Axis::X;
+                                        }
+                                        else
+                                        {
+                                            m_axis = e_Axis::Null;
+                                        }
+                                    }
+                                    else
+                                    {
+                                        const glm::vec2 mov = m_inputControl->DragMove();
+
+                                        switch (m_axis)
+                                        {
+                                        case e_Axis::X:
+                                        {
+                                            modelEditor->DragValue({ mov.x, 0.0f }, morphPlane);
+
+                                            break;
+                                        }
+                                        case e_Axis::Y:
+                                        {
+                                            modelEditor->DragValue({ 0.0f, mov.y }, morphPlane);
+
+                                            break;
+                                        }
+                                        }
+                                    }
+
+
+                                    break;
+                                }
+                            }
+                        }
+                        else if (m_inputControl->DragEnd(&startPos, &endPos))
+                        {
+                            m_selectionStart = glm::vec2(-std::numeric_limits<float>::infinity());
+
+                            const glm::vec4 startWorldPos = ScreenToWorld(startPos, halfSize, projInv, transform);
+                            const glm::vec4 endWorldPos = ScreenToWorld(endPos, halfSize, projInv, transform);
+
+                            const Transform* trans = GetObject()->GetTransform();
+
+                            const glm::mat4 transformMat = trans->GetBaseWorldMatrix();
+                            const glm::mat4 transformInv = glm::inverse(transformMat);
+                            const glm::vec3 anchor = GetBaseAnchor();
+                            const glm::mat4 anchorInv = glm::inverse(glm::translate(glm::mat4(1), -anchor));
+
+                            const glm::mat4 invFinal = anchorInv * transformInv;
+
+                            const glm::vec4 startPos = invFinal * startWorldPos;
+                            const glm::vec4 endPos = invFinal * endWorldPos;
+
+                            modelEditor->SelectMouseUp(startPos, endPos, 1.0f, morphPlane);
                         }
                     }
                     else
@@ -244,7 +363,7 @@ void MorphPlaneRenderer::MorphPlaneUpdateGUI(Workspace* a_workspace)
 
                             m_workSpace = a_workspace;
 
-                            a_workspace->GetModelEditor()->ToolsDisplayOverride(true);
+                            modelEditor->ToolsDisplayOverride(true);
                         }
                     }
                 }
@@ -690,9 +809,18 @@ void MorphPlaneRenderer::MorphPlaneDraw(bool a_preview, double a_delta, Camera* 
 
     if (a_preview && m_editingMorphPlane)
     {
+        m_inputControl->Update();
+
+        m_prevCamera = a_camera;
+
         ModelEditor* modelEditor = m_workSpace->GetModelEditor();
 
         modelEditor->ResetIMRenderer();
+
+        if (m_selectionStart.x != -std::numeric_limits<float>::infinity() && m_selectionStart.y != -std::numeric_limits<float>::infinity())
+        {
+            modelEditor->DrawSelectionBox(view * proj, m_selectionStart, m_selectionEnd);
+        }
 
         const ImVec2 winSize = ImGui::GetWindowSize();
         const glm::vec2 scaledWinSize = { winSize.x - 20, winSize.y - 60 };
@@ -707,6 +835,8 @@ void MorphPlaneRenderer::MorphPlaneDraw(bool a_preview, double a_delta, Camera* 
         {
             scalar.y = scaledWinSize.x / scaledWinSize.y;
         }
+
+        m_winSize = scaledWinSize;
 
         modelEditor->DrawMorphPlaneEditor(finalTransform, modelName, morphPlaneName, finalTransform[3].z, scalar);
 

@@ -86,6 +86,16 @@ bool ModelEditor::IsMorphTargetSelected(const glm::vec4* a_morphTarget) const
     return m_selectedMorphTarget == a_morphTarget;
 }
 
+e_ToolMode ModelEditor::GetToolMode() const
+{
+    return m_window->GetToolMode();
+}
+
+glm::vec2 ModelEditor::GetSelectionMid() const
+{
+    return m_selectMid;
+}
+
 int ModelEditor::MorphTargetPtrToIndex(const glm::vec4* a_ptr) const
 {
     if (m_selectedModelData != nullptr)
@@ -748,7 +758,6 @@ void ModelEditor::DrawMorphPlaneEditor(const glm::mat4& a_transformMatrix, const
     }
 
     const unsigned int size = morphPlane->GetSize();
-    const unsigned int scaledSize = size + 1;
 
     glm::vec2 selectMid = glm::vec2(0);
 
@@ -757,7 +766,7 @@ void ModelEditor::DrawMorphPlaneEditor(const glm::mat4& a_transformMatrix, const
     {
         for (unsigned int y = 0; y <= size; ++y)
         {
-            const unsigned int index = x + y * scaledSize;
+            const unsigned int index = x + y * size;
 
             const glm::vec2 pos = morphPlane->GetMorphPosition(x, y);
             const glm::vec4 fPos = a_transformMatrix * glm::vec4(pos.x, pos.y, a_z, 1);
@@ -835,7 +844,7 @@ const Texture* ModelEditor::DrawEditor()
     }
     else if (m_selectedMorphTarget != nullptr)
     {
-        glm::vec2 selectMid = glm::vec2(0);
+        m_selectMid = glm::vec2(0);
 
         unsigned int indexCount = 0;
         for (auto iter = m_selectedIndices.begin(); iter != m_selectedIndices.end(); ++iter)
@@ -843,16 +852,16 @@ const Texture* ModelEditor::DrawEditor()
             const glm::vec4 pos = m_selectedMorphTarget[*iter];
             const glm::vec4 fPos = finalTransform * pos;
 
-            selectMid += glm::vec2(pos.x, pos.y);
+            m_selectMid += glm::vec2(pos.x, pos.y);
 
             m_intermediateRenderer->DrawSolidCircle({ fPos.x, fPos.y, -0.1f }, 20, 0.025f, ACTIVE_COLOR, scalar.x, scalar.y);
 
             ++indexCount;
         }
 
-        selectMid /= indexCount;
+        m_selectMid /= indexCount;
 
-        TransformArrows(selectMid, finalTransform, toolMode, scalar);
+        TransformArrows(m_selectMid, finalTransform, toolMode, scalar);
 
         m_morphTargetDisplay->SetModelName(m_selectedModelData->ModelName->GetName());
 
@@ -1094,10 +1103,14 @@ void ModelEditor::DrawSelectionBox(const glm::vec2& a_startPos, const glm::vec2&
 
     const glm::mat4 viewProj = proj * view;
 
-    const glm::vec4 fPosStart = viewProj * glm::vec4(a_startPos, 0, 1); 
-    const glm::vec4 fPosEnd = viewProj * glm::vec4(a_endPos, 0, 1);
+    DrawSelectionBox(viewProj, a_startPos, a_endPos);
+}
+void ModelEditor::DrawSelectionBox(const glm::mat4& a_transform, const glm::vec2& a_startPos, const glm::vec2& a_endPos)
+{
+    const glm::vec4 fPosStart = a_transform * glm::vec4(a_startPos, 0, 1); 
+    const glm::vec4 fPosEnd = a_transform * glm::vec4(a_endPos, 0, 1);
 
-    m_intermediateRenderer->DrawBox({ fPosStart.x, fPosStart.y, -0.3f }, { fPosEnd.x, fPosEnd.y, -0.2f }, 0.01f, { 1, 1, 1, 1 });
+    m_intermediateRenderer->DrawBox({ fPosStart.x, fPosStart.y, -0.3f }, { fPosEnd.x, fPosEnd.y, -0.3f }, 0.01f, { 1, 1, 1, 1 });
 }
 
 void ModelEditor::DragValue(const glm::vec2& a_dragMov, MorphPlane* a_morphPlane)
@@ -1125,11 +1138,10 @@ void ModelEditor::SelectMouseUp(const glm::vec2& a_startPos, const glm::vec2& a_
         m_selectedIndices.clear();
     } 
 
-    const unsigned int size = m_selectedMorphPlane->Plane->GetSize();
-    const unsigned int scaledSize = size + 1;
+    const unsigned int size = a_morphPlane->GetSize();
     const unsigned int trueSize = size * size;
 
-    const glm::vec2* morpPositions = m_selectedMorphPlane->Plane->GetMorphPositions();
+    const glm::vec2* morpPositions = a_morphPlane->GetMorphPositions();
 
     for (unsigned int i = 0; i < trueSize; ++i)
     {

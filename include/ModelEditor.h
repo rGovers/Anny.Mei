@@ -78,6 +78,8 @@ private:
     MorphPlaneData*         m_selectedMorphPlane;
     glm::vec4*              m_selectedMorphTarget;
 
+    glm::vec2               m_selectMid;
+
     std::list<ModelData*>*  m_models;
 
     Namer*                  m_namer;
@@ -119,6 +121,10 @@ public:
     bool IsModelSelected() const;
     bool IsMorphPlaneSelected() const;
 
+    e_ToolMode GetToolMode() const;
+
+    glm::vec2 GetSelectionMid() const;
+
     void DrawModelList();
 
     void Update(double a_delta);
@@ -155,6 +161,7 @@ public:
     void MorphTargetSelected(glm::vec4* a_morphTarget);
 
     void DrawSelectionBox(const glm::vec2& a_startPos, const glm::vec2& a_endPos);
+    void DrawSelectionBox(const glm::mat4& a_transform, const glm::vec2& a_startPos, const glm::vec2& a_endPos);
 
     void DragValue(const glm::vec2& a_dragMov, MorphPlane* a_morphPlane);
     void SelectMouseUp(const glm::vec2& a_startPos, const glm::vec2& a_endPos, float a_scalar, MorphPlane* a_morphPlane);
